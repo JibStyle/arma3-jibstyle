@@ -1,0 +1,4 @@
+// Mimics onPlayerRespawn.sqf mission script
+call jib_misc_fnc_client_setupRadio;
+call jib_service_fnc_setupPlayerServiceVehicle;
+call jib_inventory_fnc_setupPlayerInventory;

@@ -1,0 +1,5 @@
+#include "Macros.hpp"
+#include "CfgPatches.hpp"
+#include "CfgFactionClasses.hpp"
+#include "CfgGroups.hpp"
+#include "CfgVehicles.hpp"
