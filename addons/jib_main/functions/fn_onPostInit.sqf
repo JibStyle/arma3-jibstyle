@@ -1,4 +1,4 @@
-// Init client or server during mission start
+// Init client during mission start
 if (!hasInterface) exitWith {};
 addMissionEventHandler [
     "PreloadFinished",

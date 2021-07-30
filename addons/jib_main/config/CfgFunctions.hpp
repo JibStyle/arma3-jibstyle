@@ -1,8 +1,7 @@
 class CfgFunctions {
     class jib_main {
-        class main {
-            file = "main\functions";
-            // requiredAddons[] = {"cba_settings"};
+        class jib_main {
+            file = "jib_main\functions";
 
             class onPostInit {
                 postInit = 1;

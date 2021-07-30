@@ -327,7 +327,7 @@ class CfgVehicles {
         author = "JibStyle";
         displayName = "Wildman";
         faction = "JIB_BLU_F";
-        editorPreview = "JIB_NATO\data\images\B_JIB_NATO_Wildman_01.jpg";
+        editorPreview = "jib_factions\data\images\B_JIB_NATO_Wildman_01.jpg";
         items[] = {mag_10("ACE_Banana")};
         linkedItems[] = {"ItemMicroDAGR","TFAR_anprc152"};
         respawnlinkedItems[] = {"ItemMicroDAGR","TFAR_anprc152"};

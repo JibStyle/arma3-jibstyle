@@ -1,7 +1,7 @@
 class CfgFunctions {
     class jib_misc {
-        class misc {
-            file = "misc\functions";
+        class jib_misc {
+            file = "jib_misc\functions";
 
             class onPostInit {
                 postInit = 1;

@@ -1,7 +1,7 @@
 class CfgFunctions {
     class jib_ai {
-        class misc {
-            file = "ai\functions";
+        class jib_ai {
+            file = "jib_ai\functions";
 
             class stopOnSpawn {};
             class setupObjectRecruitment {};

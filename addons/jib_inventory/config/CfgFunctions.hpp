@@ -1,7 +1,7 @@
 class CfgFunctions {
     class jib_inventory {
-        class misc {
-            file = "inventory\functions";
+        class jib_inventory {
+            file = "jib_inventory\functions";
 
             class client_loadoutRestore {};
             class client_loadoutSave {};

@@ -1,7 +1,7 @@
 class CfgFunctions {
     class jib_service {
-        class misc {
-            file = "service\functions";
+        class jib_service {
+            file = "jib_service\functions";
             
             class canServiceVehicle {};
             class setupObjectServiceAI {};
