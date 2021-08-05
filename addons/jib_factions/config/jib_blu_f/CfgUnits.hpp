@@ -1,0 +1,5 @@
+"JIB_B_Carryall_oli_BTAmmo_F",
+"JIB_B_Kitbag_rgr_AAR",
+"JIB_B_Carryall_oli_BTAAT_F",
+"JIB_B_Wildman_F",
+"JIB_B_SupplyCrate",
