@@ -18,7 +18,7 @@ if (isNil "_distance") then {_distance = 7};
                 alive _x && { not isPlayer _x };
             } apply {
                 [_x, _x] call ace_medical_treatment_fnc_fullHeal;
-                _x setUnitLoadout typeOf _x;
+                // _x setUnitLoadout typeOf _x;
                 [_x] call jib_inventory_fnc_setupAIInventory;
             };
             _x setDamage 0;
