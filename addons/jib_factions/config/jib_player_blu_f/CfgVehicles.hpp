@@ -1,5 +1,8 @@
+/// Backpacks
+
+// Ammo Bearer
 class B_Carryall_oli_BTAmmo_F;
-class JIB_B_Carryall_oli_BTAmmo_F : B_Carryall_oli_BTAmmo_F {
+class JIB_P_B_Carryall_oli_BTAmmo_F : B_Carryall_oli_BTAmmo_F {
     scope = 1;
     class TransportItems {
         item_xx(ACE_fieldDressing,4);
@@ -17,8 +20,9 @@ class JIB_B_Carryall_oli_BTAmmo_F : B_Carryall_oli_BTAmmo_F {
     };
 };
 
+// Assistant AR
 class B_Kitbag_rgr_AAR;
-class JIB_B_Kitbag_rgr_AAR : B_Kitbag_rgr_AAR {
+class JIB_P_B_Kitbag_rgr_AAR : B_Kitbag_rgr_AAR {
     scope = 1;
     class TransportItems {
         item_xx(muzzle_snds_H,1);
@@ -29,27 +33,32 @@ class JIB_B_Kitbag_rgr_AAR : B_Kitbag_rgr_AAR {
     };
 };
 
+// Assistant AT
 class B_Carryall_oli_BTAAT_F;
-class JIB_B_Carryall_oli_BTAAT_F : B_Carryall_oli_BTAAT_F {
+class JIB_P_B_Carryall_oli_BTAAT_F : B_Carryall_oli_BTAAT_F {
     scope = 1;
     class TransportMagazines {
         mag_xx(Titan_AT,3);
     };
 };
 
+/// Misc
+
+// Wildman
 class B_Survivor_F;
-class JIB_B_Wildman_F : B_Survivor_F {
+class JIB_P_B_Wildman_F : B_Survivor_F {
     author = "JibStyle";
     displayName = "Wildman";
-    faction = "JIB_BLU_F";
+    faction = "JIB_P_BLU_F";
     editorPreview = "jib_factions\data\images\B_JIB_NATO_Wildman_01.jpg";
-    items[] = {mag_10("ACE_Banana")};
+    items[] = {mag_9("ACE_Banana")};
     linkedItems[] = {"ItemMicroDAGR","TFAR_anprc152"};
     respawnlinkedItems[] = {"ItemMicroDAGR","TFAR_anprc152"};
 };
 
+// Supply Crate
 class B_SupplyCrate_F;
-class JIB_B_SupplyCrate : B_SupplyCrate_F {
+class JIB_P_B_SupplyCrate : B_SupplyCrate_F {
     author = "JibStyle";
     displayName = "JIB NATO Supply Crate";
     class TransportItems {

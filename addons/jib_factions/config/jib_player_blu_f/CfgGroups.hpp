@@ -1,11 +1,11 @@
-class JIB_BLU_F {
-    name = "JIB NATO";
+class JIB_P_BLU_F {
+    name = "Jib Player - NATO";
     class SpecOps {
 	name = "Special Forces";
-	class JIB_BLU_F_SpecOps_Hooligans {
+	class JIB_P_BLU_F_SpecOps_Hooligans {
 	    name = "Hooligans";
 	    side = 1;
-	    faction = "JIB_BLU_F";
+	    faction = "JIB_P_BLU_F";
 	    icon = "\A3\ui_f\data\map\markers\nato\b_recon.paa";
 	    rarityGroup = 0.5;
 
@@ -13,25 +13,25 @@ class JIB_BLU_F {
 		position[] = {0,0,0};
 		rank = "SERGEANT";
 		side = 1;
-		vehicle = "JIB_B_Wildman_F";
+		vehicle = "JIB_P_B_Wildman_F";
 	    };
 	    class Unit1 {
 		position[] = {5,-5,0};
 		rank = "PRIVATE";
 		side = 1;
-		vehicle = "JIB_B_Wildman_F";
+		vehicle = "JIB_P_B_Wildman_F";
 	    };
 	    class Unit2 {
 		position[] = {-5,-5,0};
 		rank = "PRIVATE";
 		side = 1;
-		vehicle = "JIB_B_Wildman_F";
+		vehicle = "JIB_P_B_Wildman_F";
 	    };
 	    class Unit3 {
 		position[] = {10,-10,0};
 		rank = "PRIVATE";
 		side = 1;
-		vehicle = "JIB_B_Wildman_F";
+		vehicle = "JIB_P_B_Wildman_F";
 	    };
 	};
     };
