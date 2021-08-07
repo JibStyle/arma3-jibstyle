@@ -4,12 +4,21 @@ class CfgFunctions {
             file = "x\jib\addons\jib_misc\functions";
 
             class onPostInit {
+                recompile = 1;
                 postInit = 1;
             };
-            class client_restrictScoretable {};
-            class client_setupRadio {};
-            class setupObjectTeleport {};
-            class setupViewDistance {};
+            class client_restrictScoretable {
+                recompile = 1;
+            };
+            class client_setupRadio {
+                recompile = 1;
+            };
+            class setupObjectTeleport {
+                recompile = 1;
+            };
+            class setupViewDistance {
+                recompile = 1;
+            };
         };
     };
 };

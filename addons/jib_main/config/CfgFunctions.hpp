@@ -5,8 +5,11 @@ class CfgFunctions {
 
             class onPostInit {
                 postInit = 1;
+                recompile = 1;
             };
-            class onPlayerRespawn {};
+            class onPlayerRespawn {
+                recompile = 1;
+            };
         };
     };
 };
