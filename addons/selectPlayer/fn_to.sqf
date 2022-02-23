@@ -4,7 +4,7 @@ if (not _isActivated) exitWith { systemChat "Not activated!"; };
 if (not isServer) exitWith { systemChat "Not server!"; };
 
 // Get curator logic
-private _curator = getAssignedCuratorLogic player;
+private _curator = getAssignedCuratorLogic jib_selectPlayer_from;
 
 // Get selected unit
 private _unit = _logic getvariable [
@@ -21,7 +21,9 @@ if (not alive _unit) exitWith {
 };
 
 // Trigger client
-[[_unit], {
+[[_unit, _curator], {
+    params ["_unit", "_curator"];
+
     // Select player
     selectPlayer _unit;
 
