@@ -7,6 +7,7 @@ class CfgPatches {
             "tfar_handhelds",
             "cTab",
             "ace_common",
+            "rhsusf_main",
         };
         units[] = {
             #include "jib_ai_blu_f\CfgUnits.hpp"
