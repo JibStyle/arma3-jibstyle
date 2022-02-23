@@ -1,5 +1,0 @@
-#include "config\Macros.hpp"
-#include "config\CfgPatches.hpp"
-#include "config\CfgFactionClasses.hpp"
-#include "config\CfgGroups.hpp"
-#include "config\CfgVehicles.hpp"
