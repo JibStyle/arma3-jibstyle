@@ -8,7 +8,6 @@ class CfgPatches {
         weapons[] = {};
     };
 };
-
 class CfgFunctions {
     class jib_zeus {
         class jib_zeus {

@@ -13,7 +13,6 @@ class CfgPatches {
         };
     };
 };
-
 class CfgFunctions {
     class jib_hc {
         class jib_hc {
@@ -26,56 +25,49 @@ class CfgFunctions {
         };
     };
 };
-
 class CfgFactionClasses {
     class NO_CATEGORY;
     class jib_hc: NO_CATEGORY {
         displayName = "Jib High Command";
     };
 };
-
 class CfgVehicles
 {
     class Module_F;
-
     class jib_hc_promote: Module_F {
         scopeCurator=2;
         curatorCanAttach=1;
         category = "jib_hc";
-        displayName = "HC Promote";
+        displayName = "Promote";
         function = "jib_hc_fnc_promote";
     };
-
     class jib_hc_demote: Module_F {
         scopeCurator=2;
         curatorCanAttach=1;
         category = "jib_hc";
-        displayName = "HC Demote";
+        displayName = "Demote";
         function = "jib_hc_fnc_demote";
     };
-
     class jib_hc_add: Module_F {
         scopeCurator=2;
         curatorCanAttach=1;
         category = "jib_hc";
-        displayName = "HC Add to Last";
+        displayName = "Add to Last";
         function = "jib_hc_fnc_add";
     };
-
     class jib_hc_remove: Module_F {
         scopeCurator=2;
         curatorCanAttach=1;
         category = "jib_hc";
-        displayName = "HC Remove";
+        displayName = "Remove";
         function = "jib_hc_fnc_remove";
     };
-
     class jib_hc_debug: Module_F {
         isGlobal=1;
         scopeCurator=2;
         curatorCanAttach=1;
         category = "jib_hc";
-        displayName = "HC Print Debug Info";
+        displayName = "Print Debug Info";
         function = "jib_hc_fnc_debug";
     };
 };

@@ -5,7 +5,6 @@ class CfgPatches {
         requiredVersion = 1.60;
         requiredAddons[] = {"A3_Modules_F"};
         units[] = {
-            "jib_modules_selectPlayer",
             "jib_modules_00",
         };
     };
@@ -15,7 +14,6 @@ class CfgFunctions {
     class jib_modules {
         class jib_modules {
             file = "x\jib\addons\modules";
-            class selectPlayer { recompile = 1; };
             class 00 { recompile = 1; };
         };
     };
@@ -44,15 +42,6 @@ class CfgVehicles
         class ModuleDescription {
             class AnyBrain;
         };
-    };
-
-    class jib_modules_selectPlayer: Module_F {
-        isGlobal=1;
-        scopeCurator=2;
-        curatorCanAttach=1;
-        category = "jib_modules";
-        displayName = "Select Player";
-        function = "jib_modules_fnc_selectPlayer";
     };
 
     // Example modules
