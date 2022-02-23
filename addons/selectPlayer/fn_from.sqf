@@ -10,7 +10,7 @@ private _unit = _logic getvariable [
 ];
 
 // Record selection
-jib_selectPlayer_from = _unit
+jib_selectPlayer_from = _unit;
 
 deleteVehicle _logic;
 true;

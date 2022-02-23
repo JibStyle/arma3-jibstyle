@@ -3,7 +3,7 @@ class CfgPatches {
         name = "JibStyle AI";
         author = "JibStyle";
         requiredVersion = 1.60;
-        requiredAddons[] = {};
+        requiredAddons[] = {"A3_Modules_F"};
         units[] = {
             "jib_ai_enableLaserControl",
         };
@@ -33,4 +33,4 @@ class CfgVehicles {
         displayName = "Laser Control";
         function = "jib_ai_fnc_enableLaserControl";
     };
-;
+};
