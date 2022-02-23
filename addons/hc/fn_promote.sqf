@@ -19,7 +19,7 @@ if (not alive _leader) exitWith {
     deleteVehicle _logic;
     false;
 };
-my_modules_hcSelected = _leader;
+jib_hc_selected = _leader;
 {
     if (_x isKindOf "HighCommand") exitWith {
         deleteVehicle _logic;
@@ -28,15 +28,15 @@ my_modules_hcSelected = _leader;
 } forEach synchronizedObjects _leader;
 
 // Maybe create logic group
-if (isNil "my_modules_hcLogicGroup") then {
-    my_modules_hcLogicGroup = createGroup sideLogic;
+if (isNil "jib_hc_group") then {
+    jib_hc_group = createGroup sideLogic;
 };
 
 // Create logics
-private _hc = my_modules_hcLogicGroup createUnit [
+private _hc = jib_hc_group createUnit [
     "HighCommand", [0, 0, 0], [], 0, "NONE"
 ];
-private _hcSub = my_modules_hcLogicGroup createUnit [
+private _hcSub = jib_hc_group createUnit [
     "HighCommandSubordinate", [0, 0, 0], [], 0, "NONE"
 ];
 _hc synchronizeObjectsAdd [_leader, _hcSub];

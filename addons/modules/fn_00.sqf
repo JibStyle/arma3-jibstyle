@@ -12,7 +12,7 @@ if (_isActivated) then {
         objnull
     ];
 
-    my_modules_00_args = _this;
+    jib_modules_00_args = _this;
     systemChat format [
         "Foo: %1, bar: %2, curatorUnit: %3 units: %4, pos: %5, args: %6",
         _foo,

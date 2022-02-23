@@ -7,7 +7,7 @@ if (not _isActivated) exitWith { systemChat "Not activated!"; };
 if (not isServer) exitWith { systemChat "Not server!"; };
 
 // Validate previously selected HC commander
-if (isNil "my_modules_hcSelected") exitWith {
+if (isNil "jib_hc_selected") exitWith {
     [
         objNull,
         "First, select leader with HC promote"
@@ -15,7 +15,7 @@ if (isNil "my_modules_hcSelected") exitWith {
     deleteVehicle _logic;
     false;
 };
-private _commander = my_modules_hcSelected;
+private _commander = jib_hc_selected;
 
 // Validate chosen subordinate
 private _subordinate = _logic getvariable [
