@@ -1,5 +1,5 @@
 # Jib Style
 
-Collection of scripts and configs for my personal Arma 3 missions.
+Collection of scripts and configs for my Arma 3 server.
 
 - Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=2478690509
