@@ -17,9 +17,12 @@ if (isNil "_distance") then {_distance = 7};
             crew _x select {
                 alive _x && { not isPlayer _x };
             } apply {
-                [_x, _x] call ace_medical_treatment_fnc_fullHeal;
-                // _x setUnitLoadout typeOf _x;
-                [_x] call jib_inventory_fnc_setupAIInventory;
+                if (isNil "ace_medical_treatment_fnc_fullHeal") then {
+                    _x setDamage 0;
+                } else {
+                    [_x, _x] call ace_medical_treatment_fnc_fullHeal;
+                };
+                _x setUnitLoadout typeOf _x;
             };
             _x setDamage 0;
             _x setFuel 1;
