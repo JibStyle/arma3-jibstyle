@@ -3,7 +3,7 @@ class CfgPatches {
         name = "Jib Zeus";
         author = "JibStyle";
         requiredVersion = 1.60;
-        requiredAddons[] = {"A3_UI_F","A3_Data_F"};
+        requiredAddons[] = {};
         units[] = {};
         weapons[] = {};
     };
@@ -14,6 +14,7 @@ class CfgFunctions {
             file = "x\jib\addons\zeus";
             class setup {
                 recompile = 1;
+                preInit = 1;
             };
         };
     };
