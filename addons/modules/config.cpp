@@ -17,7 +17,7 @@ class CfgPatches {
             "jib_modules_selectPlayerFrom",
             "jib_modules_selectPlayerTo",
             "jib_modules_selectPlayerSelf",
-            "jib_modules_token", // Doesn't work
+            "jib_modules_token",
         };
     };
 };
@@ -49,6 +49,7 @@ class CfgFactionClasses {
     class jib_dev: NO_CATEGORY { displayName = "Jib Dev"; };
     class jib_hc: NO_CATEGORY { displayName = "Jib HC"; };
     class jib_selectPlayer: NO_CATEGORY { displayName = "Jib Select Player"; };
+    class jib_token: NO_CATEGORY { displayName = "Jib Token"; };
 };
 
 class CfgVehicles
@@ -141,5 +142,9 @@ class CfgVehicles
         displayName = "To";
         function = "jib_modules_fnc_selectPlayerTo";
     };
-    class jib_modules_token: Module_F {};
+    class jib_modules_token: Module_F {
+        scope=2;
+        displayName = "Token";
+        category = "jib_token";
+    };
 };

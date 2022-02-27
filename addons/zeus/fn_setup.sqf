@@ -39,3 +39,16 @@ if (isNil "jib_zeus_admin" || { not alive jib_zeus_admin }) then {
     waitUntil { isNull (getAssignedCuratorUnit jib_zeus_curator) };
     jib_zeus_admin assignCurator jib_zeus_curator;
 };
+
+// Handle Zeus Respawn
+if (isNil "jib_zeus_registeredEntityRespawnedEH") then {
+    addMissionEventHandler ["EntityRespawned", {
+        params ["_newEntity", "_oldEntity"];
+        private _curator = getAssignedCuratorLogic _oldEntity;
+        if (isNull _curator) exitWith {};
+        unassignCurator _curator;
+        waitUntil { isNull (getAssignedCuratorUnit _curator) };
+        _newEntity assignCurator _curator;
+    }];
+};
+jib_zeus_registeredEntityRespawnedEH = true;

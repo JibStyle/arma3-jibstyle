@@ -22,9 +22,16 @@ private _hcSub = jib_hc_group createUnit [
 ];
 _hc synchronizeObjectsAdd [_leader, _hcSub];
 
-// Enable MARTA immediately
+// Enable MARTA
 [[], {
     setGroupIconsVisible [true, false];
+    if (isNil "jib_hc_promoteDidRegisterEH") then {
+        addMissionEventHandler ["CommandModeChanged", {
+            params ["_isHighCommand", "_isForced"];
+            setGroupIconsVisible [true, false];
+        }];
+    };
+    jib_hc_promoteDidRegisterEH = true;
 }] remoteExec ["spawn", _leader];
 
 true;
