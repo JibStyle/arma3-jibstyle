@@ -7,5 +7,8 @@ if (not local _logic) exitWith { false };
 private _pos = getPosATL _logic;
 jib_modules_devCopyPositionATL = _pos;
 copyToClipboard str _pos;
-[objNull, str _pos] call BIS_fnc_showCuratorFeedbackMessage;
+[
+    objNull,
+    [format "jib_modules_devCopyPositionATL: %1", _pos];
+] call BIS_fnc_showCuratorFeedbackMessage;
 deleteVehicle _logic;

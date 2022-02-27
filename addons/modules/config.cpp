@@ -67,14 +67,14 @@ class CfgVehicles
         scopeCurator=2;
         category = "jib_dev";
         displayName = "Copy Position ASL";
-        function = "jib_dev_fnc_copyPositionASL";
+        function = "jib_modules_fnc_devCopyPositionASL";
     };
     class jib_modules_devCopyPositionATL: Module_F {
         isGlobal=1;
         scopeCurator=2;
         category = "jib_dev";
         displayName = "Copy Position ATL";
-        function = "jib_dev_fnc_copyPositionATL";
+        function = "jib_modules_fnc_devCopyPositionATL";
     };
     class jib_modules_devSelectEntity: Module_F {
         isGlobal=1;
@@ -82,7 +82,7 @@ class CfgVehicles
         curatorCanAttach=1;
         category = "jib_dev";
         displayName = "Select Entity";
-        function = "jib_dev_fnc_selectEntity";
+        function = "jib_modules_fnc_devSelectEntity";
     };
     class jib_modules_hcPromote: Module_F {
         scopeCurator=2;

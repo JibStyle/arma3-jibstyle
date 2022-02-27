@@ -11,9 +11,12 @@ private _entity = _logic getvariable [
 ];
 
 // Call function
-try {
-    [player, _entity] call jib_selectPlayer_fnc_selectPlayer;
-} catch {
-    [objNull, str _exception] call BIS_fnc_showCuratorFeedbackMessage;
-};
+[[player, _entity], {
+    params ["_oldUnit", "_newUnit"];
+    try {
+        [_oldUnit, _newUnit] call jib_selectPlayer_fnc_selectPlayer;
+    } catch {
+        [objNull, str _exception] call BIS_fnc_showCuratorFeedbackMessage;
+    };
+}] remoteExec ["spawn", 2];
 deleteVehicle _logic;

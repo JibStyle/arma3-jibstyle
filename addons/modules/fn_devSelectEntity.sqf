@@ -12,7 +12,7 @@ private _entity = _logic getvariable [
 // Record selection
 jib_modules_devSelectEntity = _entity;
 private _message = format [
-    "Entity: %1 - Type (copied): %2 - ASL: %3 - AGL: %4",
+    "jib_modules_devSelectEntity: %1 - Type (copied): %2 - ASL: %3 - AGL: %4",
     _entity,
     typeOf _entity,
     getPosASL _entity,
