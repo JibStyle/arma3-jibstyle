@@ -1,30 +1,11 @@
 // Make unit a commander.
-//
-// If unit already a commander, they are unaffected. Also, HC module
-// saved in global variable and used in subsequent `fn_add` calls.
-params ["_logic", "", "_isActivated"];
-if (not _isActivated) exitWith { systemChat "Not activated!"; };
-if (not isServer) exitWith { systemChat "Not server!"; };
+params ["_leader"];
+if (not isServer) then {throw "Not server!"};
+if (not alive _leader) then {throw "Leader not alive!"};
 
-// Validate leader
-private _leader = _logic getvariable [
-    "bis_fnc_curatorAttachObject_object",
-    objNull
-];
-if (not alive _leader) exitWith {
-    [
-        objNull,
-        "Must place module on unit!"
-    ] call BIS_fnc_showCuratorFeedbackMessage;
-    deleteVehicle _logic;
-    false;
-};
-jib_hc_selected = _leader;
+// Throw if already HC
 {
-    if (_x isKindOf "HighCommand") exitWith {
-        deleteVehicle _logic;
-        true;
-    };
+    if (_x isKindOf "HighCommand") then {throw "Already HC"};
 } forEach synchronizedObjects _leader;
 
 // Maybe create logic group
@@ -41,10 +22,9 @@ private _hcSub = jib_hc_group createUnit [
 ];
 _hc synchronizeObjectsAdd [_leader, _hcSub];
 
-// Enable MARTA
+// Enable MARTA immediately
 [[], {
     setGroupIconsVisible [true, false];
 }] remoteExec ["spawn", _leader];
 
-deleteVehicle _logic;
 true;

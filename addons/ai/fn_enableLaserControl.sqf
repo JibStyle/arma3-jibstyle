@@ -1,17 +1,9 @@
 // Enable AI lasers when SL laser active
-params ["_logic", "", "_isActivated"];
-if (not _isActivated) exitWith { systemChat "Not activated!"; };
-if (not isServer) exitWith { systemChat "Not server!"; };
+params ["_group"];
 #define LASER_CONTROL_VARIABLE "jib_ai_laserControlEnabled"
 #define SLEEP_DELAY 1
-
-// Get chosen group
-private _group = group (
-    _logic getvariable [
-        "bis_fnc_curatorAttachObject_object",
-        objNull
-    ]
-);
+if (not isServer) throw "Not server!";
+if (isNull _group) throw "Null group!";
 
 // Start daemon
 [[_group], {
@@ -28,9 +20,4 @@ private _group = group (
         uiSleep SLEEP_DELAY;
     };
 }] remoteExec ["spawn", _group];
-
-[_logic, _group] spawn {
-    params ["_logic", "_group"];
-    waitUntil { isNull _logic };
-    _group setVariable [LASER_CONTROL_VARIABLE, false, owner _group];
-};
+true;

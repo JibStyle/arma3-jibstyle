@@ -5,22 +5,19 @@ if (!isServer) exitWith { "Not server!" };
 if (isNil "jib_zeus_curator") then {
     jib_zeus_group = createGroup sideLogic;
     publicVariable "jib_zeus_group";
-    "ModuleCurator_F" createUnit [
+    jib_zeus_curator = jib_zeus_group createUnit [
+        "ModuleCurator_F",
         [500,500,0],
-        jib_zeus_group,
-        "this setVariable ['Addons', 3]; this setVariable ['owner', '#adminLogged']; this setVariable ['BIS_fnc_initModules_disableAutoActivation', false]; jib_zeus_curator = this; publicVariable 'jib_zeus_curator'"
+        [],
+        0,
+        "NONE"
     ];
-    // jib_zeus_curator = jib_zeus_group createUnit [
-    //     "ModuleCurator_F",
-    //     [500,500,0],
-    //     [],
-    //     0,
-    //     "NONE"
-    // ];
-    // jib_zeus_curator setVariable ["Addons", 3];
-    // jib_zeus_curator setVariable ["owner", "#adminLogged"];
-    // [jib_zeus_curator] spawn BIS_fnc_moduleInit;
-    // publicVariable "jib_zeus_curator";
+    jib_zeus_curator setVariable ["Addons", 3];
+    jib_zeus_curator setVariable ["owner", "#adminLogged"];
+    jib_zeus_curator setVariable [
+        "BIS_fnc_initModules_disableAutoActivation", false
+    ];
+    publicVariable "jib_zeus_curator";
 };
 
 // Get admin
