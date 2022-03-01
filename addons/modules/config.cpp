@@ -15,6 +15,8 @@ class CfgPatches {
             "jib_modules_hcAdd",
             "jib_modules_hcRemove",
             "jib_modules_hcDebug",
+            "jib_modules_objectives_hostage",
+            "jib_modules_objectives_hostage_injured",
             "jib_modules_selectPlayerFrom",
             "jib_modules_selectPlayerTo",
             "jib_modules_selectPlayerSelf",
@@ -42,6 +44,8 @@ class CfgFunctions {
             class hcAdd { recompile = 1; };
             class hcRemove { recompile = 1; };
             class hcDebug { recompile = 1; };
+            class objectives_hostage { recompile = 1; };
+            class objectives_hostage_injured { recompile = 1; };
             class selectPlayerFrom { recompile = 1; };
             class selectPlayerTo { recompile = 1; };
             class selectPlayerSelf { recompile = 1; };
@@ -61,6 +65,7 @@ class CfgFactionClasses {
     class jib_debug: NO_CATEGORY { displayName = "Jib Debug"; };
     class jib_dev: NO_CATEGORY { displayName = "Jib Dev"; };
     class jib_hc: NO_CATEGORY { displayName = "Jib HC"; };
+    class jib_objectives: NO_CATEGORY { displayName = "Jib Objectives"; };
     class jib_selectPlayer: NO_CATEGORY { displayName = "Jib Select Player"; };
     class jib_support: NO_CATEGORY { displayName = "Jib Support"; };
     class jib_synchronization: NO_CATEGORY { displayName = "Jib Synchronization"; };
@@ -150,6 +155,20 @@ class CfgVehicles
         category = "jib_hc";
         displayName = "Print Debug Info";
         function = "jib_modules_fnc_hcDebug";
+    };
+    class jib_modules_objectives_hostage: Module_F {
+        scopeCurator=2;
+        curatorCanAttach=1;
+        category = "jib_objectives";
+        displayName = "Hostage";
+        function = "jib_objectives_fnc_hostage";
+    };
+    class jib_modules_objectives_hostage_injured: Module_F {
+        scopeCurator=2;
+        curatorCanAttach=1;
+        category = "jib_objectives";
+        displayName = "Hostage (Injured)";
+        function = "jib_objectives_fnc_hostage_injured";
     };
     class jib_modules_selectPlayerSelf: Module_F {
         isGlobal=1;
