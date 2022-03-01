@@ -1,6 +1,6 @@
 class CfgPatches {
     class jib_hc {
-        name = "Jib Modules";
+        name = "Jib High Command";
         author = "JibStyle";
         requiredVersion = 1.60;
         requiredAddons[] = {};

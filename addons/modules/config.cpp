@@ -6,6 +6,7 @@ class CfgPatches {
         requiredAddons[] = {"A3_Modules_F"};
         units[] = {
             "jib_modules_aiLasers",
+            "jib_modules_debug",
             "jib_modules_devCopyPositionASL",
             "jib_modules_devCopyPositionATL",
             "jib_modules_devSelectEntity",
@@ -17,6 +18,11 @@ class CfgPatches {
             "jib_modules_selectPlayerFrom",
             "jib_modules_selectPlayerTo",
             "jib_modules_selectPlayerSelf",
+            "jib_modules_supportSystem",
+            "jib_modules_synchronizationSyncFrom",
+            "jib_modules_synchronizationSyncTo",
+            "jib_modules_synchronizationUnsyncFrom",
+            "jib_modules_synchronizationUnsyncTo",
             "jib_modules_token",
         };
     };
@@ -27,6 +33,7 @@ class CfgFunctions {
         class jib_modules {
             file = "x\jib\addons\modules";
             class aiLasers { recompile = 1; };
+            class debug { recompile = 1; };
             class devCopyPositionASL { recompile = 1; };
             class devCopyPositionATL { recompile = 1; };
             class devSelectEntity { recompile = 1; };
@@ -38,6 +45,11 @@ class CfgFunctions {
             class selectPlayerFrom { recompile = 1; };
             class selectPlayerTo { recompile = 1; };
             class selectPlayerSelf { recompile = 1; };
+            class supportSystem { recompile = 1; };
+            class synchronizationSyncFrom { recompile = 1; };
+            class synchronizationSyncTo { recompile = 1; };
+            class synchronizationUnsyncFrom { recompile = 1; };
+            class synchronizationUnsyncTo { recompile = 1; };
             class tokenInit { recompile = 1; preInit = 1; };
         };
     };
@@ -46,9 +58,12 @@ class CfgFunctions {
 class CfgFactionClasses {
     class NO_CATEGORY;
     class jib_ai: NO_CATEGORY { displayName = "Jib AI"; };
+    class jib_debug: NO_CATEGORY { displayName = "Jib Debug"; };
     class jib_dev: NO_CATEGORY { displayName = "Jib Dev"; };
     class jib_hc: NO_CATEGORY { displayName = "Jib HC"; };
     class jib_selectPlayer: NO_CATEGORY { displayName = "Jib Select Player"; };
+    class jib_support: NO_CATEGORY { displayName = "Jib Support"; };
+    class jib_synchronization: NO_CATEGORY { displayName = "Jib Synchronization"; };
     class jib_token: NO_CATEGORY { displayName = "Jib Token"; };
 };
 
@@ -61,6 +76,22 @@ class CfgVehicles
         category = "jib_ai";
         displayName = "Laser Control";
         function = "jib_modules_fnc_aiLasers";
+    };
+    class jib_modules_debug: Module_F {
+        scope = 2;
+        scopeCurator = 2;
+        isGlobal = 1;
+        category = "jib_debug";
+        displayName = "Debug";
+        function = "jib_modules_fnc_debug";
+        class Arguments {
+            class jib_modules_debugFoo {
+                displayName = "Foo";
+                description = "For debugging.";
+                defaultValue = "jib default";
+                type="ArgTypeTEXT";
+            };
+        };
     };
     class jib_modules_devCopyPositionASL: Module_F {
         isGlobal=1;
@@ -141,6 +172,41 @@ class CfgVehicles
         category = "jib_selectPlayer";
         displayName = "To";
         function = "jib_modules_fnc_selectPlayerTo";
+    };
+    class jib_modules_supportSystem: Module_F {
+        isGlobal=1;
+        scopeCurator = 2;
+        category = "jib_support";
+        displayName = "Create System";
+        function = "jib_modules_fnc_supportSystem";
+    };
+    class jib_modules_synchronizationSyncFrom: Module_F {
+        scopeCurator = 2;
+        category = "jib_synchronization";
+        curatorCanAttach=1;
+        displayName = "Sync From";
+        function = "jib_modules_fnc_synchronizationSyncFrom";
+    };
+    class jib_modules_synchronizationSyncTo: Module_F {
+        scopeCurator = 2;
+        category = "jib_synchronization";
+        curatorCanAttach=1;
+        displayName = "Sync To";
+        function = "jib_modules_fnc_synchronizationSyncTo";
+    };
+    class jib_modules_synchronizationUnsyncFrom: Module_F {
+        scopeCurator = 2;
+        category = "jib_synchronization";
+        curatorCanAttach=1;
+        displayName = "Unsync From";
+        function = "jib_modules_fnc_synchronizationUnsyncFrom";
+    };
+    class jib_modules_synchronizationUnsyncTo: Module_F {
+        scopeCurator = 2;
+        category = "jib_synchronization";
+        curatorCanAttach=1;
+        displayName = "Unsync To";
+        function = "jib_modules_fnc_synchronizationUnsyncTo";
     };
     class jib_modules_token: Module_F {
         scope=2;

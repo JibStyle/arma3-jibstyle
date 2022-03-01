@@ -1,6 +1,6 @@
 class CfgPatches {
     class jib_service {
-        name = "JibStyle Service";
+        name = "Jib Service";
         author = "JibStyle";
         requiredVersion = 1.60;
         requiredAddons[] = {};

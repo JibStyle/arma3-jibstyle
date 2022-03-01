@@ -9,6 +9,6 @@ jib_modules_devCopyPositionASL = _pos;
 copyToClipboard str _pos;
 [
     objNull,
-    [format "jib_modules_devCopyPositionASL: %1", _pos];
+    [format "jib_modules_devCopyPositionASL: %1", _pos]
 ] call BIS_fnc_showCuratorFeedbackMessage;
 deleteVehicle _logic;
