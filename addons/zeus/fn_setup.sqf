@@ -52,3 +52,16 @@ if (isNil "jib_zeus_registeredEntityRespawnedEH") then {
     }];
 };
 jib_zeus_registeredEntityRespawnedEH = true;
+
+// Keep adding players
+if (isNil "jib_zeus_registeredAddPlayersCode") then {
+    [] spawn {
+        while {true} do {
+            {
+                _x addCuratorEditableObjects [allPlayers];
+            } forEach allCurators;
+            uiSleep 3;
+        };
+    };
+    jib_zeus_registeredAddPlayersCode = true;
+};
