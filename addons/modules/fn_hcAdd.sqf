@@ -27,6 +27,7 @@ private _group = group _subordinate;
 // Do it
 try {
     [_commander, _group] call jib_hc_fnc_add;
+    [] call jib_hc_fnc_debug;
 } catch {
     [objNull, str _exception] call BIS_fnc_showCuratorFeedbackMessage;
 };
