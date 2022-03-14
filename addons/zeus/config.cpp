@@ -12,11 +12,7 @@ class CfgFunctions {
     class jib_zeus {
         class jib_zeus {
             file = "x\jib\addons\zeus";
-            class activateAddons {
-                recompile = 1;
-                preInit = 1;
-            };
-            class setup {
+            class preInit {
                 recompile = 1;
                 preInit = 1;
             };

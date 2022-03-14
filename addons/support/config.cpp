@@ -12,6 +12,7 @@ class CfgFunctions {
         class jib_support {
             file = "x\jib\addons\support";
             class createSystem { recompile = 1; };
+            class preInit { recompile = 1; preInit = 1; };
         };
     };
 };

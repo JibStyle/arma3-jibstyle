@@ -16,6 +16,7 @@ class CfgFunctions {
             class add { recompile = 1; };
             class remove { recompile = 1; };
             class debug { recompile = 1; };
+            class preInit { recompile = 1; preInit = 1; };
         };
     };
 };
