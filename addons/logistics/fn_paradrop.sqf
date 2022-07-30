@@ -25,7 +25,7 @@ if (!alive _unit) then {throw "Aircraft not alive!"};
 private _vehicle = vehicle _unit;
 private _vehiclePosATL = getPosATL _vehicle;
 private _vehicleGroup = group effectiveCommander _vehicle;
-private _vehicleCurrentWP = currentWaypoint _vehicleGroup;
+private _vehicleCurrentWP = count waypoints _vehicleGroup;
 if (_flyHeight > 0) then {
     [_vehicle, _flyHeight] remoteExec ["flyInHeight", 0];
 };
@@ -42,7 +42,6 @@ if (isNil "jib_logistics_paradrop_vehicleSetup") then {
     // Vehicle setup (all)
     jib_logistics_paradrop_vehicleSetup = {
         params ["_vehicle"];
-        _vehicle setVehicleLock "LOCKED";
         private _offsets = _vehicle getVariable VAR_LIGHT_OFFSETS;
         private _brightness = _vehicle getVariable VAR_LIGHT_BRIGHTNESS;
         private _lights = [];
@@ -148,6 +147,7 @@ if (isNil "jib_logistics_paradrop_paraVehicle") then {
         } forEach (_vehicle getVariable VAR_LIGHTS);
         if (!isServer) exitWith {};
         uiSleep 1;
+        _vehicle setVehicleCargo objNull;
         private _height = _vehicle getVariable VAR_HEIGHT;
         private _interval = _vehicle getVariable VAR_INTERVAL;
         private _invincible = _vehicle getVariable VAR_INVINCIBLE;
@@ -173,31 +173,32 @@ if (isNil "jib_logistics_paradrop_paraUnit") then {
         params ["_unit", "_height", "_invincible"];
         if (not local _unit) then {throw "Unit not local!"};
         _unit allowDamage false;
-        [_unit] allowGetIn false;
         moveOut _unit;
+        unassignVehicle _unit;
+        [_unit] allowGetIn false;
+        // _unit action ["Eject", vehicle _unit];
+        uiSleep 1;
+        waitUntil {
+            position _unit # 2 < _height;
+        };
+        _unit moveInDriver createVehicle [
+            "Steerable_Parachute_F",
+            getPosATL _unit
+        ];
         [_unit, _invincible] spawn {
             params ["_unit", "_invincible"];
-            uiSleep 5;
+            uiSleep 1;
             if (isPlayer _unit || not _invincible) then {
                 _unit allowDamage true;
             };
         };
-        private _loadout = getUnitLoadout _unit;
-        removeBackpack _unit;
-        uiSleep 2;
-        waitUntil {
-            position _unit # 2 < _height;
-        };
-        _unit addBackpack "B_Parachute";
-        _unit action ["openParachute", _unit];
-        waitUntil { position _unit # 2 < 10 };
+        waitUntil { position _unit # 2 < 5 };
         if (!isPlayer _unit) then {
             _unit allowDamage false;
         };
         waitUntil { isTouchingGround _unit || position _unit # 2 < 1 };
-        uiSleep 5;
+        uiSleep 1;
         _unit allowDamage true;
-        _unit setUnitLoadout _loadout;
     };
     publicVariable "jib_logistics_paradrop_paraUnit";
 };

@@ -15,7 +15,7 @@ private _brightness = [0,0,0];
 private _doors = [["", 0], ["", 0]];
 switch true do
 {
-    case (_entity isKindOf "VTOL_01_infantry_base_F"): {
+    case (_entity isKindOf "VTOL_01_base_F"): {
         _offsets = [
             [0, -3, -2],
             [0, -6, -2],
