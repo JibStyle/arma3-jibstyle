@@ -8,6 +8,7 @@
 #define VAR_HEIGHT "jib_logistics_paradrop_height"
 #define VAR_INTERVAL "jib_logistics_paradrop_interval"
 #define VAR_INVINCIBLE "jib_logistics_paradrop_invincible"
+#define VAR_INGRESS_COMPLETE "jib_logistics_paradrop_wpIngressComplete"
 params [
     "_unit",                               // Aircraft
     ["_lightOffsets", [], [[]]],           // Light offsets
@@ -36,6 +37,7 @@ _vehicle setVariable [VAR_LIGHT_BRIGHTNESS, _lightBrightness, true];
 _vehicle setVariable [VAR_HEIGHT, _paraHeight, true];
 _vehicle setVariable [VAR_INTERVAL, _interval, true];
 _vehicle setVariable [VAR_INVINCIBLE, _invincible, true];
+_vehicle setVariable [VAR_INGRESS_COMPLETE, false];
 
 // WP 1: Wait
 if (isNil "jib_logistics_paradrop_vehicleSetup") then {
@@ -115,6 +117,7 @@ if (isNil "jib_logistics_paradrop_wpIngressComplete") then {
         params ["_group"];
         if (!isServer) then {throw "Not server!"};
         private _vehicle = vehicle leader _group;
+        _vehicle setVariable [VAR_INGRESS_COMPLETE, true];
         [_vehicle] remoteExec ["jib_logistics_paradrop_vehicleIngress", 0];
     };
 };
@@ -133,7 +136,88 @@ _vehicleGroup addWaypoint [_wpPosAGL2, 0, _wpIndex2, "Jib Ingress"];
     "[this] call jib_logistics_paradrop_wpIngressComplete"
 ];
 
-// WP 3: Drop
+// WP 3: Egress
+if (isNil "jib_logistics_paradrop_vehicleCleanup") then {
+    // Vehicle cleanup (all)
+    jib_logistics_paradrop_vehicleCleanup = {
+        params ["_vehicle"];
+        private _doors = _vehicle getVariable VAR_DOORS;
+        _vehicle animateDoor _doors # 1;
+        uiSleep 2;
+        { deleteVehicle _x } forEach (_vehicle getVariable VAR_LIGHTS);
+        _vehicle setVariable [VAR_LIGHTS, nil];
+    };
+    publicVariable "jib_logistics_paradrop_vehicleCleanup";
+};
+if (isNil "jib_logistics_paradrop_wpEgressComplete") then {
+    // Egress WP completion (server)
+    jib_logistics_paradrop_wpEgressComplete = {
+        if (!isServer) then {throw "Not server!"};
+        params ["_group"];
+        private _vehicle = vehicle leader _group;
+        [_vehicle] remoteExec ["jib_logistics_paradrop_vehicleCleanup", 0];
+    };
+};
+private _wpIndex3 = _vehicleCurrentWP + 2;
+private _wpPosAGL3 = _vehiclePosATL vectorAdd (
+    [
+        [0, 3 * WP_SPACING, 0],
+        direction _vehicle,
+        2
+    ] call BIS_fnc_rotateVector3D
+);
+_vehicleGroup addWaypoint [_wpPosAGL3, 0, _wpIndex3, "Jib Egress"];
+[_vehicleGroup, _wpIndex3] setWaypointType "MOVE";
+[_vehicleGroup, _wpIndex3] setWaypointBehaviour "CARELESS";
+[_vehicleGroup, _wpIndex3] setWaypointStatements [
+    "true",
+    "[this] call jib_logistics_paradrop_wpEgressComplete"
+];
+
+// WP 4: RTB
+if (isNil "jib_logistics_paradrop_wpRTBComplete") then {
+    // RTB WP completion (server)
+    jib_logistics_paradrop_wpRTBComplete = {
+        params ["_group"];
+        if (!isServer) then {throw "Not server!"};
+        private _vehicle = vehicle leader _group;
+        deleteVehicleCrew _vehicle;
+        deleteVehicle _vehicle;
+    };
+};
+private _wpIndex4 = _vehicleCurrentWP + 3;
+private _wpPosAGL4 = _vehiclePosATL vectorAdd (
+    [
+        [0, 4 * WP_SPACING, 0],
+        direction _vehicle,
+        2
+    ] call BIS_fnc_rotateVector3D
+);
+_vehicleGroup addWaypoint [_wpPosAGL4, 0, _wpIndex4, "Jib RTB"];
+[_vehicleGroup, _wpIndex4] setWaypointType "MOVE";
+[_vehicleGroup, _wpIndex4] setWaypointStatements [
+    "true",
+    "[this] call jib_logistics_paradrop_wpRTBComplete"
+];
+
+// SCRIPT: Drop halfway between ingress and egress WP
+if (isNil "jib_logistics_paradrop_drop") then {
+    // Begin dropping sequence (server)
+    jib_logistics_paradrop_drop = {
+        if (!isServer) then {throw "Not server!"};
+        params ["_group"];
+        private _vehicle = vehicle leader _group;
+        private _groups = [];
+        {
+            if (_x in units group effectiveCommander _vehicle) then {continue};
+            _groups pushBackUnique group _x;
+        } forEach crew _vehicle;
+        private _groupsSorted = [_groups, [], {groupId _x}] call BIS_fnc_sortBy;
+        [_vehicle, _groupsSorted] remoteExec [
+            "jib_logistics_paradrop_paraVehicle", 0
+        ];
+    };
+};
 if (isNil "jib_logistics_paradrop_paraVehicle") then {
     // Para vehicle (all)
     jib_logistics_paradrop_paraVehicle = {
@@ -216,98 +300,16 @@ if (isNil "jib_logistics_paradrop_paraGroupCleanup") then {
     };
     publicVariable "jib_logistics_paradrop_paraGroupCleanup";
 };
-if (isNil "jib_logistics_paradrop_wpDropComplete") then {
-    // Drop WP completion (server)
-    jib_logistics_paradrop_wpDropComplete = {
-        if (!isServer) then {throw "Not server!"};
-        params ["_group"];
-        private _vehicle = vehicle leader _group;
-        private _groups = [];
-        {
-            if (_x in units group effectiveCommander _vehicle) then {continue};
-            _groups pushBackUnique group _x;
-        } forEach crew _vehicle;
-        private _groupsSorted = [_groups, [], {groupId _x}] call BIS_fnc_sortBy;
-        [_vehicle, _groupsSorted] remoteExec [
-            "jib_logistics_paradrop_paraVehicle", 0
-        ];
-    };
+[_vehicleGroup, _wpIndex3] spawn {
+    params ["_vehicleGroup"];
+    private _vehicle = vehicle leader _vehicleGroup;
+    waitUntil { _vehicle getVariable [VAR_INGRESS_COMPLETE, false] };
+    uiSleep 1;
+    private _egressPos = waypointPosition [
+        _vehicleGroup,
+        currentWaypoint _vehicleGroup
+    ];
+    private _wpDistance = _vehicle distance2D _egressPos;
+    waitUntil { _vehicle distance2D _egressPos < _wpDistance * 0.6 };
+    [_vehicleGroup] call jib_logistics_paradrop_drop;
 };
-private _wpIndex3 = _vehicleCurrentWP + 2;
-private _wpPosAGL3 = _vehiclePosATL vectorAdd (
-    [
-        [0, 3 * WP_SPACING, 0],
-        direction _vehicle,
-        2
-    ] call BIS_fnc_rotateVector3D
-);
-_vehicleGroup addWaypoint [_wpPosAGL3, 0, _wpIndex3, "Jib Drop"];
-[_vehicleGroup, _wpIndex3] setWaypointType "MOVE";
-[_vehicleGroup, _wpIndex3] setWaypointBehaviour "CARELESS";
-[_vehicleGroup, _wpIndex3] setWaypointStatements [
-    "true",
-    "[this] call jib_logistics_paradrop_wpDropComplete"
-];
-
-// WP 4: Egress
-if (isNil "jib_logistics_paradrop_vehicleCleanup") then {
-    // Vehicle cleanup (all)
-    jib_logistics_paradrop_vehicleCleanup = {
-        params ["_vehicle"];
-        private _doors = _vehicle getVariable VAR_DOORS;
-        _vehicle animateDoor _doors # 1;
-        uiSleep 2;
-        { deleteVehicle _x } forEach (_vehicle getVariable VAR_LIGHTS);
-        _vehicle setVariable [VAR_LIGHTS, nil];
-    };
-    publicVariable "jib_logistics_paradrop_vehicleCleanup";
-};
-if (isNil "jib_logistics_paradrop_wpEgressComplete") then {
-    // Egress WP completion (server)
-    jib_logistics_paradrop_wpEgressComplete = {
-        if (!isServer) then {throw "Not server!"};
-        params ["_group"];
-        private _vehicle = vehicle leader _group;
-        [_vehicle] remoteExec ["jib_logistics_paradrop_vehicleCleanup", 0];
-    };
-};
-private _wpIndex4 = _vehicleCurrentWP + 3;
-private _wpPosAGL4 = _vehiclePosATL vectorAdd (
-    [
-        [0, 4 * WP_SPACING, 0],
-        direction _vehicle,
-        2
-    ] call BIS_fnc_rotateVector3D
-);
-_vehicleGroup addWaypoint [_wpPosAGL4, 0, _wpIndex4, "Jib Egress"];
-[_vehicleGroup, _wpIndex4] setWaypointType "MOVE";
-[_vehicleGroup, _wpIndex4] setWaypointStatements [
-    "true",
-    "[this] call jib_logistics_paradrop_wpEgressComplete"
-];
-
-// WP 5: RTB
-if (isNil "jib_logistics_paradrop_wpRTBComplete") then {
-    // RTB WP completion (server)
-    jib_logistics_paradrop_wpRTBComplete = {
-        params ["_group"];
-        if (!isServer) then {throw "Not server!"};
-        private _vehicle = vehicle leader _group;
-        deleteVehicleCrew _vehicle;
-        deleteVehicle _vehicle;
-    };
-};
-private _wpIndex5 = _vehicleCurrentWP + 4;
-private _wpPosAGL5 = _vehiclePosATL vectorAdd (
-    [
-        [0, 5 * WP_SPACING, 0],
-        direction _vehicle,
-        2
-    ] call BIS_fnc_rotateVector3D
-);
-_vehicleGroup addWaypoint [_wpPosAGL5, 0, _wpIndex5, "Jib RTB"];
-[_vehicleGroup, _wpIndex5] setWaypointType "MOVE";
-[_vehicleGroup, _wpIndex5] setWaypointStatements [
-    "true",
-    "[this] call jib_logistics_paradrop_wpRTBComplete"
-];
