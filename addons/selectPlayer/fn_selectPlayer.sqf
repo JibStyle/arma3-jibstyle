@@ -29,6 +29,13 @@ private _curator = getAssignedCuratorLogic _oldUnit;
     } else {
         setGroupIconsVisible [false, false];
     };
+
+    // Add ALiVE combat support actions
+    {
+        player addAction _x
+    } foreach (
+        NEO_radioLogic getVariable "NEO_radioPlayerActionArray"
+    );
 }] remoteExec ["spawn", _oldUnit];
 
 true;
