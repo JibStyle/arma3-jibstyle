@@ -12,6 +12,7 @@ private _entity = _logic getvariable [
 // Call function
 try {
     [_entity] call jib_hc_fnc_demote;
+    [] remoteExec ["jib_hc_fnc_debug", _logic];
 } catch {
     [objNull, str _exception] call BIS_fnc_showCuratorFeedbackMessage;
 };

@@ -13,6 +13,7 @@ private _group = group _subordinate;
 // Remove group from HC
 try {
     [_group] call jib_hc_fnc_remove;
+    [] remoteExec ["jib_hc_fnc_debug", _logic];
 } catch {
     [objNull, str _exception] call BIS_fnc_showCuratorFeedbackMessage;
 };

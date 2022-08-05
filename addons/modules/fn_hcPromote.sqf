@@ -18,6 +18,7 @@ jib_modules_hcSelected = _entity;
 // Call function
 try {
     [_entity] call jib_hc_fnc_promote;
+    [] remoteExec ["jib_hc_fnc_debug", _logic];
 } catch {
     [objNull, str _exception] call BIS_fnc_showCuratorFeedbackMessage;
 };
