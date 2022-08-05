@@ -39,6 +39,7 @@ class CfgPatches {
             "jib_modules_teleport_self",
             "jib_modules_teleport_to",
             "jib_modules_token",
+            "jib_modules_wp_guard",
         };
     };
 };
@@ -81,6 +82,7 @@ class CfgFunctions {
             class teleportSelf { recompile = 1; };
             class teleportTo { recompile = 1; };
             class tokenInit { recompile = 1; preInit = 1; };
+            class wp_guard { recompile = 1; };
         };
     };
 };
@@ -99,6 +101,7 @@ class CfgFactionClasses {
     class jib_synchronization: NO_CATEGORY { displayName = "Jib Sync"; };
     class jib_teleport: NO_CATEGORY { displayName = "Jib Teleport"; };
     class jib_token: NO_CATEGORY { displayName = "Jib Token"; };
+    class jib_wp: NO_CATEGORY { displayName = "Jib Waypoints"; };
 };
 
 class CfgVehicles
@@ -353,5 +356,12 @@ class CfgVehicles
         scope=2;
         displayName = "Token";
         category = "jib_token";
+    };
+    class jib_modules_wp_guard: Module_F {
+        scopeCurator=2;
+        curatorCanAttach=1;
+        category = "jib_wp";
+        displayName = "Waypoint Guard";
+        function = "jib_modules_fnc_wp_guard";
     };
 };
