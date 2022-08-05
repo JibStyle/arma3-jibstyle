@@ -20,6 +20,10 @@ class CfgPatches {
             "jib_modules_logistics_rtb",
             "jib_modules_logistics_start",
             "jib_modules_logistics_wait",
+            "jib_modules_misc_replaceFrom",
+            "jib_modules_misc_replaceTo",
+            "jib_modules_misc_replaceToUncrewed",
+            "jib_modules_misc_syncGroupIDs",
             "jib_modules_objectives_hostage",
             "jib_modules_objectives_hostage_injured",
             "jib_modules_selectPlayerFrom",
@@ -60,6 +64,10 @@ class CfgFunctions {
             class logistics_rtb { recompile = 1; };
             class logistics_start { recompile = 1; };
             class logistics_wait { recompile = 1; };
+            class misc_replaceFrom { recompile = 1; };
+            class misc_replaceTo { recompile = 1; };
+            class misc_replaceToUncrewed { recompile = 1; };
+            class misc_syncGroupIDs { recompile = 1; };
             class selectPlayerFrom { recompile = 1; };
             class selectPlayerTo { recompile = 1; };
             class selectPlayerSelf { recompile = 1; };
@@ -83,6 +91,7 @@ class CfgFactionClasses {
     class jib_debug: NO_CATEGORY { displayName = "Jib Debug"; };
     class jib_dev: NO_CATEGORY { displayName = "Jib Dev"; };
     class jib_hc: NO_CATEGORY { displayName = "Jib HC"; };
+    class jib_misc: NO_CATEGORY { displayName = "Jib Misc"; };
     class jib_objectives: NO_CATEGORY { displayName = "Jib Objectives"; };
     class jib_logistics: NO_CATEGORY { displayName = "Jib Logistics"; };
     class jib_selectPlayer: NO_CATEGORY { displayName = "Jib Select Player"; };
@@ -103,9 +112,9 @@ class CfgVehicles
         function = "jib_modules_fnc_aiLasers";
     };
     class jib_modules_debug: Module_F {
-        scope = 2;
+        scope = 2; // 2: Eden, 1: Hidden (default)
         scopeCurator = 2;
-        isGlobal = 1;
+        isGlobal = 1; // 0: Server (default), 1: All, 2: All + JIP
         category = "jib_debug";
         displayName = "Debug";
         function = "jib_modules_fnc_debug";
@@ -210,6 +219,35 @@ class CfgVehicles
         category = "jib_logistics";
         displayName = "Logistics Wait for Start";
         function = "jib_modules_fnc_logistics_wait";
+    };
+    class jib_modules_misc_replaceFrom: Module_F {
+        scopeCurator=2;
+        curatorCanAttach=1;
+        category = "jib_misc";
+        displayName = "Misc Replace From";
+        function = "jib_modules_fnc_misc_replaceFrom";
+    };
+    class jib_modules_misc_replaceTo: Module_F {
+        scopeCurator=2;
+        curatorCanAttach=1;
+        category = "jib_misc";
+        displayName = "Misc Replace To";
+        function = "jib_modules_fnc_misc_replaceTo";
+    };
+    class jib_modules_misc_replaceToUncrewed: Module_F {
+        scopeCurator=2;
+        curatorCanAttach=1;
+        category = "jib_misc";
+        displayName = "Misc Replace To (Uncrewed)";
+        function = "jib_modules_fnc_misc_replaceToUncrewed";
+    };
+    class jib_modules_misc_syncGroupIDs: Module_F {
+        isGlobal = 1;
+        scopeCurator=2;
+        curatorCanAttach=0;
+        category = "jib_misc";
+        displayName = "Misc Sync Group IDs";
+        function = "jib_modules_fnc_misc_syncGroupIDs";
     };
     class jib_modules_objectives_hostage: Module_F {
         scopeCurator=2;

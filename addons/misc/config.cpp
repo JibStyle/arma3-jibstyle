@@ -13,6 +13,8 @@ class CfgFunctions {
         class jib_misc {
             file = "x\jib\addons\misc";
             class postInit { recompile = 1; postInit = 1; };
+            class replaceDummy { recompile = 1; };
+            class syncGroupIDs { recompile = 1; };
         };
     };
 };
