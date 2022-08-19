@@ -31,11 +31,18 @@ private _curator = getAssignedCuratorLogic _oldUnit;
     };
 
     // Add ALiVE combat support actions
-    {
-        player addAction _x
-    } foreach (
-        NEO_radioLogic getVariable "NEO_radioPlayerActionArray"
-    );
+    if (!isNil "NEO_radioLogic") then {
+        {
+            player addAction _x
+        } foreach (
+            NEO_radioLogic getVariable "NEO_radioPlayerActionArray"
+        );
+    };
+
+    // Call additional event handlers
+    jib_selectPlayer_handlers apply {
+        [] call _x;
+    };
 }] remoteExec ["spawn", _oldUnit];
 
 true;

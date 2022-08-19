@@ -1,6 +1,6 @@
 class CfgPatches {
-    class jib_selectPlayer {
-        name = "Jib Select Player";
+    class jib_respawn {
+        name = "Jib Respawn";
         author = "JibStyle";
         requiredVersion = 1.60;
         requiredAddons[] = {};
@@ -9,10 +9,9 @@ class CfgPatches {
 };
 
 class CfgFunctions {
-    class jib_selectPlayer {
-        class jib_selectPlayer {
-            file = "x\jib\addons\selectPlayer";
-            class selectPlayer { recompile = 1; };
+    class jib_respawn {
+        class jib_respawn {
+            file = "x\jib\addons\respawn";
             class registerEventHandler { recompile = 1; };
         };
     };
