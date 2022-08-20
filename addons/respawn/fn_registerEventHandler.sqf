@@ -1,6 +1,8 @@
 // Register respawn event handler for all players
 //
-// Handler takes two params: unit and corpse. Same as BIS EH.
+// Handler takes two params: unit and corpse. Same as BIS EH. Register
+// on server, and it will be broadcast to all clients.
+if (!isServer) then {throw "Not server"};
 params [
     [
         "_handler",

@@ -1,4 +1,5 @@
 // Integrate addon dependencies
+if (!isServer) exitWith {};
 
 // Register earplug event handlers
 [jib_earplugs_addActions] call jib_selectPlayer_fnc_registerEventHandler;
