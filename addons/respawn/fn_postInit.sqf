@@ -1,5 +1,5 @@
 // Declare respawn event handlers to register
-if (!isServer) then {throw "Not server"};
+if (!isServer) exitWith {};
 
 // Respawn event handlers to install.
 //

@@ -1,5 +1,5 @@
 // Declare handlers to run after selecting player
-if (!isServer) then {throw "Not server"};
+if (!isServer) exitWith {};
 
 // Select player event handlers.
 //

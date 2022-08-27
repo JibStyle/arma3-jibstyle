@@ -12,7 +12,8 @@ jib_earplugs_volume = 0.2;
 jib_earplugs_sound = "FD_Timer_F";
 jib_earplugs_priority = 1.5;
 jib_earplugs_enabled = false;
-jib_earplugs_didAddActions = "jib_earplugs_didAddActions";
+jib_earplugs_actionEnableID = "jib_earplugs_actionEnableID";
+jib_earplugs_actionDisableID = "jib_earplugs_actionDisableID";
 
 // Put in earplugs
 jib_earplugs_enable = {
@@ -34,32 +35,43 @@ jib_earplugs_disable = {
 //
 // NOTE: Must be called again after respawn or select player.
 jib_earplugs_addActions = {
-    if (player getVariable [jib_earplugs_didAddActions, false]) exitWith {};
-    player addAction [
-        jib_earplugs_enableTitle,
-        jib_earplugs_enable,
-        [],
-        jib_earplugs_priority,
-        false,
-        true,
-        "",
-        "_target == _this && jib_earplugs_enabled == false",
-        -1,
-        false
+    private _actionEnableID =
+        player getVariable [jib_earplugs_actionEnableID, -1];
+    if (_actionEnableID > -1) then { player removeAction _actionEnableID; };
+    player setVariable [
+        jib_earplugs_actionEnableID,
+        player addAction [
+            jib_earplugs_enableTitle,
+            jib_earplugs_enable,
+            [],
+            jib_earplugs_priority,
+            false,
+            true,
+            "",
+            "_target == _this && jib_earplugs_enabled == false",
+            -1,
+            false
+        ]
     ];
-    player addAction [
-        jib_earplugs_disableTitle,
-        jib_earplugs_disable,
-        [],
-        jib_earplugs_priority,
-        false,
-        true,
-        "",
-        "_target == _this && jib_earplugs_enabled == true",
-        -1,
-        false
+
+    private _actionDisableID =
+        player getVariable [jib_earplugs_actionDisableID, -1];
+    if (_actionDisableID > -1) then { player removeAction _actionDisableID; };
+    player setVariable [
+        jib_earplugs_actionDisableID,
+        player addAction [
+            jib_earplugs_disableTitle,
+            jib_earplugs_disable,
+            [],
+            jib_earplugs_priority,
+            false,
+            true,
+            "",
+            "_target == _this && jib_earplugs_enabled == true",
+            -1,
+            false
+        ]
     ];
-    player setVariable [jib_earplugs_didAddActions, true];
 };
 
 // Broadcast functions and variables
@@ -73,4 +85,5 @@ publicVariable "jib_earplugs_enabled";
 publicVariable "jib_earplugs_enable";
 publicVariable "jib_earplugs_disable";
 publicVariable "jib_earplugs_addActions";
-publicVariable "jib_earplugs_didAddActions";
+publicVariable "jib_earplugs_actionEnableID";
+publicVariable "jib_earplugs_actionDisableID";
