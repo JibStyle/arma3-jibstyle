@@ -28,12 +28,6 @@ HC_Trans_addAction = {
     player addAction["<img image='\a3\Ui_f\data\GUI\Cfg\CommunicationMenu\transport_ca.paa' /> HC Transport",{showCommandingMenu "#USER:HC_Transport"},[],1,true,false,"", "hcShownBar && _target == _this" ];
 };
 
-[] spawn {
-    private ["_id"];
-    waitUntil {!isnil "bis_fnc_init";};
-    [] call HC_Trans_addAction;
-};//spawn
-
 HC_Transport_SCToggleVar = true;
 
 HC_Transport = [
@@ -289,3 +283,17 @@ HC_Transport_SCToggle = {
 	hint "HC Transport SideChat Enabled";
     };
 };
+
+publicVariable "HC_Trans_addAction";
+publicVariable "HC_Transport_SCToggleVar";
+publicVariable "HC_Transport";
+publicVariable "HC_Trans_Load";
+publicVariable "HC_Trans_Unload";
+publicVariable "HC_Trans_CrewEnter";
+publicVariable "HC_Trans_CrewExit";
+publicVariable "HC_Trans_HeloLand";
+publicVariable "HC_Trans_Engine";
+publicVariable "HC_Trans_UnloadMonitor";
+publicVariable "HC_Trans_CrewEnterCheck";
+publicVariable "HC_Trans_AssignCrew";
+publicVariable "HC_Transport_SCToggle";

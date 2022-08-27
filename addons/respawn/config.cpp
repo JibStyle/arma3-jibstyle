@@ -12,7 +12,7 @@ class CfgFunctions {
     class jib_respawn {
         class jib_respawn {
             file = "x\jib\addons\respawn";
-            class registerEventHandler { recompile = 1; };
+            class postInit { recompile = 1; postInit = 1; };
         };
     };
 };

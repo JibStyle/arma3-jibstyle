@@ -12,6 +12,7 @@ jib_earplugs_volume = 0.2;
 jib_earplugs_sound = "FD_Timer_F";
 jib_earplugs_priority = 1.5;
 jib_earplugs_enabled = false;
+jib_earplugs_didAddActions = "jib_earplugs_didAddActions";
 
 // Put in earplugs
 jib_earplugs_enable = {
@@ -33,6 +34,7 @@ jib_earplugs_disable = {
 //
 // NOTE: Must be called again after respawn or select player.
 jib_earplugs_addActions = {
+    if (player getVariable [jib_earplugs_didAddActions, false]) exitWith {};
     player addAction [
         jib_earplugs_enableTitle,
         jib_earplugs_enable,
@@ -57,20 +59,18 @@ jib_earplugs_addActions = {
         -1,
         false
     ];
+    player setVariable [jib_earplugs_didAddActions, true];
 };
-[] remoteExec ["jib_earplugs_addActions", 0];
 
 // Broadcast functions and variables
-jib_earplugs_publicVariable = {
-    publicVariable "jib_earplugs_enableTitle";
-    publicVariable "jib_earplugs_disableTitle";
-    publicVariable "jib_earplugs_delay";
-    publicVariable "jib_earplugs_volume";
-    publicVariable "jib_earplugs_sound";
-    publicVariable "jib_earplugs_priority";
-    publicVariable "jib_earplugs_enabled";
-    publicVariable "jib_earplugs_enable";
-    publicVariable "jib_earplugs_disable";
-    publicVariable "jib_earplugs_addActions";
-};
-[] call jib_earplugs_publicVariable;
+publicVariable "jib_earplugs_enableTitle";
+publicVariable "jib_earplugs_disableTitle";
+publicVariable "jib_earplugs_delay";
+publicVariable "jib_earplugs_volume";
+publicVariable "jib_earplugs_sound";
+publicVariable "jib_earplugs_priority";
+publicVariable "jib_earplugs_enabled";
+publicVariable "jib_earplugs_enable";
+publicVariable "jib_earplugs_disable";
+publicVariable "jib_earplugs_addActions";
+publicVariable "jib_earplugs_didAddActions";

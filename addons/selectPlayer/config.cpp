@@ -12,8 +12,8 @@ class CfgFunctions {
     class jib_selectPlayer {
         class jib_selectPlayer {
             file = "x\jib\addons\selectPlayer";
+            class postInit { recompile = 1; postInit = 1; };
             class selectPlayer { recompile = 1; };
-            class registerEventHandler { recompile = 1; };
         };
     };
 };
