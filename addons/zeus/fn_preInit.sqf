@@ -97,3 +97,18 @@ addMissionEventHandler ["OnUserAdminStateChanged", {
     params ["_networkId", "_loggedIn", "_votedIn"];
     [] spawn jib_zeus_fnc_ascend;
 }];
+
+// Default Respawn Inventories
+{ [_x, true] call BIS_fnc_moduleRespawnInventory } forEach allCurators;
+[west, ["B_Protagonist_VR_F"]] call BIS_fnc_setRespawnInventory;
+[east, ["O_Protagonist_VR_F"]] call BIS_fnc_setRespawnInventory;
+[independent, ["I_Protagonist_VR_F"]] call BIS_fnc_setRespawnInventory;
+[civilian, ["C_Protagonist_VR_F"]] call BIS_fnc_setRespawnInventory;
+
+// Make respawn module curator editable
+{
+    _x addCuratorEditableObjects [
+        allMissionObjects "ModuleRespawnPosition_F",
+        true
+    ];
+} forEach allCurators;
