@@ -31,18 +31,18 @@ jib_selectPlayer_handlers pushBack {
 };
 
 // Register earplug event handlers
-jib_integration_missionStartHandlers pushBack {
-    [] call jib_earplugs_addActions;
-    [] call jib_earplugs_disable;
-};
-jib_respawn_handlers pushBack {
-    [] call jib_earplugs_addActions;
-    [] call jib_earplugs_disable;
-};
-jib_selectPlayer_handlers pushBack {
-    [] call jib_earplugs_addActions;
-    [] call jib_earplugs_disable;
-};
+// jib_integration_missionStartHandlers pushBack {
+//     [] call jib_earplugs_addActions;
+//     [false] call jib_earplugs_disable;
+// };
+// jib_respawn_handlers pushBack {
+//     [] call jib_earplugs_addActions;
+//     [false] call jib_earplugs_disable;
+// };
+// jib_selectPlayer_handlers pushBack {
+//     [] call jib_earplugs_addActions;
+//     [false] call jib_earplugs_disable;
+// };
 
 // Register HC transport event handlers
 jib_integration_missionStartHandlers pushBack {

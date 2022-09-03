@@ -17,17 +17,27 @@ jib_earplugs_actionDisableID = "jib_earplugs_actionDisableID";
 
 // Put in earplugs
 jib_earplugs_enable = {
+    params [
+        ["_playSound", true, [true]]
+    ];
     jib_earplugs_delay fadeSound jib_earplugs_volume;
     jib_earplugs_enabled = true;
-    player say jib_earplugs_sound;
+    if (_playSound) then {
+        playSoundUI [jib_earplugs_sound];
+    };
     systemChat "Earplugs ON";
 };
 
 // Take out earplugs
 jib_earplugs_disable = {
+    params [
+        ["_playSound", true, [true]]
+    ];
     jib_earplugs_delay fadeSound 1.0;
     jib_earplugs_enabled = false;
-    player say jib_earplugs_sound;
+    if (_playSound) then {
+        playSoundUI [jib_earplugs_sound];
+    };
     systemChat "Earplugs OFF";
 };
 
@@ -42,7 +52,7 @@ jib_earplugs_addActions = {
         jib_earplugs_actionEnableID,
         player addAction [
             jib_earplugs_enableTitle,
-            jib_earplugs_enable,
+            {[] call jib_earplugs_enable},
             [],
             jib_earplugs_priority,
             false,
@@ -61,7 +71,7 @@ jib_earplugs_addActions = {
         jib_earplugs_actionDisableID,
         player addAction [
             jib_earplugs_disableTitle,
-            jib_earplugs_disable,
+            {[] call jib_earplugs_disable},
             [],
             jib_earplugs_priority,
             false,
