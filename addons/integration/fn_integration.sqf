@@ -64,3 +64,9 @@ publicVariable "jib_selectPlayer_handlers";
 //
 // TODO: Move this somewhere else.
 [] remoteExec ["jib_integration_missionStarted", 0, true];
+
+jib_hc_moduleValidate = jib_modules_validate;
+publicVariable "jib_hc_moduleValidate";
+
+jib_selectPlayer_moduleValidate = jib_modules_validate;
+publicVariable "jib_selectPlayer_moduleValidate";

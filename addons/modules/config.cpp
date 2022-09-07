@@ -10,11 +10,6 @@ class CfgPatches {
             "jib_modules_devCopyPositionASL",
             "jib_modules_devCopyPositionATL",
             "jib_modules_devSelectEntity",
-            "jib_modules_hcPromote",
-            "jib_modules_hcDemote",
-            "jib_modules_hcAdd",
-            "jib_modules_hcRemove",
-            "jib_modules_hcDebug",
             "jib_modules_logistics_paradrop",
             "jib_modules_logistics_paradrop_halo",
             "jib_modules_logistics_rtb",
@@ -26,9 +21,6 @@ class CfgPatches {
             "jib_modules_misc_syncGroupIDs",
             "jib_modules_objectives_hostage",
             "jib_modules_objectives_hostage_injured",
-            "jib_modules_selectPlayerFrom",
-            "jib_modules_selectPlayerTo",
-            "jib_modules_selectPlayerSelf",
             "jib_modules_supportSystem",
             "jib_modules_synchronizationSyncFrom",
             "jib_modules_synchronizationSyncTo",
@@ -53,11 +45,6 @@ class CfgFunctions {
             class devCopyPositionASL { recompile = 1; };
             class devCopyPositionATL { recompile = 1; };
             class devSelectEntity { recompile = 1; };
-            class hcPromote { recompile = 1; };
-            class hcDemote { recompile = 1; };
-            class hcAdd { recompile = 1; };
-            class hcRemove { recompile = 1; };
-            class hcDebug { recompile = 1; };
             class objectives_hostage { recompile = 1; };
             class objectives_hostage_injured { recompile = 1; };
             class logistics_paradrop { recompile = 1; };
@@ -69,9 +56,7 @@ class CfgFunctions {
             class misc_replaceTo { recompile = 1; };
             class misc_replaceToUncrewed { recompile = 1; };
             class misc_syncGroupIDs { recompile = 1; };
-            class selectPlayerFrom { recompile = 1; };
-            class selectPlayerTo { recompile = 1; };
-            class selectPlayerSelf { recompile = 1; };
+            class modules { preInit = 1; recompile = 1; };
             class supportSystem { recompile = 1; };
             class synchronizationSyncFrom { recompile = 1; };
             class synchronizationSyncTo { recompile = 1; };
@@ -92,11 +77,9 @@ class CfgFactionClasses {
     class jib_ai: NO_CATEGORY { displayName = "Jib AI"; };
     class jib_debug: NO_CATEGORY { displayName = "Jib Debug"; };
     class jib_dev: NO_CATEGORY { displayName = "Jib Dev"; };
-    class jib_hc: NO_CATEGORY { displayName = "Jib HC"; };
     class jib_misc: NO_CATEGORY { displayName = "Jib Misc"; };
     class jib_objectives: NO_CATEGORY { displayName = "Jib Objectives"; };
     class jib_logistics: NO_CATEGORY { displayName = "Jib Logistics"; };
-    class jib_selectPlayer: NO_CATEGORY { displayName = "Jib Select Player"; };
     class jib_support: NO_CATEGORY { displayName = "Jib Support"; };
     class jib_synchronization: NO_CATEGORY { displayName = "Jib Sync"; };
     class jib_teleport: NO_CATEGORY { displayName = "Jib Teleport"; };
@@ -151,42 +134,6 @@ class CfgVehicles
         category = "jib_dev";
         displayName = "Select Entity";
         function = "jib_modules_fnc_devSelectEntity";
-    };
-    class jib_modules_hcPromote: Module_F {
-        scopeCurator=2;
-        curatorCanAttach=1;
-        category = "jib_hc";
-        displayName = "HC Promote";
-        function = "jib_modules_fnc_hcPromote";
-    };
-    class jib_modules_hcDemote: Module_F {
-        scopeCurator=2;
-        curatorCanAttach=1;
-        category = "jib_hc";
-        displayName = "HC Demote";
-        function = "jib_modules_fnc_hcDemote";
-    };
-    class jib_modules_hcAdd: Module_F {
-        scopeCurator=2;
-        curatorCanAttach=1;
-        category = "jib_hc";
-        displayName = "HC Add to Last";
-        function = "jib_modules_fnc_hcAdd";
-    };
-    class jib_modules_hcRemove: Module_F {
-        scopeCurator=2;
-        curatorCanAttach=1;
-        category = "jib_hc";
-        displayName = "HC Remove";
-        function = "jib_modules_fnc_hcRemove";
-    };
-    class jib_modules_hcDebug: Module_F {
-        isGlobal=1;
-        scopeCurator=2;
-        curatorCanAttach=1;
-        category = "jib_hc";
-        displayName = "HC Print Debug Info";
-        function = "jib_modules_fnc_hcDebug";
     };
     class jib_modules_logistics_paradrop: Module_F {
         scopeCurator=2;
@@ -265,28 +212,6 @@ class CfgVehicles
         category = "jib_objectives";
         displayName = "Objective Hostage (Injured)";
         function = "jib_modules_fnc_objectives_hostage_injured";
-    };
-    class jib_modules_selectPlayerSelf: Module_F {
-        isGlobal=1;
-        scopeCurator=2;
-        curatorCanAttach=1;
-        category = "jib_selectPlayer";
-        displayName = "Select Player Self";
-        function = "jib_modules_fnc_selectPlayerSelf";
-    };
-    class jib_modules_selectPlayerFrom: Module_F {
-        scopeCurator=2;
-        curatorCanAttach=1;
-        category = "jib_selectPlayer";
-        displayName = "Select Player From";
-        function = "jib_modules_fnc_selectPlayerFrom";
-    };
-    class jib_modules_selectPlayerTo: Module_F {
-        scopeCurator=2;
-        curatorCanAttach=1;
-        category = "jib_selectPlayer";
-        displayName = "Select Player To";
-        function = "jib_modules_fnc_selectPlayerTo";
     };
     class jib_modules_supportSystem: Module_F {
         isGlobal=1;
