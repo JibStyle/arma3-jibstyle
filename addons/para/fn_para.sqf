@@ -1,7 +1,7 @@
 if (!isServer) exitWith {};
 
-// Variable for saving vehicle lights.
-jib_para_varLights = "jib_para_varLights";
+// Time between unit jumps
+jib_para_interval = 0.1;
 
 // Association list of vehicle type to array of light offsets
 jib_para_lights = [
@@ -19,6 +19,9 @@ jib_para_doors = [
     ["VTOL_01_base_F",
      [["Door_1_source", 1], ["Door_1_source", 0]]]
 ];
+
+// Variable for saving vehicle lights.
+jib_para_varLights = "jib_para_varLights";
 
 // Transport ingress (all)
 //
@@ -160,7 +163,6 @@ jib_para_cargoUnload = {
     params ["_vehicle", "_groupsUnits", "_height"];
     if (!isServer) then {throw "Not server!"};
     if (!canSuspend) then {throw "Not in scheduled environment!"};
-    private _interval = 0.3;
     private _invincible = false;
     _vehicle setVehicleCargo objNull;
     _groupsUnits apply {
@@ -172,7 +174,7 @@ jib_para_cargoUnload = {
             [_unit, _height, _invincible] remoteExec [
                 "jib_para_jump", _unit
             ];
-            uiSleep _interval;
+            uiSleep jib_para_interval;
         };
         [_group, _vehicle] remoteExec ["leaveVehicle", _group];
     };

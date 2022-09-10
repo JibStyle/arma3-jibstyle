@@ -81,13 +81,14 @@ jib_selectPlayer_moduleTo = {
         _this,
         {
             params ["_posATL", "_attached", "_args"];
-            private _oldUnit = jib_selectPlayer_selectedFrom;
+            _args params ["_oldUnit"];
             jib_selectPlayer_selectedFrom = objNull;
             [
                 _oldUnit,
                 effectiveCommander _attached
             ] call jib_selectPlayer_selectPlayer;
-        }
+        },
+        [jib_selectPlayer_selectedFrom]
     ] call jib_selectPlayer_moduleValidate;
 };
 

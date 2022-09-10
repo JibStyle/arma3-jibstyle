@@ -20,7 +20,6 @@ jib_wp_paraUnload = {params ["_group", "_height"];};
 // Print debug description of group waypoints
 jib_wp_debug = {
     params ["_group"];
-    if (not isServer) then {throw "Not server!"};
     if (isNull _group) then {throw "No group selected!"};
     private _data = waypoints _group apply {
         _x params ["_group", "_index"];
@@ -320,6 +319,7 @@ publicVariable "jib_wp_paraEffectIngress";
 publicVariable "jib_wp_paraEffectDropzone";
 publicVariable "jib_wp_paraEffectEgress";
 publicVariable "jib_wp_paraUnload";
+publicVariable "jib_wp_debug";
 publicVariable "jib_wp_moduleDebug";
 publicVariable "jib_wp_moduleGuard";
 publicVariable "jib_wp_moduleWait";
