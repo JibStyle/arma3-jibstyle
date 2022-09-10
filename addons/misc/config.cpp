@@ -33,7 +33,7 @@ class CfgVehicles
     class jib_misc_module: Module_F {
         isGlobal=1; // All machines (not JIP)
         curatorCanAttach=1;
-        category = "jib_hc";
+        category = "jib_misc";
     };
     class jib_misc_moduleReplaceFrom: jib_misc_module {
         scopeCurator=2;

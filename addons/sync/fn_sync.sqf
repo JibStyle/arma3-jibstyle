@@ -5,6 +5,12 @@ if (!isServer) exitWith {};
 // Dependency injected from integration.
 jib_sync_moduleValidate = {};
 
+// PRIVATE
+
+jib_sync_selectedSyncFrom = objNull;
+
+jib_sync_selectedUnsyncFrom = objNull;
+
 jib_sync_moduleSyncFrom = {
     [
         _this,
@@ -59,8 +65,10 @@ jib_sync_moduleUnsyncTo = {
     ] call jib_sync_moduleValidate;
 };
 
+publicVariable "jib_sync_moduleValidate";
+publicVariable "jib_sync_selectedSyncFrom";
+publicVariable "jib_sync_selectedUnsyncFrom";
 publicVariable "jib_sync_moduleSyncFrom";
 publicVariable "jib_sync_moduleSyncTo";
 publicVariable "jib_sync_moduleUnsyncFrom";
 publicVariable "jib_sync_moduleUnsyncTo";
-publicVariable "jib_sync_moduleValidate";

@@ -23,8 +23,7 @@ jib_para_doors = [
 // Transport ingress (all)
 //
 // Turn on red lights, wait, then open door.
-jib_para_ingress = {
-    scriptName "jib_para_ingress";
+jib_para_effectIngress = {
     params ["_group"];
     if (!canSuspend) then {throw "Not in scheduled environment!"};
     [_group] call jib_para_assignedVehicles apply {
@@ -40,7 +39,7 @@ jib_para_ingress = {
         // Lights
         jib_para_lights apply {
             _x params ["_xType", "_xOffsets"];
-            if (_vehicle isKindOf _type) then {
+            if (_vehicle isKindOf _xType) then {
                 _offsets = _xOffsets;
                 break;
             };
@@ -60,7 +59,7 @@ jib_para_ingress = {
         uiSleep 2;
         jib_para_doors apply {
             _x params ["_xType", "_xDoors"];
-            if (_vehicle isKindOf _type) then {
+            if (_vehicle isKindOf _xType) then {
                 _doors = _xDoors;
                 break;
             };
@@ -71,13 +70,9 @@ jib_para_ingress = {
 
 // Transport unload (all)
 //
-// Turn on green lights. If server, wait then unload cargo.
-jib_para_unload = {
-    scriptName "jib_para_unload";
-    params ["_group", "_height"];
-    if (!canSuspend) then {throw "Not in scheduled environment!"};
-    private _interval = 0.3;
-    private _invincible = false;
+// Turn on green lights.
+jib_para_effectDropzone = {
+    params ["_group"];
 
     // Lights
     [_group] call jib_para_assignedVehicles apply {
@@ -88,55 +83,22 @@ jib_para_unload = {
             _x setLightAmbient _color;
         };
     };
-
-    // Jump! (server)
-    if (!isServer) exitWith {};
-    uiSleep 1;
-    [_group] call jib_para_assignedVehicles apply {
-
-        // Unload vehicle in vehicle
-        private _vehicle = _x;
-        _vehicle setVehicleCargo objNull;
-
-        // Collect groups and units
-        private _cargo = crew _vehicle select {
-            _x in units group effectiveCommander _vehicle == false;
-        };
-        private _groups = [];
-        _cargo apply {_groups pushBackUnique group _x};
-        private _groupsSorted =
-            [_groups, [], {groupId _x}] call BIS_fnc_sortBy;
-        private _groupsAndUnits = _groupsSorted apply {
-            [_x, units _x select {_x in _cargo}];
-        };
-        _groupsAndUnits apply {
-
-            // Make units jump
-            _x params [_group, _units];
-            _units apply {
-                private _unit = _x;
-                [_unit, _height, _invincible] remoteExec [
-                    "jib_para_jump", _unit
-                ];
-                uiSleep _interval;
-            };
-            [_group, _vehicle] remoteExec ["leaveVehicle", _group];
-        };
-    };
 };
 
-// Transport cleanup (all)
-jib_para_egress = {
-    scriptName "jib_para_egress";
+// Transport cleanup (all).
+//
+// Close door, wait, then delete lights.
+jib_para_effectEgress = {
     params ["_group"];
     if (!canSuspend) then {throw "Not in scheduled environment!"};
     [_group] call jib_para_assignedVehicles apply {
         private _vehicle = _x;
+        private _doors = [["", 0], ["", 0]];
 
         // Door
         jib_para_doors apply {
             _x params ["_xType", "_xDoors"];
-            if (_vehicle isKindOf _type) then {
+            if (_vehicle isKindOf _xType) then {
                 _doors = _xDoors;
                 break;
             };
@@ -152,23 +114,90 @@ jib_para_egress = {
     };
 };
 
+// Collect and unload cargo (server).
+jib_para_unload = {
+    params ["_group", "_height"];
+    if (!isServer) then {throw "Not server!"};
+    [_group] call jib_para_cargoCollect apply {
+        _x params ["_vehicle", "_groupsUnits"];
+        [_vehicle, _groupsUnits, _height] spawn jib_para_cargoUnload;
+    };
+};
+
+// PRIVATE
+
+// Collect vehicles, groups, and units to unload (server).
+jib_para_cargoCollect = {
+    params ["_group"];
+    if (!isServer) then {throw "Not server!"};
+    private _vehiclesGroupsUnits = [];
+
+    // Collect vehicles
+    [_group] call jib_para_assignedVehicles apply {
+
+        // Collect groups
+        private _vehicle = _x;
+        private _cargo = crew _vehicle select {
+            _x in units group effectiveCommander _vehicle == false;
+        };
+        private _groups = [];
+        _cargo apply {_groups pushBackUnique group _x};
+        private _groupsSorted =
+            [_groups, [], {groupId _x}] call BIS_fnc_sortBy;
+
+        // Collect units
+        private _groupsUnits = _groupsSorted apply {
+            [_x, units _x select {_x in _cargo}];
+        };
+
+        _vehiclesGroupsUnits pushBack [_vehicle, _groupsUnits];
+    };
+    _vehiclesGroupsUnits;
+};
+
+// Unload specific cargo (server).
+jib_para_cargoUnload = {
+    params ["_vehicle", "_groupsUnits", "_height"];
+    if (!isServer) then {throw "Not server!"};
+    if (!canSuspend) then {throw "Not in scheduled environment!"};
+    private _interval = 0.3;
+    private _invincible = false;
+    _vehicle setVehicleCargo objNull;
+    _groupsUnits apply {
+
+        // Make units jump
+        _x params ["_group", "_units"];
+        _units apply {
+            private _unit = _x;
+            [_unit, _height, _invincible] remoteExec [
+                "jib_para_jump", _unit
+            ];
+            uiSleep _interval;
+        };
+        [_group, _vehicle] remoteExec ["leaveVehicle", _group];
+    };
+
+};
+
 // Get group assigned vehicles (all)
 //
 // NOTE: `assignedVehicles` engine command to be released in v2.12.
 jib_para_assignedVehicles = {
-    scriptName "jib_para_assignedVehicles";
     params ["_group"];
     private _vehicles = [];
     units _group apply {
-        _vehicles pushBackUnique assignedVehicle _x;
+        private _vehicle = assignedVehicle _x;
+        if (not isNull _vehicle) then {
+            _vehicles pushBackUnique _vehicle;
+        };
     };
+    _vehicles;
 };
 
 // Unit paradrop (local)
 //
 // Jump out from vehicle and auto deploy parachute.
 jib_para_jump = {
-    scriptName "jib_para_jump";
     params ["_unit", "_height", "_invincible"];
     if (not local _unit) then {throw "Unit not local!"};
     _unit allowDamage false;
@@ -204,8 +233,8 @@ jib_para_jump = {
 publicVariable "jib_para_varLights";
 publicVariable "jib_para_lights";
 publicVariable "jib_para_doors";
-publicVariable "jib_para_ingress";
-publicVariable "jib_para_unload";
-publicVariable "jib_para_egress";
+publicVariable "jib_para_effectIngress";
+publicVariable "jib_para_effectDropzone";
+publicVariable "jib_para_effectEgress";
 publicVariable "jib_para_assignedVehicles";
 publicVariable "jib_para_jump";

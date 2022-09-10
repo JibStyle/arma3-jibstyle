@@ -5,6 +5,7 @@ class CfgPatches {
         requiredVersion = 1.60;
         requiredAddons[] = {"A3_Modules_F"};
         units[] = {
+            "jib_wp_moduleDebug",
             "jib_wp_moduleGuard",
             "jib_wp_moduleWait",
             "jib_wp_moduleStart",
@@ -36,6 +37,11 @@ class CfgVehicles
         isGlobal=1;
         curatorCanAttach=1;
         category = "jib_wp";
+    };
+    class jib_wp_moduleDebug: jib_wp_module {
+        scopeCurator=2;
+        displayName = "Waypoint Debug";
+        function = "jib_wp_moduleDebug";
     };
     class jib_wp_moduleGuard: jib_wp_module {
         scopeCurator=2;

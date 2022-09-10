@@ -5,8 +5,6 @@ if (!isServer) exitWith {};
 // Dependency injected from integration.
 jib_misc_moduleValidate = {};
 
-// PRIVATE BELOW HERE
-
 // Push group IDs from current machine to all
 jib_misc_pushGroupIDs = {
     allGroups apply {
@@ -20,16 +18,17 @@ jib_misc_pushGroupIDs = {
 // Useful for spawning vehicles above ground like on a carrier.
 jib_misc_replaceDummy = {
     params [
-        "_oldVehicle",        // Object to delete
-        "_newType",           // Type to spawn
-        ["_createCrew", true] // Whether to create crew
+        "_oldVehicle", // Object to delete
+        "_newType",    // Type to spawn
+        "_createCrew", // Whether to create crew
+        "_curators"    // Curators to add new vic to
     ];
     if (not isServer) then {throw "Not server!"};
     if (typeName _newType != "STRING") then {
         throw "No type selected!"
     };
-    [_oldVehicle, _newType, _createCrew] spawn {
-        params ["_oldVehicle", "_newType", "_createCrew"];
+    [_oldVehicle, _newType, _createCrew, _curators] spawn {
+        params ["_oldVehicle", "_newType", "_createCrew", "_curators"];
         private _posATL = getPosATL _oldVehicle;
         private _dir = getDir _oldVehicle;
         deleteVehicleCrew _oldVehicle;
@@ -40,8 +39,13 @@ jib_misc_replaceDummy = {
             createVehicleCrew _newVic;
         };
         _newVic setDir _dir;
+        _curators apply {
+            _x addCuratorEditableObjects [[_newVic], true];
+        };
     };
 };
+
+// PRIVATE BELOW HERE
 
 // Select type to replace with
 jib_misc_moduleReplaceFrom = {
@@ -62,10 +66,15 @@ jib_misc_moduleReplaceTo = {
         _this,
         {
             params ["_posATL", "_attached", "_args"];
-            _args params ["_type"];
-            [_attached, _type, true] call jib_misc_replaceDummy
+            _args params ["_type", "_curators"];
+            [
+                _attached,
+                _type,
+                true,
+                _curators
+            ] call jib_misc_replaceDummy
         },
-        [jib_misc_moduleReplaceType]
+        [jib_misc_moduleReplaceType, [getAssignedCuratorLogic player]]
     ] call jib_misc_moduleValidate;
 };
 
@@ -75,10 +84,15 @@ jib_misc_moduleReplaceToUncrewed = {
         _this,
         {
             params ["_posATL", "_attached", "_args"];
-            _args params ["_type"];
-            [_attached, _type, false] call jib_misc_replaceDummy
+            _args params ["_type", "_curators"];
+            [
+                _attached,
+                _type,
+                false,
+                _curators
+            ] call jib_misc_replaceDummy
         },
-        [jib_misc_moduleReplaceType]
+        [jib_misc_moduleReplaceType, [getAssignedCuratorLogic player]]
     ] call jib_misc_moduleValidate;
 };
 
