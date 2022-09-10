@@ -24,12 +24,16 @@ jib_teleport_teleport = {
     } forEach _units;
 };
 
+// PRIVATE
+
 // Common inner code passed to module validator
 jib_teleport_inner = {
     params ["_posATL", "_attached", "_args"];
     _args params ["_units"];
     [_units, _posATL] call jib_teleport_teleport;
 };
+
+jib_teleport_moduleSelectedEntity = objNull;
 
 jib_teleport_moduleFrom = {
     [
@@ -66,12 +70,14 @@ jib_teleport_moduleAll = {
     [
         _this,
         jib_teleport_inner,
-        _units
+        [_units]
     ] call jib_teleport_moduleValidate;
 };
 
 publicVariable "jib_teleport_moduleValidate";
+publicVariable "jib_teleport_moduleSelectedEntity";
 publicVariable "jib_teleport_moduleFrom";
 publicVariable "jib_teleport_moduleTo";
 publicVariable "jib_teleport_moduleSelf";
 publicVariable "jib_teleport_moduleAll";
+publicVariable "jib_teleport_inner";

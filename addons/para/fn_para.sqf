@@ -24,6 +24,7 @@ jib_para_doors = [
 //
 // Turn on red lights, wait, then open door.
 jib_para_ingress = {
+    scriptName "jib_para_ingress";
     params ["_group"];
     if (!canSuspend) then {throw "Not in scheduled environment!"};
     [_group] call jib_para_assignedVehicles apply {
@@ -72,6 +73,7 @@ jib_para_ingress = {
 //
 // Turn on green lights. If server, wait then unload cargo.
 jib_para_unload = {
+    scriptName "jib_para_unload";
     params ["_group", "_height"];
     if (!canSuspend) then {throw "Not in scheduled environment!"};
     private _interval = 0.3;
@@ -125,6 +127,7 @@ jib_para_unload = {
 
 // Transport cleanup (all)
 jib_para_egress = {
+    scriptName "jib_para_egress";
     params ["_group"];
     if (!canSuspend) then {throw "Not in scheduled environment!"};
     [_group] call jib_para_assignedVehicles apply {
@@ -153,6 +156,7 @@ jib_para_egress = {
 //
 // NOTE: `assignedVehicles` engine command to be released in v2.12.
 jib_para_assignedVehicles = {
+    scriptName "jib_para_assignedVehicles";
     params ["_group"];
     private _vehicles = [];
     units _group apply {
@@ -164,6 +168,7 @@ jib_para_assignedVehicles = {
 //
 // Jump out from vehicle and auto deploy parachute.
 jib_para_jump = {
+    scriptName "jib_para_jump";
     params ["_unit", "_height", "_invincible"];
     if (not local _unit) then {throw "Unit not local!"};
     _unit allowDamage false;

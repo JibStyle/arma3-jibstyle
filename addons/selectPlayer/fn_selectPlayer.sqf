@@ -62,13 +62,17 @@ jib_selectPlayer_selectPlayer = {
     true;
 };
 
+jib_selectPlayer_selectedFrom = objNull;
+
 jib_selectPlayer_moduleFrom = {
     [
         _this,
         {
-            params ["_entity", "_client"];
-            jib_selectPlayer_selectedFrom = effectiveCommander _entity;
-        }
+            params ["_posATL", "_attached", "_args"];
+            jib_selectPlayer_selectedFrom = effectiveCommander _attached;
+        },
+        [],
+        "local"
     ] call jib_selectPlayer_moduleValidate;
 };
 
@@ -76,15 +80,12 @@ jib_selectPlayer_moduleTo = {
     [
         _this,
         {
-            params ["_entity", "_client"];
-            if (isNil "jib_selectPlayer_selectedFrom") then {
-                jib_selectPlayer_selectedFrom = objNull;
-            };
+            params ["_posATL", "_attached", "_args"];
             private _oldUnit = jib_selectPlayer_selectedFrom;
             jib_selectPlayer_selectedFrom = objNull;
             [
                 _oldUnit,
-                effectiveCommander _entity
+                effectiveCommander _attached
             ] call jib_selectPlayer_selectPlayer;
         }
     ] call jib_selectPlayer_moduleValidate;
@@ -94,14 +95,17 @@ jib_selectPlayer_moduleSelf = {
     [
         _this,
         {
-            params ["_entity", "_client", "_player"];
-            [_player, _entity] call jib_selectPlayer_selectPlayer;
-        }
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_player"];
+            [_player, _attached] call jib_selectPlayer_selectPlayer;
+        },
+        [player]
     ] call jib_selectPlayer_moduleValidate;
 };
 
 // Publish variables and functions
 publicVariable "jib_selectPlayer_handlers";
+publicVariable "jib_selectPlayer_selectedFrom";
 publicVariable "jib_selectPlayer_moduleFrom";
 publicVariable "jib_selectPlayer_moduleTo";
 publicVariable "jib_selectPlayer_moduleSelf";

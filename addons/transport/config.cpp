@@ -11,7 +11,7 @@ class CfgFunctions {
     class jib_transport {
         class jib_transport {
             file = "x\jib\addons\transport";
-            class postInit { recompile = 1; postInit = 1; };
+            class transport { recompile = 1; preInit = 1; };
         };
     };
 };

@@ -47,7 +47,7 @@ class CfgVehicles
     class jib_teleport_moduleSelf: jib_teleport_module {
         scopeCurator=2;
         displayName = "Teleport Self";
-        function = "jib_teleport_moduleSelft";
+        function = "jib_teleport_moduleSelf";
     };
     class jib_teleport_moduleAll: jib_teleport_module {
         scopeCurator=2;
