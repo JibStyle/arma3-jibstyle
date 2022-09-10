@@ -13,6 +13,7 @@ class CfgPatches {
         };
     };
 };
+
 class CfgFunctions {
     class jib_hc {
         class jib_hc {

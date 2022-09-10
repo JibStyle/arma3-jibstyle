@@ -6,6 +6,8 @@ if (!isServer) exitWith {};
 // Dependency injected from integration.
 jib_hc_moduleValidate = {};
 
+// PRIVATE BELOW HERE
+
 // Register client event handlers
 jib_hc_registerEH = {
     if (!hasInterface) exitWith {};
@@ -155,11 +157,13 @@ jib_hc_modulePromote = {
     [
         _this,
         {
-            params ["_entity", "_client"];
-            jib_hc_selectedCommander = _entity;
-            [_entity] call jib_hc_promote;
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_client"];
+            jib_hc_selectedCommander = _attached;
+            [_attached] call jib_hc_promote;
             [] remoteExec ["jib_hc_debug", _client];
-        }
+        },
+        [clientOwner]
     ] call jib_hc_moduleValidate;
 };
 
@@ -171,13 +175,15 @@ jib_hc_moduleAdd = {
     [
         _this,
         {
-            params ["_entity", "_client"];
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_client"];
             [
                 jib_hc_selectedCommander,
-                group _entity
+                group _attached
             ] call jib_hc_add;
             [] remoteExec ["jib_hc_debug", _client];
-        }
+        },
+        [clientOwner]
     ] call jib_hc_moduleValidate;
 };
 
@@ -186,6 +192,7 @@ jib_hc_moduleDebug = {
     [
         _this,
         {[] call jib_hc_debug;},
+        [],
         "local"
     ] call jib_hc_moduleValidate;
 };
@@ -195,10 +202,12 @@ jib_hc_moduleDemote = {
     [
         _this,
         {
-            params ["_entity", "_client"];
-            [_entity] call jib_hc_demote;
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_client"];
+            [_attached] call jib_hc_demote;
             [] remoteExec ["jib_hc_debug", _client];
-        }
+        },
+        [clientOwner]
     ] call jib_hc_moduleValidate;
 };
 
@@ -207,10 +216,12 @@ jib_hc_moduleRemove = {
     [
         _this,
         {
-            params ["_entity", "_client"];
-            [group _entity] call jib_hc_remove;
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_client"];
+            [group _attached] call jib_hc_remove;
             [] remoteExec ["jib_hc_debug", _client];
-        }
+        },
+        [clientOwner]
     ] call jib_hc_moduleValidate;
 };
 

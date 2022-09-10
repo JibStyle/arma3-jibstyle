@@ -65,8 +65,29 @@ publicVariable "jib_selectPlayer_handlers";
 // TODO: Move this somewhere else.
 [] remoteExec ["jib_integration_missionStarted", 0, true];
 
-jib_hc_moduleValidate = jib_modules_validate;
+jib_ai_moduleValidate = jib_module_validate;
+jib_debug_moduleValidate = jib_module_validate;
+jib_hc_moduleValidate = jib_module_validate;
+jib_misc_moduleValidate = jib_module_validate;
+jib_objective_moduleValidate = jib_module_validate;
+jib_selectPlayer_moduleValidate = jib_module_validate;
+jib_support_moduleValidate = jib_module_validate;
+jib_sync_moduleValidate = jib_module_validate;
+jib_teleport_moduleValidate = jib_module_validate;
+jib_wp_moduleValidate = jib_module_validate;
+jib_wp_paraIngress = jib_para_ingress;
+jib_wp_paraUnload = jib_para_unload;
+jib_wp_paraEgress = jib_para_egress;
+publicVariable "jib_ai_moduleValidate";
+publicVariable "jib_debug_moduleValidate";
 publicVariable "jib_hc_moduleValidate";
-
-jib_selectPlayer_moduleValidate = jib_modules_validate;
+publicVariable "jib_misc_moduleValidate";
+publicVariable "jib_objective_moduleValidate";
 publicVariable "jib_selectPlayer_moduleValidate";
+publicVariable "jib_support_moduleValidate";
+publicVariable "jib_sync_moduleValidate";
+publicVariable "jib_teleport_moduleValidate";
+publicVariable "jib_wp_moduleValidate";
+publicVariable "jib_wp_paraIngress";
+publicVariable "jib_wp_paraUnload";
+publicVariable "jib_wp_paraEgress";

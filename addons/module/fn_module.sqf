@@ -2,22 +2,29 @@ if (!isServer) exitWith {};
 
 // Validate module logic then run inner code.
 //
-// Check if activated and local. Get attached entity. Inner code run
-// on specified locality machine. If inner code throws an exception
-// string, it is shown as curator feedback message.
-jib_modules_validate = {
+// Validation occurs on machine where logic is local. Ensures
+// activation and gets attached entity. Inner code dispatched to
+// specified machine. If inner code throws exception, it dispatches
+// display to machine where logic is local.
+//
+// NOTE: Attributes of logic such as client owner may not be synced
+// over network when inner code runs remotely. More reliable to
+// explicitly pass such attributes via args.
+jib_module_validate = {
     params [
         "_moduleParams",              // Module_F function params
         [
             "_code",                  // Run if validation success
             {
                 params [
-                    "_entity", // Synced entity or objNull
-                    "_client"  // Owner of logic
+                    "_posATL",   // Logic position ATL
+                    "_attached", // Attached entity or objNull
+                    "_args"      // Passed through extra args
                 ];
             },
             [{}]
         ],
+        ["_args", [], [[]]],          // Passed through to code
         ["_locality", "server", [""]] // "server" or "local"
     ];
     _moduleParams params ["_logic", "", "_isActivated"];
@@ -26,11 +33,13 @@ jib_modules_validate = {
     if (not _isActivated) exitWith {};
     if (not local _logic) exitWith {};
 
+    private _posATL = getPosATL _logic;
+
     // Get synced entity
     //
     // NOTE: Only reliable on client where logic is local. Race
     // condition to propagate variable from curator client to server.
-    private _entity = _logic getvariable [
+    private _attached = _logic getvariable [
         "bis_fnc_curatorAttachObject_object",
         objNull
     ];
@@ -39,9 +48,9 @@ jib_modules_validate = {
     switch (_locality) do
     {
         case "server": {
-            [[_entity, clientOwner, player, _code], {
-                params ["_entity", "_client", "_player", "_code"];
-                try {[_entity, _client, _player] call _code} catch {
+            [[clientOwner, _posATL, _attached, _code, _args], {
+                params ["_client", "_posATL", "_attached", "_code", "_args"];
+                try {[_posATL, _attached, _args] call _code} catch {
                     [objNull, str _exception] remoteExec [
                         "BIS_fnc_showCuratorFeedbackMessage",
                         _client
@@ -50,7 +59,7 @@ jib_modules_validate = {
             }] remoteExec ["spawn", 2];
         };
         case "local": {
-            try {[_entity, clientOwner, player] call _code} catch {
+            try {[_posATL, _attached, _args] call _code} catch {
                 [
                     objNull,
                     str _exception
@@ -62,4 +71,11 @@ jib_modules_validate = {
     deleteVehicle _logic;
 };
 
-publicVariable "jib_modules_validate";
+jib_module_moduleExample = {
+    params ["_logic", "_units", "_isActivated"];
+    if (!_isActivated) exitWith {};
+    jib_module_exampleFoo =
+        _logic getVariable ["jib_module_exampleFoo", objNull];
+};
+
+publicVariable "jib_module_validate";

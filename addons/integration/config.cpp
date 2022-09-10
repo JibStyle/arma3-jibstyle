@@ -4,11 +4,21 @@ class CfgPatches {
         author = "JibStyle";
         requiredVersion = 1.60;
         requiredAddons[] = {
+            "jib_ai",
+            "jib_debug",
             "jib_earplugs",
             "jib_hc",
+            "jib_misc",
+            "jib_module",
+            "jib_para",
+            "jib_objective",
             "jib_respawn",
             "jib_selectPlayer",
+            "jib_support",
+            "jib_sync",
+            "jib_teleport",
             "jib_transport",
+            "jib_wp",
         };
         units[] = {};
     };
