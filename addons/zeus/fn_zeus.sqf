@@ -1,6 +1,11 @@
 // Zeus functions
 if (!isServer) exitWith { "Not server!" };
 
+// Validate module logic then run inner code.
+//
+// Dependency injected from integration.
+jib_sync_moduleValidate = {};
+
 // Event handler for mission start.
 jib_zeus_handlerMissionStart = {
     if (!isServer) then {throw "Not server!"};
@@ -144,6 +149,167 @@ jib_zeus_addRespawnPositions = {
             true
         ];
     };
+};
+
+// Get all players and their vehicles
+jib_zeus_allPlayers = {
+    allPlayers + allPlayers apply {vehicle _x};
+};
+
+// Get all units and vehicles of a side
+jib_zeus_allUnitsSide = {
+    params ["_side"];
+    allUnits + vehicles select {side _x == _side};
+};
+
+jib_zeus_moduleAddAllPlayers = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_curator"];
+            _curator addCuratorEditableObjects [
+                [] call jib_zeus_allPlayers,
+                true
+            ];
+        },
+        [getAssignedCuratorLogic player]
+    ]
+};
+
+jib_zeus_moduleRemoveAllPlayers = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_curator"];
+            _curator removeCuratorEditableObjects [
+                [] call jib_zeus_allPlayers,
+                true
+            ];
+        },
+        [getAssignedCuratorLogic player]
+    ]
+};
+
+jib_zeus_moduleAddAllWest = {
+    [
+        _this
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_curator"];
+            _curator addCuratorEditableObjects [
+                [west] call jib_zeus_allUnitsSide,
+                true
+            ];
+        },
+        [getAssignedCuratorLogic player]
+    ]
+};
+
+jib_zeus_moduleRemoveAllWest = {
+    [
+        _this
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_curator"];
+            _curator removeCuratorEditableObjects [
+                [west] call jib_zeus_allUnitsSide,
+                true
+            ];
+        },
+        [getAssignedCuratorLogic player]
+    ]
+};
+
+jib_zeus_moduleAddAllEast = {
+    [
+        _this
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_curator"];
+            _curator addCuratorEditableObjects [
+                [east] call jib_zeus_allUnitsSide,
+                true
+            ];
+        },
+        [getAssignedCuratorLogic player]
+    ]
+};
+
+jib_zeus_moduleRemoveAllEast = {
+    [
+        _this
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_curator"];
+            _curator removeCuratorEditableObjects [
+                [east] call jib_zeus_allUnitsSide,
+                true
+            ];
+        },
+        [getAssignedCuratorLogic player]
+    ]
+};
+
+jib_zeus_moduleAddAllIndependent = {
+    [
+        _this
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_curator"];
+            _curator addCuratorEditableObjects [
+                [independent] call jib_zeus_allUnitsSide,
+                true
+            ];
+        },
+        [getAssignedCuratorLogic player]
+    ]
+};
+
+jib_zeus_moduleRemoveAllIndependent = {
+    [
+        _this
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_curator"];
+            _curator removeCuratorEditableObjects [
+                [independent] call jib_zeus_allUnitsSide,
+                true
+            ];
+        },
+        [getAssignedCuratorLogic player]
+    ]
+};
+
+jib_zeus_moduleAddAllCivilian = {
+    [
+        _this
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_curator"];
+            _curator addCuratorEditableObjects [
+                [civilian] call jib_zeus_allUnitsSide,
+                true
+            ];
+        },
+        [getAssignedCuratorLogic player]
+    ]
+};
+
+jib_zeus_moduleRemoveAllCivilian = {
+    [
+        _this
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_curator"];
+            _curator removeCuratorEditableObjects [
+                [civilian] call jib_zeus_allUnitsSide,
+                true
+            ];
+        },
+        [getAssignedCuratorLogic player]
+    ]
 };
 
 // Publish variables

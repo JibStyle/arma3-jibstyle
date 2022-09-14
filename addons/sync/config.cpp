@@ -5,10 +5,10 @@ class CfgPatches {
         requiredVersion = 1.60;
         requiredAddons[] = {"A3_Modules_F"};
         units[] = {
-            "jib_sync_syncFrom",
-            "jib_sync_syncTo",
-            "jib_sync_unsyncFrom",
-            "jib_sync_unsyncTo",
+            "jib_sync_moduleSyncFrom",
+            "jib_sync_moduleSyncTo",
+            "jib_sync_moduleUnsyncFrom",
+            "jib_sync_moduleUnsyncTo",
         };
     };
 };
