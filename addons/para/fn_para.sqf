@@ -1,7 +1,12 @@
 if (!isServer) exitWith {};
 
 // Time between unit jumps
-jib_para_interval = 0.1;
+jib_para_interval = 0.2;
+
+// AI units invincible while in air.
+//
+// Workaround because they magically die a lot.
+jib_para_invincible = true;
 
 // Association list of vehicle type to array of light offsets
 jib_para_lights = [
@@ -163,7 +168,6 @@ jib_para_cargoUnload = {
     params ["_vehicle", "_groupsUnits", "_height"];
     if (!isServer) then {throw "Not server!"};
     if (!canSuspend) then {throw "Not in scheduled environment!"};
-    private _invincible = false;
     _vehicle setVehicleCargo objNull;
     _groupsUnits apply {
 
@@ -171,7 +175,7 @@ jib_para_cargoUnload = {
         _x params ["_group", "_units"];
         _units apply {
             private _unit = _x;
-            [_unit, _height, _invincible] remoteExec [
+            [_unit, _height, jib_para_invincible] remoteExec [
                 "jib_para_jump", _unit
             ];
             uiSleep jib_para_interval;

@@ -6,6 +6,18 @@ if (!isServer) exitWith {};
 // Dependency injected from integration.
 jib_hc_moduleValidate = {};
 
+// Event handler for select player.
+jib_hc_selectPlayerHandler = {
+    params ["_oldUnit", "_newUnit"];
+
+    // Update MARTA
+    if (count hcAllGroups player > 0) then {
+        setGroupIconsVisible [true, false];
+    } else {
+        setGroupIconsVisible [false, false];
+    };
+};
+
 // PRIVATE BELOW HERE
 
 // Register client event handlers

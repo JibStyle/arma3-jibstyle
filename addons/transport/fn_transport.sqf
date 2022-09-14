@@ -1,3 +1,34 @@
+// Transport Functions
+if (!isServer) exitWith { "Not server!" };
+
+// Server
+jib_transport_handlerMissionStart = {
+    params ["_oldUnit", "_newUnit"];
+    [] remoteExec ["jib_transport_addAction", 0, true];
+};
+
+// Server
+jib_transport_handlerEntityRespawned = {
+    params ["_oldUnit", "_newUnit"];
+    [] remoteExec ["jib_transport_addAction", _newUnit, true];
+};
+
+// Server
+jib_transport_handlerTeamSwitch = {
+    params ["_oldUnit", "_newUnit"];
+    [] remoteExec ["jib_transport_addAction", _newUnit, true];
+};
+
+// Client
+jib_transport_selectPlayerHandler = {
+    [] call jib_transport_addAction;
+};
+
+// Add action to player.
+jib_transport_addAction = {
+    player addAction["<img image='\a3\Ui_f\data\GUI\Cfg\CommunicationMenu\transport_ca.paa' /> HC Transport",{showCommandingMenu "#USER:HC_Transport"},[],1,true,false,"", "hcShownBar && _target == _this" ];
+};
+
 // *********************************
 // High Command Transport
 // LightWeight AddOn v.0.01
@@ -23,10 +54,6 @@
 // - Select high command groups (F1 - F12)
 // - Press 6 on keyboard to bring up AddOn Command Menu
 // *********************************
-
-HC_Trans_addAction = {
-    player addAction["<img image='\a3\Ui_f\data\GUI\Cfg\CommunicationMenu\transport_ca.paa' /> HC Transport",{showCommandingMenu "#USER:HC_Transport"},[],1,true,false,"", "hcShownBar && _target == _this" ];
-};
 
 HC_Transport_SCToggleVar = true;
 
@@ -284,7 +311,7 @@ HC_Transport_SCToggle = {
     };
 };
 
-publicVariable "HC_Trans_addAction";
+publicVariable "jib_transport_addAction";
 publicVariable "HC_Transport_SCToggleVar";
 publicVariable "HC_Transport";
 publicVariable "HC_Trans_Load";
