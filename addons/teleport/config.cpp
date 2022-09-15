@@ -8,6 +8,10 @@ class CfgPatches {
             "jib_teleport_moduleFrom",
             "jib_teleport_moduleSelf",
             "jib_teleport_moduleTo",
+            "jib_teleport_moduleVehicleLoadTransport",
+            "jib_teleport_moduleVehicleLoadCargo",
+            "jib_teleport_moduleVehicleUnloadCargo",
+            "jib_teleport_moduleVehicleUnloadTransport",
         };
     };
 };
@@ -53,5 +57,25 @@ class CfgVehicles
         scopeCurator=2;
         displayName = "Teleport All";
         function = "jib_teleport_moduleAll";
+    };
+    class jib_teleport_moduleVehicleLoadTransport: jib_teleport_module {
+        scopeCurator=2;
+        displayName = "Load Transport";
+        function = "jib_teleport_moduleVehicleLoadTransport";
+    };
+    class jib_teleport_moduleVehicleLoadCargo: jib_teleport_module {
+        scopeCurator=2;
+        displayName = "Load Cargo";
+        function = "jib_teleport_moduleVehicleLoadCargo";
+    };
+    class jib_teleport_moduleVehicleUnloadCargo: jib_teleport_module {
+        scopeCurator=2;
+        displayName = "Unload Cargo";
+        function = "jib_teleport_moduleVehicleUnloadCargo";
+    };
+    class jib_teleport_moduleVehicleUnloadTransport: jib_teleport_module {
+        scopeCurator=2;
+        displayName = "Unload Transport";
+        function = "jib_teleport_moduleVehicleUnloadTransport";
     };
 };
