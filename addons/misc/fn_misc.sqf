@@ -47,6 +47,8 @@ jib_misc_replaceDummy = {
 
 // PRIVATE BELOW HERE
 
+jib_misc_moduleReplaceType = objNull;
+
 // Select type to replace with
 jib_misc_moduleReplaceFrom = {
     [
@@ -109,6 +111,7 @@ jib_misc_modulePushGroupIDs = {
 // Remote calls
 publicVariable "jib_misc_pushGroupIDs";
 publicVariable "jib_misc_moduleValidate";
+publicVariable "jib_misc_moduleReplaceType";
 publicVariable "jib_misc_moduleReplaceFrom";
 publicVariable "jib_misc_moduleReplaceTo";
 publicVariable "jib_misc_moduleReplaceToUncrewed";

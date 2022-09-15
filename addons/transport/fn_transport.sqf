@@ -8,13 +8,13 @@ jib_transport_handlerMissionStart = {
 };
 
 // Server
-jib_transport_handlerEntityRespawned = {
+jib_transport_handlerMissionEntityRespawned = {
     params ["_oldUnit", "_newUnit"];
     [] remoteExec ["jib_transport_addAction", _newUnit, true];
 };
 
 // Server
-jib_transport_handlerTeamSwitch = {
+jib_transport_handlerMissionTeamSwitch = {
     params ["_oldUnit", "_newUnit"];
     [] remoteExec ["jib_transport_addAction", _newUnit, true];
 };

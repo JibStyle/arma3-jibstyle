@@ -251,7 +251,7 @@ jib_support_moduleCreate = {
             _args params ["_curator"];
             private _logics = [_posATL] call jib_support_create;
             if (not isNull _curator) then {
-                _curator addCuratorEditableObjects [_newLogics, true];
+                _curator addCuratorEditableObjects [_logics, true];
             };
         },
         [getAssignedCuratorLogic player]

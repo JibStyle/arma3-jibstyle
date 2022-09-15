@@ -96,11 +96,11 @@ jib_handler_missionUninstall = {
 };
 
 jib_handler_varMissionEntityRespawned =
-    "jib_handler_varMissionEntityRespawned";
+    "jib_handler_idMissionEntityRespawned";
 jib_handler_varMissionTeamSwitch =
-    "jib_handler_varMissionTeamSwitch";
+    "jib_handler_idMissionTeamSwitch";
 jib_handler_varMissionOnUserAdminStateChanged =
-    "jib_handler_varMissionOnUserAdminStateChanged";
+    "jib_handler_idMissionOnUserAdminStateChanged";
 
 // Publish variables and functions
 publicVariable "jib_handler_isMainMenu";

@@ -83,8 +83,10 @@ jib_selectPlayer_moduleSelf = {
 };
 
 // Publish variables and functions
+publicVariable "jib_selectPlayer_moduleValidate";
 publicVariable "jib_selectPlayer_selectedFrom";
 publicVariable "jib_selectPlayer_moduleFrom";
 publicVariable "jib_selectPlayer_moduleTo";
 publicVariable "jib_selectPlayer_moduleSelf";
 publicVariable "jib_selectPlayer_handlers";
+publicVariable "jib_selectPlayer_client";

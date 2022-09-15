@@ -7,6 +7,12 @@ class CfgPatches {
         units[] = {
             "jib_zeus_moduleAddAllPlayers",
             "jib_zeus_moduleRemoveAllPlayers",
+            "jib_zeus_moduleAddAllUnits",
+            "jib_zeus_moduleRemoveAllUnits",
+            "jib_zeus_moduleAddAllDead",
+            "jib_zeus_moduleRemoveAllDead",
+            "jib_zeus_moduleAddAllLogic",
+            "jib_zeus_moduleRemoveAllLogic",
             "jib_zeus_moduleAddAllWest",
             "jib_zeus_moduleRemoveAllWest",
             "jib_zeus_moduleAddAllEast",
@@ -23,10 +29,8 @@ class CfgFunctions {
     class jib_zeus {
         class jib_zeus {
             file = "x\jib\addons\zeus";
-            class zeus {
-                recompile = 1;
-                preInit = 1;
-            };
+            class zeus {recompile = 1; preInit = 1;};
+            class activateAddons {recompile = 1; preInit = 1;};
         };
     };
 };
@@ -53,6 +57,36 @@ class CfgVehicles
         scopeCurator=2;
         displayName = "Zeus Remove All Players";
         function = "jib_zeus_moduleRemoveAllPlayers";
+    };
+    class jib_zeus_moduleAddAllUnits: jib_zeus_module {
+        scopeCurator=2;
+        displayName = "Zeus Add All Units";
+        function = "jib_zeus_moduleAddAllUnits";
+    };
+    class jib_zeus_moduleRemoveAllUnits: jib_zeus_module {
+        scopeCurator=2;
+        displayName = "Zeus Remove All Units";
+        function = "jib_zeus_moduleRemoveAllUnits";
+    };
+    class jib_zeus_moduleAddAllDead: jib_zeus_module {
+        scopeCurator=2;
+        displayName = "Zeus Add All Dead";
+        function = "jib_zeus_moduleAddAllDead";
+    };
+    class jib_zeus_moduleRemoveAllDead: jib_zeus_module {
+        scopeCurator=2;
+        displayName = "Zeus Remove All Dead";
+        function = "jib_zeus_moduleRemoveAllDead";
+    };
+    class jib_zeus_moduleAddAllLogic: jib_zeus_module {
+        scopeCurator=2;
+        displayName = "Zeus Add All Logic";
+        function = "jib_zeus_moduleAddAllLogic";
+    };
+    class jib_zeus_moduleRemoveAllLogic: jib_zeus_module {
+        scopeCurator=2;
+        displayName = "Zeus Remove All Logic";
+        function = "jib_zeus_moduleRemoveAllLogic";
     };
     class jib_zeus_moduleAddAllWest: jib_zeus_module {
         scopeCurator=2;
