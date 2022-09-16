@@ -42,8 +42,16 @@ jib_random_continuous = {
 };
 
 // Choose buckets of objects to keep and delete the rest.
+//
+// Must specify either number > 0 or probability in range (0, 1], and
+// specify -1 for the other.
 jib_random_chooseBuckets = {
-    params ["_buckets", "_number", "_probability"];
+    params [
+        "_buckets",    // Array of arrays of objects
+        "_number",     // Number of buckets to choose, or -1
+        "_probability" // Probability to choose each bucket, or -1
+    ];
+    if (!isServer) then {throw "Not server!"};
 
     // Results
     private _yes = [];
@@ -97,6 +105,89 @@ jib_random_chooseBuckets = {
             };
         };
     };
+};
+
+// Init a game logic to choose a number of buckets.
+//
+// Call this function in the logic init field. The logic should be
+// synced to multiple triggers which represent buckets. Each trigger
+// specifies objects to be in its bucket by syncing to them or having
+// them in its area.
+jib_random_logicChooseNumber = {
+    params [
+        "_logic", // Logic synced to triggers
+        "_number" // Number of buckets to choose
+    ];
+    if (!isServer) exitWith {};
+
+    private _triggers =
+        [
+            _logic,
+            "EmptyDetector",
+            false
+        ] call BIS_fnc_synchronizedObjects;
+    private _buckets = _triggers apply {
+        private _trigger = _x;
+        (
+            [
+                [getPosATL _trigger] + triggerArea _trigger
+            ] call jib_random_areaObjects
+        ) + synchronizedObjects _trigger select {
+            _x != _trigger;
+        };
+    };
+
+    [_buckets, _number, -1] call jib_random_chooseBuckets;
+};
+
+// Init a game logic to choose buckets by probability.
+//
+// Call this function in the logic init field. The logic should be
+// synced to multiple triggers which represent buckets. Each trigger
+// specifies objects to be in its bucket by syncing to them or having
+// them in its area.
+jib_random_logicChooseProbability = {
+    params [
+        "_logic",      // Logic synced to triggers
+        "_probability" // Probability to choose each bucket
+    ];
+    if (!isServer) exitWith {};
+
+    private _triggers =
+        [_logic, "EmptyDetector"] call BIS_fnc_synchronizedObjects;
+    private _buckets = _triggers apply {
+        private _trigger = _x;
+        (
+            [
+                [getPosATL _trigger] + triggerArea _trigger
+            ] call jib_random_areaObjects
+        ) + synchronizedObjects _trigger select {
+            _x != _trigger;
+        };
+    };
+
+    [_buckets, -1, _probability] call jib_random_chooseBuckets;
+};
+
+// Get objects in area
+jib_random_areaObjects = {
+    params ["_area"]; // [[x, y, z], a, b, rot, square, h]
+    _area params ["_positionAGL", "_a", "_b"];
+
+    // Subset we don't want (eg houses, trees)
+    private _terrainObjects = nearestTerrainObjects [
+        _positionAGL,
+        [],
+        (_a max _b) * 1.42,
+        false
+    ] inAreaArray _area;
+
+    // Superset of what we want (eg units, sandbags, houses, trees)
+    private _objects = (
+        _positionAGL nearObjects (_a max _b) * 1.42
+    ) inAreaArray _area;
+
+    _objects select { _x in _terrainObjects == false };
 };
 
 // PRIVATE
