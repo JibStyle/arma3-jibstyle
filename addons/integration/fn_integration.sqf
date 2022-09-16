@@ -29,7 +29,6 @@ jib_selectPlayer_handlers = [
                 NEO_radioLogic getVariable "NEO_radioPlayerActionArray"
             );
         };
-
     }
 ];
 publicVariable "jib_selectPlayer_handlers";
@@ -39,6 +38,7 @@ jib_debug_moduleValidate = jib_module_validate;
 jib_hc_moduleValidate = jib_module_validate;
 jib_misc_moduleValidate = jib_module_validate;
 jib_objective_moduleValidate = jib_module_validate;
+jib_random_moduleValidate = jib_module_validate;
 jib_selectPlayer_moduleValidate = jib_module_validate;
 jib_support_moduleValidate = jib_module_validate;
 jib_sync_moduleValidate = jib_module_validate;
@@ -54,6 +54,7 @@ publicVariable "jib_debug_moduleValidate";
 publicVariable "jib_hc_moduleValidate";
 publicVariable "jib_misc_moduleValidate";
 publicVariable "jib_objective_moduleValidate";
+publicVariable "jib_random_moduleValidate";
 publicVariable "jib_selectPlayer_moduleValidate";
 publicVariable "jib_support_moduleValidate";
 publicVariable "jib_sync_moduleValidate";
