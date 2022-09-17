@@ -110,9 +110,9 @@ jib_random_chooseBuckets = {
 // Init a game logic to choose a number of buckets.
 //
 // Call this function in the logic init field. The logic should be
-// synced to multiple triggers which represent buckets. Each trigger
-// specifies objects to be in its bucket by syncing to them or having
-// them in its area.
+// synced to multiple logics or triggers which represent buckets. Each
+// logic or trigger specifies objects to be in its bucket by syncing
+// to them or having them in its trigger area.
 jib_random_logicChooseNumber = {
     params [
         "_logic", // Logic synced to triggers
@@ -120,32 +120,19 @@ jib_random_logicChooseNumber = {
     ];
     if (!isServer) exitWith {};
 
-    private _triggers =
-        [
-            _logic,
-            "EmptyDetector",
-            false
-        ] call BIS_fnc_synchronizedObjects;
-    private _buckets = _triggers apply {
-        private _trigger = _x;
-        (
-            [
-                [getPosATL _trigger] + triggerArea _trigger
-            ] call jib_random_areaObjects
-        ) + synchronizedObjects _trigger select {
-            _x != _trigger;
-        };
-    };
-
-    [_buckets, _number, -1] call jib_random_chooseBuckets;
+    [
+        [_logic] call jib_random_logicBuckets,
+        _number,
+        -1
+    ] call jib_random_chooseBuckets;
 };
 
 // Init a game logic to choose buckets by probability.
 //
 // Call this function in the logic init field. The logic should be
-// synced to multiple triggers which represent buckets. Each trigger
-// specifies objects to be in its bucket by syncing to them or having
-// them in its area.
+// synced to multiple logics or triggers which represent buckets. Each
+// logic or trigger specifies objects to be in its bucket by syncing
+// to them or having them in its trigger area.
 jib_random_logicChooseProbability = {
     params [
         "_logic",      // Logic synced to triggers
@@ -153,20 +140,11 @@ jib_random_logicChooseProbability = {
     ];
     if (!isServer) exitWith {};
 
-    private _triggers =
-        [_logic, "EmptyDetector"] call BIS_fnc_synchronizedObjects;
-    private _buckets = _triggers apply {
-        private _trigger = _x;
-        (
-            [
-                [getPosATL _trigger] + triggerArea _trigger
-            ] call jib_random_areaObjects
-        ) + synchronizedObjects _trigger select {
-            _x != _trigger;
-        };
-    };
-
-    [_buckets, -1, _probability] call jib_random_chooseBuckets;
+    [
+        [_logic] call jib_random_logicBuckets,
+        -1,
+        _probability
+    ] call jib_random_chooseBuckets;
 };
 
 // Get objects in area
@@ -191,6 +169,38 @@ jib_random_areaObjects = {
 };
 
 // PRIVATE
+
+// Get buckets from a logic
+jib_random_logicBuckets = {
+    params ["_logic"];
+    (
+        [
+            _logic,
+            "EmptyDetector",
+            false
+        ] call BIS_fnc_synchronizedObjects apply {
+            private _trigger = _x;
+            (
+                [
+                    [getPosATL _trigger] + triggerArea _trigger
+                ] call jib_random_areaObjects
+            ) + synchronizedObjects _trigger select {
+                _x != _trigger && _x != _logic;
+            };
+        }
+    ) + (
+        [
+            _logic,
+            "Logic",
+            false
+        ] call BIS_fnc_synchronizedObjects apply {
+            private _childLogic = _x;
+            synchronizedObjects _childLogic select {
+                _x != _childLogic && _x != _logic;
+            };
+        }
+    );
+};
 
 jib_random_moduleBucketObjects = "jib_random_moduleBucketObjects";
 
