@@ -12,7 +12,7 @@ jib_zeus_handlerMissionStart = {
     [] call jib_zeus_adminCreate;
     [allCurators] call jib_zeus_setupInventory;
     [allCurators] call jib_zeus_addRespawnPositions;
-    [] spawn jib_zeus_adminAssign;
+    [] call jib_zeus_adminAssign;
 };
 
 // Mission event handler for entity respawn.
@@ -32,7 +32,7 @@ jib_zeus_handlerMissionTeamSwitch = {
 // Mission event handler for admin state change.
 jib_zeus_handlerMissionOnUserAdminStateChanged = {
     if (!isServer) then {throw "Not server!"};
-    [] spawn jib_zeus_adminAssign;
+    [] call jib_zeus_adminAssign;
 };
 
 // Event handler for select player.
@@ -42,23 +42,35 @@ jib_zeus_selectPlayerHandler = {
     [false, false] call BIS_fnc_forceCuratorInterface;
 };
 
+// Disable ALiVE zeus registering
+jib_misc_aliveZeusRegisterDisable = {
+    if (not isServer) then {throw "Not server!"};
+    [] spawn {
+        private _t = time;
+        waitUntil {
+            isNil "ALiVE_fnc_ZeusRegister" == false
+                || {time > _t + 5}
+        };
+        if (isNil "ALiVE_fnc_ZeusRegister") exitWith {};
+        jib_misc_aliveZeusRegister = ALiVE_fnc_ZeusRegister;
+        ALiVE_fnc_ZeusRegister = {};
+    };
+};
+
+// Enable ALiVE zeus registering
+jib_misc_aliveZeusRegisterEnable = {
+    if (not isServer) then {throw "Not server!"};
+    [] spawn {
+        sleep 1;
+        if (isNil "jib_misc_aliveZeusRegister") exitWith {};
+        ALiVE_fnc_ZeusRegister = jib_misc_aliveZeusRegister;
+    };
+};
+
 // PRIVATE
 
-// Assign admin curator
-jib_zeus_adminAssign = {
-    if (!isServer) then {throw "Not server!"};
-    if (!canSuspend) then {throw "Cannot suspend!"};
-
-    // Wait for mission start if server
-    if (!hasInterface) then {
-        waitUntil {
-            time > 0
-                && count allPlayers > 0
-                && count (allPlayers select {local _x}) == 0
-        };
-    };
-
-    // Get admin
+// Get admin
+jib_zeus_admin = {
     private _admin = objNull;
     if (hasInterface) then {
         _admin = player;
@@ -69,9 +81,19 @@ jib_zeus_adminAssign = {
             };
         };
     };
+    _admin;
+};
 
-    // Assign curator
-    [jib_zeus_adminCurator, _admin] call jib_zeus_assign;
+// Assign admin curator
+jib_zeus_adminAssign = {
+    if (!isServer) then {throw "Not server!"};
+    [] spawn {
+        waitUntil {alive ([] call jib_zeus_admin)};
+        [
+            jib_zeus_adminCurator,
+            [] call jib_zeus_admin
+        ] call jib_zeus_assign;
+    };
 };
 
 // Create special curator for admin
@@ -96,6 +118,7 @@ jib_zeus_assign = {
     params ["_curator", "_unit"];
     if (!isServer) then {throw "Not server!"};
     if (!canSuspend) then {throw "Cannot suspend!"};
+    if (!alive _unit) then {throw "Unit not alive!"};
     private _objects = curatorEditableObjects _curator;
     unassignCurator _curator;
     waitUntil { isNull getAssignedCuratorUnit _curator };
@@ -110,7 +133,7 @@ jib_zeus_transfer = {
     if (!isServer) then {throw "Not server!"};
     private _curator = getAssignedCuratorLogic _oldUnit;
     if (not isNull _curator) then {
-        [_curator, _newUnit] call jib_zeus_assign;
+        [_curator, _newUnit] spawn jib_zeus_assign;
     };
 };
 
@@ -422,3 +445,5 @@ publicVariable "jib_zeus_moduleRemoveAllCivilian";
 publicVariable "jib_zeus_moduleValidate";
 publicVariable "jib_zeus_handlerMissionStart";
 publicVariable "jib_zeus_selectPlayerHandler";
+
+[] call jib_misc_aliveZeusRegisterDisable;

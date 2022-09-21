@@ -108,27 +108,6 @@ jib_misc_modulePushGroupIDs = {
     ] call jib_misc_moduleValidate;
 };
 
-// Disable ALiVE zeus registering
-jib_misc_aliveZeusRegisterDisable = {
-    if (not isServer) then {throw "Not server!"};
-    [] spawn {
-        sleep 1;
-        if (isNil "ALiVE_fnc_ZeusRegister") exitWith {};
-        jib_misc_aliveZeusRegister = ALiVE_fnc_ZeusRegister;
-        ALiVE_fnc_ZeusRegister = {};
-    };
-};
-
-// Enable ALiVE zeus registering
-jib_misc_aliveZeusRegisterEnable = {
-    if (not isServer) then {throw "Not server!"};
-    [] spawn {
-        sleep 1;
-        if (isNil "jib_misc_aliveZeusRegister") exitWith {};
-        ALiVE_fnc_ZeusRegister = jib_misc_aliveZeusRegister;
-    };
-};
-
 // Remote calls
 publicVariable "jib_misc_pushGroupIDs";
 publicVariable "jib_misc_moduleValidate";
@@ -138,4 +117,3 @@ publicVariable "jib_misc_moduleReplaceTo";
 publicVariable "jib_misc_moduleReplaceToUncrewed";
 publicVariable "jib_misc_modulePushGroupIDs";
 [] call jib_misc_pushGroupIDs;
-[] call jib_misc_aliveZeusRegisterDisable;

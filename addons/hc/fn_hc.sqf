@@ -24,6 +24,19 @@ jib_hc_handlerMissionTeamSwitch = {
     [_oldUnit, _newUnit] call jib_hc_transfer;
 };
 
+// Setup a HC platoon all at once
+jib_hc_setup = {
+    params ["_leader", "_groups"];
+    if (!isServer) exitWith {};
+    [_leader, _groups] spawn {
+        params ["_leader", "_groups"];
+        [_leader] call jib_hc_promote;
+        _groups apply {
+            [_leader, _x] call jib_hc_add;
+        };
+    };
+};
+
 // PRIVATE BELOW HERE
 
 // Transfer HC
@@ -209,6 +222,7 @@ jib_hc_moduleRemove = {
 };
 
 // Remote calls
+publicVariable "jib_hc_setup";
 publicVariable "jib_hc_moduleValidate";
 publicVariable "jib_hc_modulePromote";
 publicVariable "jib_hc_moduleAdd";
