@@ -67,7 +67,7 @@ jib_wp_wait = {
     _group setVariable [jib_wp_varStart, false, true];
     [
         _group,
-        10,
+        20,
         "SCRIPTED",
         "UNCHANGED",
         "[this] call jib_wp_waitCondition",
@@ -96,7 +96,7 @@ jib_wp_paradrop = {
     _group setVariable [jib_wp_varParadropHeight, _height];
     [
         _group,
-        100,
+        200,
         "MOVE",
         "UNCHANGED",
         "true",
@@ -105,7 +105,7 @@ jib_wp_paradrop = {
     ] call jib_wp_add;
     [
         _group,
-        200,
+        100,
         "MOVE",
         "UNCHANGED",
         "true",
@@ -146,11 +146,34 @@ jib_wp_add = {
     if (!isServer) then {throw "Not server!"};
     private _vehicle = vehicle leader _group;
     private _index = count waypoints _group;
+
+    // Base case: use vehicle and direction
+    private _pos1 = getPosATL _vehicle vectorAdd (
+        [
+            [0, _spacing, 0],
+            direction _vehicle - 180,
+            2
+        ] call BIS_fnc_rotateVector3D
+    );
+    private _pos2 = getPosATL _vehicle;
+
+    // If at least 1 real WP: use vehicle and last WP
+    if (_index > 1) then {
+        _pos1 = getPosATL _vehicle;
+        _pos2 = waypointPosition [_group, _index - 1];
+    };
+
+    // If at least 2 real WP: use last 2 WPs
+    if (_index > 2) then {
+        _pos1 = waypointPosition [_group, _index - 2];
+        _pos2 = waypointPosition [_group, _index - 1];
+    };
+
     _group addWaypoint [
-        getPosATL _vehicle vectorAdd (
+        _pos2 vectorAdd (
             [
                 [0, _spacing, 0],
-                direction _vehicle,
+                _pos1 getDir _pos2,
                 2
             ] call BIS_fnc_rotateVector3D
         ),

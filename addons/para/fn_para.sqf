@@ -128,6 +128,7 @@ jib_para_unload = {
     if (!isServer) then {throw "Not server!"};
     [_group] call jib_para_cargoCollect apply {
         _x params ["_vehicle", "_groupsUnits"];
+        [_vehicle, _groupsUnits] call jib_para_cargoRegroup;
         [_vehicle, _groupsUnits, _height] spawn jib_para_cargoUnload;
     };
 };
@@ -168,7 +169,11 @@ jib_para_cargoUnload = {
     params ["_vehicle", "_groupsUnits", "_height"];
     if (!isServer) then {throw "Not server!"};
     if (!canSuspend) then {throw "Not in scheduled environment!"};
+
+    // Vehicle in vehicle
     _vehicle setVehicleCargo objNull;
+
+    // Infantry
     _groupsUnits apply {
 
         // Make units jump
@@ -182,7 +187,23 @@ jib_para_cargoUnload = {
         };
         [_group, _vehicle] remoteExec ["leaveVehicle", _group];
     };
+};
 
+// Regroup cargo groups.
+//
+// NOTE: This is a workaround for a bug where after landing, AI try to
+// go back to the location where they boarded the transport.
+jib_para_cargoRegroup = {
+    params ["_vehicle", "_groupsUnits"];
+    if (!isServer) then {throw "Not server!"};
+    getVehicleCargo _vehicle apply {
+        [_x, leader _x] remoteExec ["doFollow", _x];
+    };
+    _groupsUnits apply {
+        _x params ["_group", "_units"];
+        [_units, leader _group] remoteExec ["doFollow", _group];
+        _units doFollow leader _group;
+    };
 };
 
 // Get group assigned vehicles (all)
@@ -221,7 +242,7 @@ jib_para_jump = {
     ];
     [_unit, _invincible] spawn {
         params ["_unit", "_invincible"];
-        uiSleep 1;
+        uiSleep 3;
         if (isPlayer _unit || not _invincible) then {
             _unit allowDamage true;
         };
@@ -230,8 +251,8 @@ jib_para_jump = {
     if (!isPlayer _unit) then {
         _unit allowDamage false;
     };
-    waitUntil { isTouchingGround _unit || position _unit # 2 < 1 };
-    uiSleep 1;
+    waitUntil { isTouchingGround _unit };
+    uiSleep 3;
     _unit allowDamage true;
     [_unit] allowGetIn true;
 };
