@@ -127,9 +127,13 @@ jib_para_unload = {
     params ["_group", "_height"];
     if (!isServer) then {throw "Not server!"};
     [_group] call jib_para_cargoCollect apply {
-        _x params ["_vehicle", "_groupsUnits"];
-        [_vehicle, _groupsUnits] call jib_para_cargoRegroup;
-        [_vehicle, _groupsUnits, _height] spawn jib_para_cargoUnload;
+        _x params ["_vehicle", "_groupsUnits", "_cargo"];
+        [
+            _vehicle,
+            _groupsUnits,
+            _cargo,
+            _height
+        ] spawn jib_para_cargoUnload;
     };
 };
 
@@ -159,19 +163,29 @@ jib_para_cargoCollect = {
             [_x, units _x select {_x in _cargo}];
         };
 
-        _vehiclesGroupsUnits pushBack [_vehicle, _groupsUnits];
+        // Collect cargo
+        private _cargo = getVehicleCargo _vehicle;
+
+        _vehiclesGroupsUnits pushBack [
+            _vehicle,
+            _groupsUnits,
+            _cargo
+        ];
     };
     _vehiclesGroupsUnits;
 };
 
 // Unload specific cargo (server).
 jib_para_cargoUnload = {
-    params ["_vehicle", "_groupsUnits", "_height"];
+    params ["_vehicle", "_groupsUnits", "_cargo", "_height"];
     if (!isServer) then {throw "Not server!"};
     if (!canSuspend) then {throw "Not in scheduled environment!"};
 
     // Vehicle in vehicle
     _vehicle setVehicleCargo objNull;
+    _cargo apply {
+        [_x, leader _x] remoteExec ["doFollow", _x];
+    };
 
     // Infantry
     _groupsUnits apply {
@@ -185,24 +199,13 @@ jib_para_cargoUnload = {
             ];
             uiSleep jib_para_interval;
         };
-        [_group, _vehicle] remoteExec ["leaveVehicle", _group];
-    };
-};
 
-// Regroup cargo groups.
-//
-// NOTE: This is a workaround for a bug where after landing, AI try to
-// go back to the location where they boarded the transport.
-jib_para_cargoRegroup = {
-    params ["_vehicle", "_groupsUnits"];
-    if (!isServer) then {throw "Not server!"};
-    getVehicleCargo _vehicle apply {
-        [_x, leader _x] remoteExec ["doFollow", _x];
-    };
-    _groupsUnits apply {
-        _x params ["_group", "_units"];
-        [_units, leader _group] remoteExec ["doFollow", _group];
-        _units doFollow leader _group;
+        // Make units regroup
+        [[_group, _units, _vehicle], {
+            params ["_group", "_units", "_vehicle"];
+            _group leaveVehicle _vehicle;
+            _units doFollow leader _group;
+        }] remoteExec ["spawn", _group];
     };
 };
 
