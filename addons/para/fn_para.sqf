@@ -127,11 +127,11 @@ jib_para_unload = {
     params ["_group", "_height"];
     if (!isServer) then {throw "Not server!"};
     [_group] call jib_para_cargoCollect apply {
-        _x params ["_vehicle", "_groupsUnits", "_cargo"];
+        _x params ["_vehicle", "_groupsUnits", "_groupsCargo"];
         [
             _vehicle,
             _groupsUnits,
-            _cargo,
+            _groupsCargo,
             _height
         ] spawn jib_para_cargoUnload;
     };
@@ -143,7 +143,7 @@ jib_para_unload = {
 jib_para_cargoCollect = {
     params ["_group"];
     if (!isServer) then {throw "Not server!"};
-    private _vehiclesGroupsUnits = [];
+    private _vehiclesGroupsUnitsGroupsCargo = [];
 
     // Collect vehicles
     [_group] call jib_para_assignedVehicles apply {
@@ -163,28 +163,48 @@ jib_para_cargoCollect = {
             [_x, units _x select {_x in _cargo}];
         };
 
-        // Collect cargo
-        private _cargo = getVehicleCargo _vehicle;
+        // Collect cargo groups
+        _cargo = getVehicleCargo _vehicle;
+        _groups = [];
+        _cargo apply {_groups pushBackUnique group _x};
+        _groupsSorted =
+            [_groups, [], {groupId _x}] call BIS_fnc_sortBy;
 
-        _vehiclesGroupsUnits pushBack [
+        // Collect cargo units
+        private _groupsCargo = _groupsSorted apply {
+            [
+                _x,
+                [_x] call jib_para_assignedVehicles select {
+                    _x in _cargo;
+                }
+            ];
+        };
+
+        // Push result
+        _vehiclesGroupsUnitsGroupsCargo pushBack [
             _vehicle,
             _groupsUnits,
-            _cargo
+            _groupsCargo
         ];
     };
-    _vehiclesGroupsUnits;
+    _vehiclesGroupsUnitsGroupsCargo;
 };
 
 // Unload specific cargo (server).
 jib_para_cargoUnload = {
-    params ["_vehicle", "_groupsUnits", "_cargo", "_height"];
+    params ["_vehicle", "_groupsUnits", "_groupsCargo", "_height"];
     if (!isServer) then {throw "Not server!"};
     if (!canSuspend) then {throw "Not in scheduled environment!"};
 
     // Vehicle in vehicle
     _vehicle setVehicleCargo objNull;
-    _cargo apply {
-        [_x, leader _x] remoteExec ["doFollow", _x];
+    _groupsCargo apply {
+        _x params ["_group", "_cargo"];
+        [
+            _vehicle,
+            _group,
+            _cargo
+        ] remoteExec ["jib_para_regroup", leader _group];
     };
 
     // Infantry
@@ -201,12 +221,24 @@ jib_para_cargoUnload = {
         };
 
         // Make units regroup
-        [[_group, _units, _vehicle], {
-            params ["_group", "_units", "_vehicle"];
-            _group leaveVehicle _vehicle;
-            _units doFollow leader _group;
-        }] remoteExec ["spawn", _group];
+        [
+            _vehicle,
+            _group,
+            _units
+        ] remoteExec ["jib_para_regroup", leader _group];
     };
+};
+
+// Regroup units when they land.
+jib_para_regroup = {
+    params ["_vehicle", "_group", "_units"];
+    if (!canSuspend) then {throw "Not in scheduled environment!"};
+    _group leaveVehicle _vehicle;
+    doStop _units;
+    waitUntil {
+        getPosATL vehicle leader _group # 2 < 10
+    };
+    _units doFollow leader _group;
 };
 
 // Get group assigned vehicles (all)
@@ -268,3 +300,4 @@ publicVariable "jib_para_effectDropzone";
 publicVariable "jib_para_effectEgress";
 publicVariable "jib_para_assignedVehicles";
 publicVariable "jib_para_jump";
+publicVariable "jib_para_regroup";

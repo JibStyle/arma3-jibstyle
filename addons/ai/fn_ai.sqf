@@ -32,7 +32,7 @@ jib_ai_laserControlEnable = {
 	    _group enableIRLasers _laserOn;
             uiSleep _sleepDelay;
         };
-    }] remoteExec ["spawn", _group];
+    }] remoteExec ["spawn", _group]; // NOTE: Group remoteExec bad!
     true;
 };
 
