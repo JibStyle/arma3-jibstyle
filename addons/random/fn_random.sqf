@@ -308,6 +308,8 @@ jib_random_moduleBucketArea = {
     ] call jib_random_moduleValidate;
 };
 
+publicVariable "jib_random_logicChooseNumber";
+publicVariable "jib_random_logicChooseProbability";
 publicVariable "jib_random_moduleValidate";
 publicVariable "jib_random_moduleBucketObjects";
 publicVariable "jib_random_moduleSystem";

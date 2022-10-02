@@ -5,6 +5,8 @@ class CfgPatches {
         requiredVersion = 1.60;
         requiredAddons[] = {"A3_Modules_F"};
         units[] = {
+            "jib_ai_moduleInfiniteAmmoEnable",
+            "jib_ai_moduleInfiniteAmmoDisable",
             "jib_ai_moduleLaserControlEnable",
             "jib_ai_moduleLaserControlDisable",
         };
@@ -32,6 +34,16 @@ class CfgVehicles
         isGlobal=1;
         curatorCanAttach=1;
         category = "jib_ai";
+    };
+    class jib_ai_moduleInfiniteAmmoEnable: jib_ai_module {
+        scopeCurator=2;
+        displayName = "Infinite Ammo Enable";
+        function = "jib_ai_moduleInfiniteAmmoEnable";
+    };
+    class jib_ai_moduleInfiniteAmmoDisable: jib_ai_module {
+        scopeCurator=2;
+        displayName = "Infinite Ammo Disable";
+        function = "jib_ai_moduleInfiniteAmmoDisable";
     };
     class jib_ai_moduleLaserControlEnable: jib_ai_module {
         scopeCurator=2;

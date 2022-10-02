@@ -43,7 +43,7 @@ jib_zeus_selectPlayerHandler = {
 };
 
 // Disable ALiVE zeus registering
-jib_misc_aliveZeusRegisterDisable = {
+jib_zeus_aliveRegisterDisable = {
     if (not isServer) then {throw "Not server!"};
     [] spawn {
         private _t = time;
@@ -52,18 +52,18 @@ jib_misc_aliveZeusRegisterDisable = {
                 || {time > _t + 5}
         };
         if (isNil "ALiVE_fnc_ZeusRegister") exitWith {};
-        jib_misc_aliveZeusRegister = ALiVE_fnc_ZeusRegister;
+        jib_zeus_aliveRegister = ALiVE_fnc_ZeusRegister;
         ALiVE_fnc_ZeusRegister = {};
     };
 };
 
 // Enable ALiVE zeus registering
-jib_misc_aliveZeusRegisterEnable = {
+jib_zeus_aliveRegisterEnable = {
     if (not isServer) then {throw "Not server!"};
     [] spawn {
         sleep 1;
-        if (isNil "jib_misc_aliveZeusRegister") exitWith {};
-        ALiVE_fnc_ZeusRegister = jib_misc_aliveZeusRegister;
+        if (isNil "jib_zeus_aliveRegister") exitWith {};
+        ALiVE_fnc_ZeusRegister = jib_zeus_aliveRegister;
     };
 };
 
@@ -183,6 +183,26 @@ jib_zeus_allLogics = {
 jib_zeus_allUnitsSide = {
     params ["_side"];
     allUnits + vehicles select {side _x == _side};
+};
+
+jib_zeus_moduleAliveRegisterEnable = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            [] call jib_zeus_aliveRegisterEnable;
+        }
+    ] call jib_zeus_moduleValidate;
+};
+
+jib_zeus_moduleAliveRegisterDisable = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            [] call jib_zeus_aliveRegisterDisable;
+        }
+    ] call jib_zeus_moduleValidate;
 };
 
 jib_zeus_moduleAddAllPlayers = {
@@ -426,6 +446,8 @@ jib_zeus_moduleRemoveAllCivilian = {
 };
 
 // Publish variables
+publicVariable "jib_zeus_moduleAliveRegisterEnable";
+publicVariable "jib_zeus_moduleAliveRegisterDisable";
 publicVariable "jib_zeus_moduleAddAllPlayers";
 publicVariable "jib_zeus_moduleRemoveAllPlayers";
 publicVariable "jib_zeus_moduleAddAllUnits";
@@ -446,4 +468,4 @@ publicVariable "jib_zeus_moduleValidate";
 publicVariable "jib_zeus_handlerMissionStart";
 publicVariable "jib_zeus_selectPlayerHandler";
 
-[] call jib_misc_aliveZeusRegisterDisable;
+[] call jib_zeus_aliveRegisterDisable;

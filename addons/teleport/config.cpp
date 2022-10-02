@@ -10,6 +10,7 @@ class CfgPatches {
             "jib_teleport_moduleTo",
             "jib_teleport_moduleVehicleLoadTransport",
             "jib_teleport_moduleVehicleLoadCargo",
+            "jib_teleport_moduleVehicleLoadGroup",
             "jib_teleport_moduleVehicleUnloadCargo",
             "jib_teleport_moduleVehicleUnloadTransport",
         };
@@ -67,6 +68,11 @@ class CfgVehicles
         scopeCurator=2;
         displayName = "Load Cargo";
         function = "jib_teleport_moduleVehicleLoadCargo";
+    };
+    class jib_teleport_moduleVehicleLoadGroup: jib_teleport_module {
+        scopeCurator=2;
+        displayName = "Load Group";
+        function = "jib_teleport_moduleVehicleLoadGroup";
     };
     class jib_teleport_moduleVehicleUnloadCargo: jib_teleport_module {
         scopeCurator=2;

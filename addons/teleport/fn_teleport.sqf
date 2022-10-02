@@ -24,14 +24,20 @@ jib_teleport_teleport = {
     } forEach _units;
 };
 
-// Load vehicle in vehicle
+// Load cargo or units into vehicle
 jib_teleport_vehicleLoad = {
-    params ["_transport", "_cargo"];
+    params ["_transport", "_cargo", ["_units", []]];
     if (not isServer) then {throw "Not server!"};
     if (isNull _transport) then {throw "No transport selected!"};
-    if (isNull _cargo) then {throw "No cargo selected!"};
-    if (_transport setVehicleCargo _cargo == false) then {
-        throw "Transport is already full!";
+    if (not isNull _cargo) then {
+        if (_transport setVehicleCargo _cargo == false) then {
+            throw "Cargo did not fit!";
+        };
+    };
+    if (count _units > 0) then {
+        _units apply {
+            _x moveInAny _transport;
+        };
     };
 };
 
@@ -126,6 +132,22 @@ jib_teleport_moduleVehicleLoadCargo = {
     ] call jib_teleport_moduleValidate;
 };
 
+jib_teleport_moduleVehicleLoadGroup = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            _args params ["_transport"];
+            [
+                _transport,
+                objNull,
+                units group _attached
+            ] call jib_teleport_vehicleLoad;
+        },
+        [jib_teleport_moduleSelectedVehicleLoadTransport]
+    ] call jib_teleport_moduleValidate;
+};
+
 jib_teleport_moduleVehicleUnloadCargo = {
     [
         _this,
@@ -155,6 +177,7 @@ publicVariable "jib_teleport_moduleSelf";
 publicVariable "jib_teleport_moduleAll";
 publicVariable "jib_teleport_moduleVehicleLoadTransport";
 publicVariable "jib_teleport_moduleVehicleLoadCargo";
+publicVariable "jib_teleport_moduleVehicleLoadGroup";
 publicVariable "jib_teleport_moduleVehicleUnloadCargo";
 publicVariable "jib_teleport_moduleVehicleUnloadTransport";
 publicVariable "jib_teleport_inner";
