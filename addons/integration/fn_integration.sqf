@@ -34,6 +34,7 @@ jib_selectPlayer_handlers = [
 publicVariable "jib_selectPlayer_handlers";
 
 jib_ai_moduleValidate = jib_module_validate;
+jib_alive_moduleValidate = jib_module_validate;
 jib_debug_moduleValidate = jib_module_validate;
 jib_hc_moduleValidate = jib_module_validate;
 jib_misc_moduleValidate = jib_module_validate;
@@ -50,6 +51,7 @@ jib_wp_paraEffectIngress = jib_para_effectIngress;
 jib_wp_paraUnload = jib_para_unload;
 jib_zeus_moduleValidate = jib_module_validate;
 publicVariable "jib_ai_moduleValidate";
+publicVariable "jib_alive_moduleValidate";
 publicVariable "jib_debug_moduleValidate";
 publicVariable "jib_hc_moduleValidate";
 publicVariable "jib_misc_moduleValidate";

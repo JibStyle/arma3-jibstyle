@@ -5,8 +5,6 @@ class CfgPatches {
         requiredVersion = 1.60;
         requiredAddons[] = {"A3_Modules_F"};
         units[] = {
-            "jib_zeus_moduleAliveRegisterEnable",
-            "jib_zeus_moduleAliveRegisterDisable",
             "jib_zeus_moduleAddAllPlayers",
             "jib_zeus_moduleRemoveAllPlayers",
             "jib_zeus_moduleAddAllUnits",
@@ -49,16 +47,6 @@ class CfgVehicles
         isGlobal=1;
         curatorCanAttach=1;
         category = "jib_zeus";
-    };
-    class jib_zeus_moduleAliveRegisterEnable: jib_zeus_module {
-        scopeCurator=2;
-        displayName = "Zeus ALiVE Register Enable";
-        function = "jib_zeus_moduleAliveRegisterEnable";
-    };
-    class jib_zeus_moduleAliveRegisterDisable: jib_zeus_module {
-        scopeCurator=2;
-        displayName = "Zeus ALiVE Register Disable";
-        function = "jib_zeus_moduleAliveRegisterDisable";
     };
     class jib_zeus_moduleAddAllPlayers: jib_zeus_module {
         scopeCurator=2;
