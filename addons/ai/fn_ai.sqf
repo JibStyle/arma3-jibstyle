@@ -10,22 +10,40 @@ jib_ai_moduleValidate = {};
 // Keeps daemon running
 jib_ai_laserControlVariable = "jib_ai_laserControlVariable";
 
+jib_ai_infiniteAmmoReloadTime = "jib_ai_infiniteAmmoReloadTime";
+
 jib_ai_infiniteAmmoFiredHandler = "jib_ai_infiniteAmmoFiredHandler";
 
 jib_ai_infiniteAmmoEnable = {
-    params ["_unit"];
+    params [
+        "_unit",         // Unit
+        ["_time", 20, [0]] // Time to reload
+    ];
     if (not isServer) then {throw "Not server!"};
     if (isNull _unit) then {throw "Null unit!"};
 
-    [[_unit], {
-        params ["_unit"];
+    [[_unit, _time], {
+        params ["_unit", "_time"];
+        _unit setVariable [
+            jib_ai_infiniteAmmoReloadTime,
+            _time
+        ];
         _unit setVariable [
             jib_ai_infiniteAmmoFiredHandler,
             _unit addEventHandler [
                 "Fired",
                 {
                     params ["_unit"];
-                    _unit setVehicleAmmo 1;
+                    [_unit] spawn {
+                        params ["_unit"];
+                        uiSleep (
+                            _unit getVariable [
+                                jib_ai_infiniteAmmoReloadTime,
+                                20
+                            ]
+                        );
+                        _unit setVehicleAmmo 1;
+                    };
                 }
             ]
         ];
