@@ -6,6 +6,9 @@ if (!isServer) exitWith { "Not server!" };
 // Dependency injected from integration.
 jib_zeus_moduleValidate = {};
 
+// Logging dependency.
+jib_zeus_log = {};
+
 // Event handler for mission start.
 jib_zeus_handlerMissionStart = {
     if (!isServer) then {throw "Not server!"};
@@ -19,25 +22,56 @@ jib_zeus_handlerMissionStart = {
 jib_zeus_handlerMissionEntityRespawned = {
     params ["_oldUnit", "_newUnit"];
     if (!isServer) then {throw "Not server!"};
+    [
+        format [
+            "jib_zeus_handlerMissionEntityRespawned [%1, %2]",
+            _oldUnit,
+            _newUnit
+        ]
+    ] call jib_zeus_log;
     [_oldUnit, _newUnit] spawn jib_zeus_transfer;
+
+    allCurators apply {
+        if (_oldUnit in curatorEditableObjects _x) then {
+            _x addCuratorEditableObjects [[_newUnit], true];
+        };
+    };
 };
 
 // Mission event handler for team switch.
 jib_zeus_handlerMissionTeamSwitch = {
     params ["_oldUnit", "_newUnit"];
     if (!isServer) then {throw "Not server!"};
+    [
+        format [
+            "jib_zeus_handlerMissionTeamSwitch [%1, %2]",
+            _oldUnit,
+            _newUnit
+        ]
+    ] call jib_zeus_log;
     [_oldUnit, _newUnit] spawn jib_zeus_transfer;
 };
 
 // Mission event handler for admin state change.
 jib_zeus_handlerMissionOnUserAdminStateChanged = {
     if (!isServer) then {throw "Not server!"};
+    [
+        "jib_zeus_handlerMissionOnUserAdminStateChanged"
+    ] call jib_zeus_log;
     [] call jib_zeus_adminAssign;
 };
 
 // Event handler for select player.
 jib_zeus_selectPlayerHandler = {
     params ["_oldUnit", "_newUnit"];
+    [
+        format [
+            "jib_zeus_selectPlayerHandler [%1, %2]",
+            _oldUnit,
+            _newUnit
+        ],
+        2
+    ] call jib_zeus_log;
     [_oldUnit, _newUnit] remoteExec ["jib_zeus_transfer", 2];
     [false, false] call BIS_fnc_forceCuratorInterface;
 };
@@ -106,6 +140,9 @@ jib_zeus_assign = {
 jib_zeus_transfer = {
     params ["_oldUnit", "_newUnit"];
     if (!isServer) then {throw "Not server!"};
+    [
+        format ["jib_zeus_transfer [%1, %2]", _oldUnit, _newUnit]
+    ] call jib_zeus_log;
     private _curator = getAssignedCuratorLogic _oldUnit;
     if (not isNull _curator) then {
         [_curator, _newUnit] spawn jib_zeus_assign;
@@ -115,10 +152,13 @@ jib_zeus_transfer = {
 // Default Respawn Inventories
 jib_zeus_setupInventory = {
     params ["_curators"];
+    [
+        format ["jib_zeus_setupInventory [%1]", _curators]
+    ] call jib_zeus_log;
     {
         [
             _x,  // Curator
-            false // true for all, false for units curator can place
+            true // true for all, false for units curator can place
         ] call BIS_fnc_moduleRespawnInventory
     } forEach _curators;
     [west, ["B_Protagonist_VR_F"]] call BIS_fnc_setRespawnInventory;
@@ -131,6 +171,13 @@ jib_zeus_setupInventory = {
 jib_zeus_addRespawnPositions = {
     params ["_curators"];
     if (!isServer) then {throw "Not server!"};
+    [
+        format [
+            "jib_zeus_addRespawnPositions [%1, %2]",
+            _curators,
+            allMissionObjects "ModuleRespawnPosition_F"
+        ]
+    ] call jib_zeus_log;
     _curators apply {
         _x addCuratorEditableObjects [
             allMissionObjects "ModuleRespawnPosition_F",
@@ -401,6 +448,7 @@ jib_zeus_moduleRemoveAllCivilian = {
 };
 
 // Publish variables
+publicVariable "jib_zeus_log";
 publicVariable "jib_zeus_moduleAddAllPlayers";
 publicVariable "jib_zeus_moduleRemoveAllPlayers";
 publicVariable "jib_zeus_moduleAddAllUnits";

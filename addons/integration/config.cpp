@@ -6,9 +6,11 @@ class CfgPatches {
         requiredAddons[] = {
             "jib_ai",
             "jib_debug",
+            "jib_draw",
             "jib_earplugs",
             "jib_handler",
             "jib_hc",
+            "jib_log",
             "jib_misc",
             "jib_module",
             "jib_para",

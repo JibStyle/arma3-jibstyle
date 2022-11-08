@@ -5,7 +5,137 @@ if (!isServer) exitWith {};
 // Dependency injected from integration.
 jib_ai_moduleValidate = {};
 
+// Dependency to draw
+jib_ai_drawAdd = {};
+
+// Dependency to reset drawing
+jib_ai_drawRemove = {};
+
 // PRIVATE BELOW HERE
+
+// Cancel monitor schedule
+jib_ai_monitorReset = {
+    params ["_unit"];
+    if (not isServer) then {throw "Not server!"};
+    if (isNull _unit) then {throw "Null unit!"};
+
+    _unit setVariable ["jib_ai_monitor", "", true];
+    [_unit] call jib_ai_drawRemove;
+};
+
+// Schedule monitor for targets
+jib_ai_monitorTargets = {
+    params ["_unit"];
+    if (not isServer) then {throw "Not server!"};
+    if (isNull _unit) then {throw "Null unit!"};
+
+    [_unit] call jib_ai_monitorReset;
+    _unit setVariable ["jib_ai_monitor", "targets", true];
+    [[_unit], {
+        params ["_unit"];
+        while {
+            not isNull _unit
+                && {
+                    _unit getVariable ["jib_ai_monitor", ""]
+                        == "targets"
+                }
+        } do {
+            [
+                _unit,
+                [_unit] call jib_ai_drawText,
+                [_unit] call jib_ai_drawLines
+            ] remoteExec ["jib_ai_drawAdd", 2];
+            uiSleep 1;
+        };
+    }] remoteExec ["spawn", _unit];
+};
+
+// Get draw text for unit
+jib_ai_drawText = {
+    params ["_unit"];
+    if (isNull _unit) then {throw "Null unit!"};
+    "";
+};
+
+// Get draw lines for unit
+jib_ai_drawLines = {
+    params ["_unit"];
+    if (isNull _unit) then {throw "Null unit!"};
+
+    if (
+        _unit getVariable ["jib_ai_monitor", ""] != "targets"
+    ) exitWith {[]};
+
+    _unit nearTargets 1500 select {
+        _x # 4 isKindOf "AllVehicles"
+    } apply {
+        _x params ["", "", "", "", "_target", ""];
+        [
+            _target,
+            _unit knowsAbout _target,
+            _x,
+            _unit targetKnowledge _target,
+            _unit getHideFrom _target
+        ];
+    } apply {
+        _x params [
+            "_target",
+            "_knowsAbout",
+            "_nearTarget",
+            "_targetKnowledge",
+            "_getHideFrom" // ATL aimPos
+        ];
+        _nearTarget params [
+            "_nearTargetPosition",
+            "_nearTargetType",
+            "_nearTargetSide",
+            "_nearTargetSubjectiveCost",
+            "_nearTargetObject", // same as _target
+            "_nearTargetPositionAccuracy"
+        ];
+        _targetKnowledge params [
+            "_targetKnowledgeKnownByGroup",
+            "_targetKnowledgeKnownByUnit",
+            "_targetKnowledgeLastSeen",
+            "_targetKnowledgeLastThreat",
+            "_targetKnowledgeSide",
+            "_targetKnowledgeErrorMargin",
+            "_targetKnowledgePosition"
+        ];
+
+        private _color = [];
+        switch (_nearTargetSide) do
+        {
+            case west: {
+                _color = [0, .3, .6, 1];
+            };
+            case east: {
+                _color = [.5, 0, 0, 1];
+            };
+            case independent: {
+                _color = [0, .5, 0, 1];
+            };
+            case civilian: {
+                _color = [.4, 0, .5, 1];
+            };
+            default {
+                _color = [.7, .6, 0, 1];
+            };
+        };
+
+        [
+            _target,
+            _color,
+            format [
+                "K: %1, T: %2, C: %3, A: %4",
+                _knowsAbout,
+                _nearTargetType,
+                _nearTargetSubjectiveCost,
+                _nearTargetPositionAccuracy
+            ]
+        ];
+    };
+};
 
 // Keeps daemon running
 jib_ai_laserControlVariable = "jib_ai_laserControlVariable";
@@ -150,6 +280,28 @@ jib_ai_moduleLaserControlDisable = {
     ] call jib_ai_moduleValidate;
 };
 
+// Monitor targets
+jib_ai_moduleMonitorTargets = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            [_attached] call jib_ai_monitorTargets;
+        }
+    ] call jib_ai_moduleValidate;
+};
+
+// Monitor reset
+jib_ai_moduleMonitorReset = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            [_attached] call jib_ai_monitorReset;
+        }
+    ] call jib_ai_moduleValidate;
+};
+
 publicVariable "jib_ai_moduleValidate";
 publicVariable "jib_ai_infiniteAmmoFiredHandler";
 publicVariable "jib_ai_laserControlVariable";
@@ -157,3 +309,5 @@ publicVariable "jib_ai_moduleInfiniteAmmoEnable";
 publicVariable "jib_ai_moduleInfiniteAmmoDisable";
 publicVariable "jib_ai_moduleLaserControlEnable";
 publicVariable "jib_ai_moduleLaserControlDisable";
+publicVariable "jib_ai_moduleMonitorTargets";
+publicVariable "jib_ai_moduleMonitorReset";

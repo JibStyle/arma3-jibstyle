@@ -9,6 +9,8 @@ class CfgPatches {
             "jib_ai_moduleInfiniteAmmoDisable",
             "jib_ai_moduleLaserControlEnable",
             "jib_ai_moduleLaserControlDisable",
+            "jib_ai_moduleMonitorTargets",
+            "jib_ai_moduleMonitorReset",
         };
         weapons[] = {};
     };
@@ -54,5 +56,15 @@ class CfgVehicles
         scopeCurator=2;
         displayName = "Laser Control Disable";
         function = "jib_ai_moduleLaserControlDisable";
+    };
+    class jib_ai_moduleMonitorTargets: jib_ai_module {
+        scopeCurator=2;
+        displayName = "AI Monitor Targets";
+        function = "jib_ai_moduleMonitorTargets";
+    };
+    class jib_ai_moduleMonitorReset: jib_ai_module {
+        scopeCurator=2;
+        displayName = "AI Monitor Reset";
+        function = "jib_ai_moduleMonitorReset";
     };
 };
