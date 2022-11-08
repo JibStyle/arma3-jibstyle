@@ -60,7 +60,7 @@ jib_draw_setup = {
                 if (_text != "") then {
                     private _color = [0,1,0,.5];
                     private _offset = 2; // Additional height
-                    private _shadow = true;
+                    private _shadow = false;
                     private _textSize = .05;
 
                     drawIcon3D [
@@ -85,8 +85,8 @@ jib_draw_setup = {
                 if (count _lines > 0) then {
                     _lines apply {
                         _x params ["_other", "_color", "_text"];
-                        private _shadow = true;
-                        private _textSize = .05;
+                        private _shadow = false;
+                        private _textSize = .03;
                         private _interpolation = .75;
 
                         if (isNull _other) then {continue};

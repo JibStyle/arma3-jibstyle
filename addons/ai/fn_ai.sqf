@@ -127,9 +127,9 @@ jib_ai_drawLines = {
             _target,
             _color,
             format [
-                "K: %1, T: %2, C: %3, A: %4",
-                _knowsAbout,
+                "%1 (%2, %3, %4)",
                 _nearTargetType,
+                _knowsAbout,
                 _nearTargetSubjectiveCost,
                 _nearTargetPositionAccuracy
             ]
@@ -302,6 +302,10 @@ jib_ai_moduleMonitorReset = {
     ] call jib_ai_moduleValidate;
 };
 
+publicVariable "jib_ai_drawAdd";
+publicVariable "jib_ai_drawRemove";
+publicVariable "jib_ai_drawText";
+publicVariable "jib_ai_drawLines";
 publicVariable "jib_ai_moduleValidate";
 publicVariable "jib_ai_infiniteAmmoFiredHandler";
 publicVariable "jib_ai_laserControlVariable";
