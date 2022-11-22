@@ -43,6 +43,22 @@ jib_wp_debug = {
     };
 };
 
+// Add dismiss waypoint to group
+jib_wp_dismiss = {
+    params ["_group"];
+    if (not isServer) then {throw "Not server!"};
+    if (isNull _group) then {throw "No group selected!"};
+    [
+        _group,
+        0,
+        "DISMISS",
+        "UNCHANGED",
+        "true",
+        "",
+        "jib_wp_dismiss"
+    ] call jib_wp_add;
+};
+
 // Add guard waypoint to group
 jib_wp_guard = {
     params ["_group"];
@@ -56,6 +72,38 @@ jib_wp_guard = {
         "true",
         "",
         "jib_wp_guard"
+    ] call jib_wp_add;
+};
+
+// Add hold waypoint to group
+jib_wp_hold = {
+    params ["_group"];
+    if (not isServer) then {throw "Not server!"};
+    if (isNull _group) then {throw "No group selected!"};
+    [
+        _group,
+        0,
+        "HOLD",
+        "UNCHANGED",
+        "true",
+        "",
+        "jib_wp_hold"
+    ] call jib_wp_add;
+};
+
+// Add sentry waypoint to group
+jib_wp_sentry = {
+    params ["_group"];
+    if (not isServer) then {throw "Not server!"};
+    if (isNull _group) then {throw "No group selected!"};
+    [
+        _group,
+        0,
+        "SENTRY",
+        "UNCHANGED",
+        "true",
+        "",
+        "jib_wp_sentry"
     ] call jib_wp_add;
 };
 
@@ -277,12 +325,42 @@ jib_wp_moduleDebug = {
     ] call jib_wp_moduleValidate;
 };
 
+jib_wp_moduleDismiss = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            [group _attached] call jib_wp_dismiss;
+        }
+    ] call jib_wp_moduleValidate;
+};
+
 jib_wp_moduleGuard = {
     [
         _this,
         {
             params ["_posATL", "_attached", "_args"];
             [group _attached] call jib_wp_guard;
+        }
+    ] call jib_wp_moduleValidate;
+};
+
+jib_wp_moduleHold = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            [group _attached] call jib_wp_hold;
+        }
+    ] call jib_wp_moduleValidate;
+};
+
+jib_wp_moduleSentry = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            [group _attached] call jib_wp_sentry;
         }
     ] call jib_wp_moduleValidate;
 };
@@ -344,7 +422,10 @@ publicVariable "jib_wp_paraEffectEgress";
 publicVariable "jib_wp_paraUnload";
 publicVariable "jib_wp_debug";
 publicVariable "jib_wp_moduleDebug";
+publicVariable "jib_wp_moduleDismiss";
 publicVariable "jib_wp_moduleGuard";
+publicVariable "jib_wp_moduleHold";
+publicVariable "jib_wp_moduleSentry";
 publicVariable "jib_wp_moduleWait";
 publicVariable "jib_wp_moduleStart";
 publicVariable "jib_wp_moduleParadrop";

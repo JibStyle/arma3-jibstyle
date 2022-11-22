@@ -5,9 +5,12 @@ class CfgPatches {
         requiredVersion = 1.60;
         requiredAddons[] = {"A3_Modules_F"};
         units[] = {
+            "jib_wp_moduleDismiss",
             "jib_wp_moduleDebug",
             "jib_wp_moduleGuard",
+            "jib_wp_moduleHold",
             "jib_wp_moduleWait",
+            "jib_wp_moduleSentry",
             "jib_wp_moduleStart",
             "jib_wp_moduleParadrop",
             "jib_wp_moduleParadropHALO",
@@ -43,15 +46,30 @@ class CfgVehicles
         displayName = "Waypoint Debug";
         function = "jib_wp_moduleDebug";
     };
+    class jib_wp_moduleDismiss: jib_wp_module {
+        scopeCurator=2;
+        displayName = "Waypoint Dismiss";
+        function = "jib_wp_moduleDismiss";
+    };
     class jib_wp_moduleGuard: jib_wp_module {
         scopeCurator=2;
-        displayName = "Waypoint GUARD";
+        displayName = "Waypoint Guard";
         function = "jib_wp_moduleGuard";
+    };
+    class jib_wp_moduleHold: jib_wp_module {
+        scopeCurator=2;
+        displayName = "Waypoint Hold";
+        function = "jib_wp_moduleHold";
     };
     class jib_wp_moduleWait: jib_wp_module {
         scopeCurator=2;
         displayName = "Waypoint Wait";
         function = "jib_wp_moduleWait";
+    };
+    class jib_wp_moduleSentry: jib_wp_module {
+        scopeCurator=2;
+        displayName = "Waypoint Sentry";
+        function = "jib_wp_moduleSentry";
     };
     class jib_wp_moduleStart: jib_wp_module {
         scopeCurator=2;
