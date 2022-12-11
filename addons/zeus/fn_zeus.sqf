@@ -116,7 +116,7 @@ jib_zeus_adminCreate = {
         "NONE"
     ];
     jib_zeus_adminCurator setVariable ["Addons", 3];
-    jib_zeus_adminCurator setVariable ["owner", "#adminLogged"];
+    jib_zeus_adminCurator setVariable ["owner", ""];
     jib_zeus_adminCurator setVariable [
         "BIS_fnc_initModules_disableAutoActivation", false
     ];
