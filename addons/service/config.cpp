@@ -13,6 +13,9 @@ class CfgFunctions {
         class jib_service {
             file = "x\jib\addons\service";
 
+            class service {
+                recompile = 1; preInit = 1;
+            };
             class canServiceVehicle {
                 recompile = 1;
             };
