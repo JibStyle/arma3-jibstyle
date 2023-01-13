@@ -17,7 +17,7 @@ class CfgPatches {
             "jib_objective",
             "jib_random",
             "jib_selectPlayer",
-            "jib_support",
+            "jib_spawn",
             "jib_sync",
             "jib_teleport",
             "jib_transport",
