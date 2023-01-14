@@ -79,6 +79,8 @@ publicVariable "jib_wp_paraUnload";
 publicVariable "jib_zeus_log";
 publicVariable "jib_zeus_moduleValidate";
 
+jib_logistics_main_menu = jib_handler_isMainMenu;
+jib_logistics_admin = jib_zeus_admin;
 jib_menu_alive_opcom_disable = jib_alive_opcomDisable;
 jib_menu_alive_opcom_enable = jib_alive_opcomEnable;
 jib_menu_alive_profile_disable = jib_alive_profileDisable;
@@ -97,7 +99,6 @@ publicVariable "jib_menu_alive_profile_disable";
 publicVariable "jib_menu_alive_profile_enable";
 publicVariable "jib_menu_alive_register_disable";
 publicVariable "jib_menu_alive_register_enable";
-publicVariable "jib_handler_isMainMenu";
 publicVariable "jib_menu_objective_capture_start";
 publicVariable "jib_menu_objective_capture_stop";
 publicVariable "jib_menu_service_group_bottom";

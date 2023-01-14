@@ -16,3 +16,14 @@ class CfgFunctions {
         };
     };
 };
+
+class CfgCommunicationMenu {
+    class jib_logistics_unit_menu {
+        text = "Unit Menu";
+        submenu = "#USER:jib_logistics_unit_menu";
+    };
+    class jib_logistics_insert_menu {
+        text = "Insert Menu";
+        submenu = "#USER:jib_logistics_insert_menu";
+    };
+};
