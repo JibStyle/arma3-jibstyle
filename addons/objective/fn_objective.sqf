@@ -143,6 +143,52 @@ jib_objective_hostageAllComplete = {
         && jib_objective_hostageRemaining == 0;
 };
 
+jib_objective_capture_enable = true;
+jib_objective_capture_delay = 0.25;
+jib_objective_capture_distance = 7;
+publicVariable "jib_objective_capture_enable";
+publicVariable "jib_objective_capture_delay";
+publicVariable "jib_objective_capture_distance";
+
+jib_objective_capture_register = {
+    params ["_unit"];
+    _unit setVariable ["jib_objective_capture_registered", true];
+    if (local _unit) then {
+        _unit setCaptive true;
+    };
+};
+publicVariable "jib_objective_capture_register";
+
+jib_objective_capture_start = {
+    jib_objective_capture_enable = false;
+    uiSleep jib_objective_capture_delay * 2;
+    jib_objective_capture_enable = true;
+    while {jib_objective_capture_enable} do {
+        uiSleep jib_objective_capture_delay;
+        private _target = cursorObject;
+        if (
+            _target getVariable [
+                "jib_objective_capture_registered", false
+            ] && (
+                _target distance player
+                    < jib_objective_capture_distance
+            )
+        ) then {
+            [
+                "ace_captives_setSurrendered",
+                [_target, true],
+                _target
+            ] call CBA_fnc_targetEvent;
+        };
+    };
+};
+publicVariable "jib_objective_capture_start";
+
+jib_objective_capture_stop = {
+    jib_objective_capture_enable = false;
+};
+publicVariable "jib_objective_capture_stop";
+
 // PRIVATE
 
 // Server vars
