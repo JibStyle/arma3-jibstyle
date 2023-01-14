@@ -106,7 +106,7 @@ jib_debug_count = {
     };
 
     format [
-        "B%1,%2,%3,%4,%5,%6,I%7,%8,%9,%10,%11,%12,O%13,%14,%15,%16,%17,%18,C%19,%20,%21,%22,%23,%24",
+        "B%1m%2c%3t%4a%5o%6_I%7m%8c%9t%10a%11o%12_O%13m%14c%15t%16a%17o%18_C%19m%20c%21t%22a%23o%24",
         _westGroup,
         _westMan,
         _westCar,
@@ -133,6 +133,7 @@ jib_debug_count = {
         _civilianOther
     ];
 };
+publicVariable "jib_debug_count";
 
 jib_debug_moduleCopyPositionASL = {
     [
