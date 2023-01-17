@@ -89,7 +89,10 @@ jib_random_chooseBuckets = {
         _bucketObjects apply {
             private _object = _x;
             private _group = group _object;
-            if (isNull _group) then {
+            if (
+                (_object call BIS_fnc_objectType) # 0 == "Logic"
+                    || isNull _group
+            ) then {
                 // Delete individual unit
                 deleteVehicle _object;
             } else {
