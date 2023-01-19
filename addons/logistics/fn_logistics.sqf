@@ -25,6 +25,7 @@ jib_logistics_unit_menu_init = {
     jib_logistics_units = [];
     jib_logistics_unit_pos = getPosATL _logic;
     jib_logistics_unit_direction = direction _logic;
+    private _groups = [];
     private _units = [];
     private _vehicles = [];
 
@@ -33,6 +34,7 @@ jib_logistics_unit_menu_init = {
             "Soldier", "Vehicle"
         ]
     } apply {
+        _groups pushBackUnique group _x;
         units group _x apply {
             if (vehicle _x == _x) then {
                 _units pushBackUnique _x;
@@ -121,6 +123,7 @@ jib_logistics_unit_menu_init = {
         deleteVehicleCrew _x;
         deleteVehicle _x;
     };
+    _groups apply {deleteGroup _x};
 
     publicVariable "jib_logistics_units";
     publicVariable "jib_logistics_unit_menu";

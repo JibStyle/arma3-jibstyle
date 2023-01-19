@@ -3,8 +3,12 @@ jib_spawn_debug = false;
 jib_spawn_count = 0;
 
 jib_spawn_register_emitter = {
-    params ["_logic"];
+    params [
+        "_logic",
+        ["_weight", 1, [0]]
+    ];
     _logic setVariable ["jib_spawn_type", "emitter"];
+    _logic setVariable ["jib_spawn_weight", _weight];
     _logic setVariable [
         "jib_spawn_batches",
         synchronizedObjects _logic apply {
@@ -154,7 +158,8 @@ jib_spawn_register_egress = {
         ["_behaviour", "UNCHANGED", [""]],
         ["_mode", "NO CHANGE", [""]],
         ["_speed", "UNCHANGED", [""]],
-        ["_timeout", [0, 0, 0], [[]]]
+        ["_timeout", [0, 0, 0], [[]]],
+        ["_statements", ["true", ""], [[]]]
     ];
     _logic setVariable ["jib_spawn_wp_weight", _weight];
     _logic setVariable ["jib_spawn_wp_radius", _radius];
@@ -169,19 +174,6 @@ jib_spawn_register_egress = {
     _logic setVariable ["jib_spawn_type", "waypoint"];
 };
 
-jib_spawn_egress_complete = {
-    params ["_leader"];
-    if (!local group _leader) exitWith {};
-    private _vehicles = [];
-    units group _leader apply {
-        _vehicles pushBackUnique vehicle _x;
-    };
-    _vehicles apply {
-        deleteVehicleCrew _x;
-        deleteVehicle _x;
-    };
-};
-
 jib_spawn_activate_trigger = {
     params [
         "_trigger",
@@ -189,15 +181,19 @@ jib_spawn_activate_trigger = {
     ];
     if (!canSuspend) then {throw "Cannot suspend!"};
     private _n = round random _randomNum;
-    sleep jib_spawn_delay;
+    private _choices = [];
+    synchronizedObjects _trigger select {
+        _x getVariable ["jib_spawn_type", ""] == "emitter"
+    } apply {
+        _choices pushBack _x;
+        _choices pushBack (_x getVariable ["jib_spawn_weight", 1]);
+    };
+
     for "_i" from 0 to (_n - 1) do {
         [
-            selectRandom (
-                synchronizedObjects _trigger select {
-                    _x getVariable ["jib_spawn_type", ""] == "emitter"
-                }
-            )
+            selectRandomWeighted _choices
         ] call jib_spawn_activate_emitter;
+        sleep jib_spawn_delay;
     };
 };
 

@@ -304,13 +304,15 @@ jib_wp_rtbComplete = {
     params ["_leader"];
     if (!isServer) exitWith {};
     private _vehicles = [];
-    units group _leader apply {
+    private _group = group _leader;
+    units _group apply {
         _vehicles pushBackUnique vehicle _x;
     };
     _vehicles apply {
         deleteVehicleCrew _x;
         deleteVehicle _x;
     };
+    deleteGroup _group;
 };
 
 jib_wp_moduleDebug = {

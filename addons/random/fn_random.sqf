@@ -105,6 +105,7 @@ jib_random_chooseBuckets = {
                     deleteVehicleCrew _x;
                     deleteVehicle _x;
                 };
+                deleteGroup _group;
             };
         };
     };

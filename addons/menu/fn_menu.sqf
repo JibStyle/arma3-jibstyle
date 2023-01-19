@@ -132,6 +132,9 @@ jib_menu_setup = {
     if ([] call jib_menu_handler_main_menu) exitWith {};
     waitUntil { sleep 1; alive ([] call jib_menu_zeus_admin) };
     private _admin = [] call jib_menu_zeus_admin;
+    [_admin, "jib_menu_mission"] remoteExecCall [
+        "BIS_fnc_addCommMenuItem", _admin
+    ];
     [_admin, "jib_menu_admin"] remoteExecCall [
         "BIS_fnc_addCommMenuItem", _admin
     ];
