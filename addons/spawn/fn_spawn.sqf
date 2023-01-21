@@ -212,6 +212,7 @@ jib_spawn_deactivate_trigger = {
 
 jib_spawn_activate_emitter = {
     params ["_logic"];
+    if (!isServer) exitWith {};
     if (!canSuspend) then {throw "Cannot suspend!"};
     selectRandom (
         _logic getVariable ["jib_spawn_batches", []]
@@ -271,6 +272,7 @@ jib_spawn_activate_emitter = {
                 _group createUnit [_type, _posATL, [], 0, "NONE"];
             _unit allowDamage false;
             [_unit] call _add_to_curators;
+            _logicUnits pushBack _unit;
             _unit setDir _direction; // maybe delay
             _unit setRank _rank;
             _unit setSkill _skill;
@@ -338,8 +340,11 @@ jib_spawn_activate_emitter = {
         };
     };
 
+    private _logicUnits =
+        _logic getVariable ["jib_spawn_emitter_units", []];
     _vehicles = _vehicles apply {[_x] call _spawn_vehicle};
     _groups = _groups apply {[_x, _vehicles] call _spawn_group};
+    _logic setVariable ["jib_spawn_emitter_units", _logicUnits];
     if (count _groups == 1) then {
         [_groups # 0, _waypoints] call _add_waypoints;
     } else {
@@ -353,6 +358,28 @@ jib_spawn_activate_emitter = {
     _vehicles apply {_x allowDamage true};
     _groups apply {units _x apply {_x allowDamage true}};
     [_vehicles, _groups];
+};
+
+jib_spawn_emitter_units = {
+    params ["_logic"];
+    if (!isServer) exitWith {};
+    private _units = _logic getVariable [
+        "jib_spawn_emitter_units", []
+    ] select {alive _x};
+    _logic setVariable ["jib_spawn_emitter_units", _units];
+    _units;
+};
+
+jib_spawn_trigger_units = {
+    params ["_trigger"];
+    if (!isServer) exitWith {};
+    private _units = [];
+    synchronizedObjects _trigger select {
+        _x getVariable ["jib_spawn_type", ""] == "emitter"
+    } apply {
+        _units = _units + ([_x] call jib_spawn_emitter_units);
+    };
+    _units;
 };
 
 jib_spawn_choose_waypoints = {

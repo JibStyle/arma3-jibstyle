@@ -170,6 +170,17 @@ jib_logistics_unit_spawn = {
         };
     };
 
+    private _refreshBackpack = {
+        params ["_unit"];
+        sleep jib_logistics_delay;
+        private _items = backpackItems _unit;
+        private _backpack = backpack _unit;
+        removeBackpack _unit;
+        _unit addBackpack _backpack;
+        clearAllItemsFromBackpack _unit;
+        _items apply {_unit addItemToBackpack _x};
+    };
+
     switch (_type) do
     {
         case "Soldier": {
@@ -183,6 +194,7 @@ jib_logistics_unit_spawn = {
             _unit setRank _rank;
             _unit setSkill _skill;
             _unit setUnitLoadout _loadout;
+            [_unit] call _refreshBackpack;
             sleep jib_logistics_delay;
             _unit allowDamage true;
         };
@@ -211,6 +223,7 @@ jib_logistics_unit_spawn = {
                 _unit setRank _rank;
                 _unit setSkill _skill;
                 _unit setUnitLoadout _loadout;
+                [_unit] call _refreshBackpack;
                 switch (_role) do
                 {
                     case "driver": {

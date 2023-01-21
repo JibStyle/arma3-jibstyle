@@ -5,6 +5,55 @@ if (!isServer) exitWith {};
 // Dependency injected from integration.
 jib_objective_moduleValidate = {};
 
+// Spawn minefield in trigger area
+jib_objective_minefield = {
+    params [
+        "_trigger",
+        ["_spacing", 20, [0]],
+        ["_radius", 5, [0]]
+    ];
+    if (!isServer) exitWith {};
+    if (!canSuspend) then {throw "Cannot suspend!"};
+    while {triggerActivated _trigger} do {
+        uiSleep 0.5;
+        list _trigger apply {
+            if (
+                _x getVariable [
+                    "jib_objective_minefield_last", [0, 0, 0]
+                ] distance2D _x > _spacing && isTouchingGround _x
+            ) then {
+                private _posATL = getPosATL _x;
+                private _setLast = {
+                    _this setVariable [
+                        "jib_objective_minefield_last", _posATL
+                    ];
+                };
+                private _mine = {
+                    params ["_type"];
+                    createMine [
+                        _type,
+                        [_posATL # 0, _posATL # 1, 0],
+                        [],
+                        _radius
+                    ] setDamage 1;
+                };
+                _x call _setLast;
+                crew _x apply {_x call _setLast};
+                switch (_x call BIS_fnc_objectType select 0) do
+                {
+                    case "Soldier": {
+                        ["APERSMine"] call _mine;
+                    };
+                    case "Vehicle";
+                    case "VehicleAutonomous": {
+                        ["ATMine"] call _mine;
+                    };
+                };
+            };
+        };
+    };
+};
+
 // Setup data terminal objective
 jib_objective_dataTerminal = {
     params [

@@ -42,7 +42,7 @@ jib_service_teleport_init = {
                 [_other], 10, false, true, "", "true", 2
             ];
         };
-    }] remoteExec ["spawn", 0];
+    }] remoteExec ["spawn", 0, true];
 };
 
 // Init object to force respawn
@@ -56,7 +56,7 @@ jib_service_respawn_init = {
             "Respawn (without counting death)",
             {forceRespawn player}, [], 10, false, true, "", "true", 2
         ];
-    }] remoteExec ["spawn", 0];
+    }] remoteExec ["spawn", 0, true];
 };
 
 // Init object to heal players
@@ -78,59 +78,70 @@ jib_service_fak_init = {
                 systemChat format ["Healed %1 units", count _units];
             }, [], 10, false, true, "", "true", 2
         ];
-    }] remoteExec ["spawn", 0];
+    }] remoteExec ["spawn", 0, true];
 };
 
 // Init object to provide vehicle service
 // [depot] call jib_service_depot_init;
 jib_service_depot_init = {
-    params ["_object"];
+    params [
+        "_object",
+        ["_service", true, [true]],
+        ["_pylon", true, [true]],
+        ["_inventory", true, [true]]
+    ];
     if (!isServer) exitWith {};
-    [[_object], {
-        params ["_object"];
+    [[_object, _service, _pylon, _inventory], {
+        params ["_object", "_service", "_pylon", "_inventory"];
         jib_service_depot_allowed = {
             vehicle player != player
                 && effectiveCommander player == player;
         };
-        _object addAction [
-            "Full Vehicle Service",
-            {
-                private _vehicle = vehicle player;
-                private _commander = effectiveCommander _vehicle;
-                private _oldCrew = crew _vehicle;
-                _vehicle setVehicleAmmo 1;
-                _vehicle setFuel 1;
-                _vehicle setDamage 0;
-                _oldCrew apply {
-                    if (alive _x) then {
-                        [_x] remoteExec ["jib_service_heal", 2];
-                        [[_x]] remoteExec [
-                            "jib_service_loadout_load", 2
-                        ];
-                    } else {
-                        _vehicle deleteVehicleCrew _x;
+        if (_service) then {
+            _object addAction [
+                "Full Vehicle Service",
+                {
+                    private _vehicle = vehicle player;
+                    private _commander = effectiveCommander _vehicle;
+                    private _oldCrew = crew _vehicle;
+                    _vehicle setVehicleAmmo 1;
+                    _vehicle setFuel 1;
+                    _vehicle setDamage 0;
+                    _oldCrew apply {
+                        if (alive _x) then {
+                            [_x] remoteExec ["jib_service_heal", 2];
+                            [[_x]] remoteExec [
+                                "jib_service_loadout_load", 2
+                            ];
+                        } else {
+                            _vehicle deleteVehicleCrew _x;
+                        };
                     };
-                };
-                createVehicleCrew _vehicle;
-                private _newCrew = crew _vehicle - _oldCrew;
-                _newCrew join _commander;
-            },
-            [], 10, true, true, "",
-            "[] call jib_service_depot_allowed", 30
-        ];
-        _object addAction [
-            "Pylon Manager",
-            {[vehicle player] call zen_pylons_fnc_configure},
-            [], 10, true, true, "",
-            "[] call jib_service_depot_allowed", 30
-        ];
-        _object addAction [
-            "Edit Inventory",
-            {[vehicle player] call zen_inventory_fnc_configure},
-            [], 10, true, true, "",
-            "[] call jib_service_depot_allowed", 30
-        ];
-    }] remoteExec ["spawn", 0];
+                    createVehicleCrew _vehicle;
+                    private _newCrew = crew _vehicle - _oldCrew;
+                    _newCrew join _commander;
+                },
+                [], 10, true, true, "",
+                "[] call jib_service_depot_allowed", 30
+            ];
+        };
+        if (_pylon) then {
+            _object addAction [
+                "Pylon Manager",
+                {[vehicle player] call zen_pylons_fnc_configure},
+                [], 10, true, true, "",
+                "[] call jib_service_depot_allowed", 30
+            ];
+        };
+        if (_inventory) then {
+            _object addAction [
+                "Edit Inventory",
+                {[vehicle player] call zen_inventory_fnc_configure},
+                [], 10, true, true, "",
+                "[] call jib_service_depot_allowed", 30
+            ];
+        };
+    }] remoteExec ["spawn", 0, true];
 };
 
 // Init object to provide loadout service
@@ -144,7 +155,7 @@ jib_service_loadout_init = {
             {showCommandingMenu "#USER:jib_service_loadout_menu"},
             [], 10, true, true, "", "true", 2
         ];
-    }] remoteExec ["spawn", 0];
+    }] remoteExec ["spawn", 0, true];
 };
 
 jib_service_loadout_menu = [
