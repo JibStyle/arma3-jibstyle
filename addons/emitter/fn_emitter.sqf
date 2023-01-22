@@ -45,6 +45,18 @@ jib_emitter_waypoint = {
     _serializedWaypoint;
 };
 
+// Enable waypoint
+jib_emitter_waypoint_enable = {
+    params ["_waypoint"];
+    _waypoint setVariable ["jib_emitter_enabled", true];
+};
+
+// Disable waypoint
+jib_emitter_waypoint_disable = {
+    params ["_waypoint"];
+    _waypoint setVariable ["jib_emitter_enabled", false];
+};
+
 // Save batches and crates to emitter
 jib_emitter_save = {
     params ["_emitter"];
@@ -110,10 +122,10 @@ jib_emitter_save = {
 jib_emitter_limit = {
     params [
         "_emitter",
-        ["_maxBatches", 4, [0]],
-        ["_maxVehicles", 4, [0]],
-        ["_maxGroups", 8, [0]],
-        ["_maxUnits", 48, [0]]
+        ["_maxBatches", -1, [0]],
+        ["_maxVehicles", -1, [0]],
+        ["_maxGroups", -1, [0]],
+        ["_maxUnits", -1, [0]]
     ];
 
     _emitter setVariable ["jib_emitter_max_batches", _maxBatches];
@@ -133,24 +145,36 @@ jib_emitter_enable = {
 
     if (!canSuspend) then {throw "Cannot suspend!"};
     while {_emitter getVariable ["jib_emitter_enabled", false]} do {
+        private _max_batches =
+            _emitter getVariable ["jib_emitter_max_batches", -1];
+        private _max_vehicles =
+            _emitter getVariable ["jib_emitter_max_vehicles", -1];
+        private _max_groups =
+            _emitter getVariable ["jib_emitter_max_groups", -1];
+        private _max_units =
+            _emitter getVariable ["jib_emitter_max_units", -1];
+        private _cur_batches = count (
+            [_emitter] call jib_emitter__getDeserializedBatches
+        );
+        private _cur_vehicles = count (
+            [_emitter] call jib_emitter__getDeserializedVehicles
+        );
+        private _cur_groups = count (
+            [_emitter] call jib_emitter__getDeserializedGroups
+        );
+        private _cur_units = count (
+            [_emitter] call jib_emitter__getDeserializedUnits
+        );
         if (
-            count (
-                [_emitter] call jib_emitter__getDeserializedBatches
-            ) < _emitter getVariable [
-                "jib_emitter_max_batches", 0
-            ] && count (
-                [_emitter] call jib_emitter__getDeserializedVehicles
-            ) < _emitter getVariable [
-                "jib_emitter_max_vehicles", 0
-            ] && count (
-                [_emitter] call jib_emitter__getDeserializedGroups
-            ) < _emitter getVariable [
-                "jib_emitter_max_groups", 0
-            ] && count (
-                [_emitter] call jib_emitter__getDeserializedUnits
-            ) < _emitter getVariable [
-                "jib_emitter_max_units", 0
-            ]
+            (
+                _max_batches < 0 || _cur_batches < _max_batches
+            ) && (
+                _max_vehicles < 0 || _cur_vehicles < _max_vehicles
+            ) && (
+                _max_groups < 0 || _cur_groups < _max_groups
+            ) && (
+                _max_units < 0 || _cur_units < _max_units
+            )
         ) then {
             [_emitter] call jib_emitter_single;
             uiSleep jib_emitter_delay_emission;
@@ -301,6 +325,7 @@ jib_emitter__deserialize_batch = {
     [
         _vehicles, _groups, _serializedSeats
     ] call jib_emitter__deserialize_seats;
+    private _batch = [_vehicles, _groups];
 
     uiSleep jib_emitter_delay_physics;
     _vehicles apply {_x allowDamage true};
@@ -328,7 +353,7 @@ jib_emitter__deserialize_batch = {
         _emitter, flatten (_groups apply {units _x})
     ] call jib_emitter__addDeserializedUnits;
 
-    [_vehicles, _groups];
+    _batch;
 };
 
 jib_emitter__deserialize_crate = {
@@ -688,49 +713,58 @@ jib_emitter__waypoint_search = {
         ["_numChildPaths", 0, [0]],
         ["_blacklist", [], [[]]]
     ];
-    private _path = [_root];
+    private _path = [];
     private _childPaths = [];
-    private _getRelatives = {
-        params ["_node", "_path", "_blacklist"];
-        private _getNeighbors = {
-            params ["_node", "_path", "_blacklist", "_type"];
-            private _synchronizedNodes = [];
-            synchronizedObjects _node select {
-                _x getVariable ["jib_emitter_type", ""] == _type
-                    && _x getVariable ["jib_emitter_enabled", false]
-                    && !(_x in _path) && !(_x in _blacklist)
-            } apply {
-                _synchronizedNodes pushBack _x;
-                _synchronizedNodes pushBack (
-                    _x getVariable ["jib_emitter_weight", 1]
-                );
-            };
-        };
-        private _relatives =
-            [_node, _path, _blacklist, "waypoint"] call _getNeighbors;
-        private _children =
-            [_node, _path, _blacklist, "child"] call _getNeighbors;
-        if (count _children > 0 && _numChildPaths > 0) then {
-            for "_i" from 0 to _numChildPaths - 1 do {
-                private _child = selectRandomWeighted _children;
-                _childPaths pushBack (
-                    (
-                        [
-                            _child, 0, _path
-                        ] call jib_emitter__waypoint_search
-                    ) # 0
-                );
-            };
-            _numChildPaths = 0;
-        };
-        _relatives;
-    };
 
-    private _relatives = [_root, _path] call _getRelatives;
+    private _relatives = [
+        _root, _path, _blacklist
+    ] call jib_emitter__waypoint_getRelatives;
     while {count _relatives != 0} do {
         private _neighbor = selectRandomWeighted _relatives;
         _path pushBack _neighbor;
-        _relatives = [_root, _path] call _getRelatives;
+        _relatives = [
+            _neighbor, _path, _blacklist
+        ] call jib_emitter__waypoint_getRelatives;
     };
     [_path] + _childPaths;
+};
+
+jib_emitter__waypoint_getRelatives = {
+    params ["_node", "_path", "_blacklist"];
+    private _relatives = [
+        _node, _path, _blacklist, "waypoint"
+    ] call jib_emitter__waypoint_getNeighbors;
+    private _children = [
+        _node, _path, _blacklist, "child"
+    ] call jib_emitter__waypoint_getNeighbors;
+    if (count _children > 0 && _numChildPaths > 0) then {
+        for "_i" from 0 to _numChildPaths - 1 do {
+            private _child = selectRandomWeighted _children;
+            _childPaths pushBack (
+                (
+                    [
+                        _child, 0, _path
+                    ] call jib_emitter__waypoint_search
+                ) # 0
+            );
+        };
+        _numChildPaths = 0;
+    };
+    _relatives;
+};
+
+jib_emitter__waypoint_getNeighbors = {
+    params ["_node", "_path", "_blacklist", "_type"];
+    private _synchronizedNodes = [];
+    synchronizedObjects _node select {
+        _x getVariable ["jib_emitter_type", ""] == _type
+            && _x getVariable ["jib_emitter_enabled", false]
+            && !(_x in _path) && !(_x in _blacklist)
+    } apply {
+        _synchronizedNodes pushBack _x;
+        _synchronizedNodes pushBack (
+            _x getVariable ["jib_emitter_weight", 1]
+        );
+    };
+    _synchronizedNodes;
 };
