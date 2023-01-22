@@ -149,7 +149,7 @@ jib_ai_infiniteAmmoEnable = {
         "_unit",         // Unit
         ["_time", 20, [0]] // Time to reload
     ];
-    if (not isServer) then {throw "Not server!"};
+    if (not isServer) exitWith {};
     if (isNull _unit) then {throw "Null unit!"};
 
     [[_unit, _time], {
