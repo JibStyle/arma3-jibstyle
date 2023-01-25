@@ -540,7 +540,7 @@ jib_emitter__getDeserializedVehicles = {
     params ["_emitter"];
     _emitter getVariable [
         "jib_emitter_deserialized_vehicles", []
-    ] select {alive _x};
+    ] select {alive _x && {alive _x} count crew _x > 0};
 };
 
 jib_emitter__getDeserializedGroups = {
