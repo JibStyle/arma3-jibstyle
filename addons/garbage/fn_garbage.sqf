@@ -1,11 +1,13 @@
-jib_garbage__period = 5;
-jib_garbage__sentinel = 1e+010;
-jib_garbage__handle = scriptNull;
 jib_garbage__vehicle_limit = 5;
 jib_garbage__ground_limit = 5;
-jib_garbage__ttl_min = 10;
-jib_garbage__ttl_max = 20;
+jib_garbage__simulated_limit = 5;
+jib_garbage__ttl_min = 5;
+jib_garbage__ttl_max = 10;
 jib_garbage__distance = 50;
+
+jib_garbage__period = 1;
+jib_garbage__sentinel = 1e+010;
+jib_garbage__handle = scriptNull;
 
 // Start garbage collector
 jib_garbage_start = {
@@ -14,9 +16,26 @@ jib_garbage_start = {
 
     jib_garbage__handle = [] spawn {
         while {true} do {
-            [] call jib_garbage__cycle apply {
-                deleteVehicleCrew _x;
-                deleteVehicle _x;
+            [
+                [] call jib_garbage__vehicle_all,
+                jib_garbage__vehicle_collectible,
+                jib_garbage__vehicle_limit
+            ] call jib_garbage__collect apply {
+                [_x] call jib_garbage__vehicle_dispose
+            };
+            [
+                [] call jib_garbage__ground_all,
+                jib_garbage__ground_collectible,
+                jib_garbage__ground_limit
+            ] call jib_garbage__collect apply {
+                [_x] call jib_garbage__ground_dispose
+            };
+            [
+                [] call jib_garbage__simulated_all,
+                jib_garbage__simulated_collectible,
+                jib_garbage__simulated_limit
+            ] call jib_garbage__collect apply {
+                [_x] call jib_garbage__simulated_dispose
             };
             uiSleep jib_garbage__period;
         };
@@ -28,11 +47,18 @@ jib_garbage_stop = {
     terminate jib_garbage__handle;
 };
 
-jib_garbage__cycle = {
+jib_garbage__collect = {
+    params ["_candidates", "_collectible", "_limit"];
     private _toDelete = [];
-    private _vehicles = [];
-    [] call jib_garbage__allVehicles apply {
-        if ([_x] call jib_garbage__isCollectableVehicle) then {
+    private _collection = [];
+    _candidates apply {
+        if (
+            [_x] call _collectible
+                && {
+                    [_x] call jib_garbage__playerDistance
+                        > jib_garbage__distance
+                }
+        ) then {
             private _start = _x getVariable [
                 "jib_garbage__start", jib_garbage__sentinel
             ];
@@ -45,7 +71,7 @@ jib_garbage__cycle = {
                     _toDelete pushBack _x;
                 };
                 case (_start + jib_garbage__ttl_min < time): {
-                    _vehicles pushBack _x;
+                    _collection pushBack _x;
                 };
                 default {};
             };
@@ -55,46 +81,67 @@ jib_garbage__cycle = {
             ];
         };
     };
-    private _vehiclesSorted = [
-        _vehicles, [], {
+    private _collectionSorted = [
+        _collection, [], {
             _x getVariable [
                 "jib_garbage__start", jib_garbage__sentinel
             ]
         }
     ] call BIS_fnc_sortBy;
-    _vehiclesSorted select [
-        0, count _vehiclesSorted - jib_garbage__vehicle_limit
+    _collectionSorted select [
+        0, count _collectionSorted - _limit
     ] apply {
         _toDelete pushBack _x;
     };
     _toDelete;
 };
 
-jib_garbage__allVehicles = {
+jib_garbage__vehicle_all = {
     vehicles select {
         _x call BIS_fnc_objectType select 0 == "Vehicle"
     };
 };
 
-jib_garbage__isCollectableVehicle = {
+jib_garbage__vehicle_collectible = {
     params ["_vehicle"];
     _vehicle getVariable ["jib_garbage__include", true] // TODO false
-        && {{alive _x} count crew _vehicle == 0}
-        && {
-            [_vehicle] call jib_garbage__playerDistance
-                > jib_garbage__distance
-        };
+        && {{alive _x} count crew _vehicle == 0};
 };
 
-jib_garbage__getGarbage = {
-    private _vehicles = vehicles select {
-        {alive _x} count crew _x == 0
+jib_garbage__vehicle_dispose = {
+    params ["_vehicles"];
+    _vehicles apply {
+        deleteVehicleCrew _x;
+        deleteVehicle _x;
     };
-    private _groundHolders =
-        allMissionObjects "GroundWeaponHolder";
-    private _simulatedHolders =
-        allMissionObjects "WeaponHolderSimulated";
-    [_vehicles, _groundHolders, _simulatedHolders];
+};
+
+jib_garbage__ground_all = {
+    allMissionObjects "GroundWeaponHolder";
+};
+
+jib_garbage__ground_collectible = {
+    params ["_ground"];
+    true;
+};
+
+jib_garbage__ground_dispose = {
+    params ["_ground"];
+    deleteVehicle _ground;
+};
+
+jib_garbage__simulated_all = {
+    allMissionObjects "WeaponHolderSimulated";
+};
+
+jib_garbage__simulated_collectible = {
+    params ["_simulated"];
+    true;
+};
+
+jib_garbage__simulated_dispose = {
+    params ["_simulated"];
+    deleteVehicle _simulated;
 };
 
 jib_garbage__playerDistance = {
