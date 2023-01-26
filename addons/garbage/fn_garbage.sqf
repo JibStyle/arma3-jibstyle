@@ -1,3 +1,4 @@
+jib_garbage__soldier_limit = 15;
 jib_garbage__vehicle_limit = 5;
 jib_garbage__ground_limit = 15;
 jib_garbage__simulated_limit = 30;
@@ -16,28 +17,43 @@ jib_garbage_start = {
 
     jib_garbage__handle = [] spawn {
         while {true} do {
-            [
-                [] call jib_garbage__vehicle_all,
-                jib_garbage__vehicle_collectible,
-                jib_garbage__vehicle_limit
-            ] call jib_garbage__collect apply {
-                [_x] call jib_garbage__vehicle_dispose
+            private _collectors = [
+                [
+                    jib_garbage__soldier_all,
+                    jib_garbage__soldier_collectible,
+                    jib_garbage__soldier_limit,
+                    jib_garbage__soldier_dispose
+                ],
+                [
+                    jib_garbage__vehicle_all,
+                    jib_garbage__vehicle_collectible,
+                    jib_garbage__vehicle_limit,
+                    jib_garbage__vehicle_dispose
+                ],
+                [
+                    jib_garbage__ground_all,
+                    jib_garbage__ground_collectible,
+                    jib_garbage__ground_limit,
+                    jib_garbage__ground_dispose
+                ],
+                [
+                    jib_garbage__simulated_all,
+                    jib_garbage__simulated_collectible,
+                    jib_garbage__simulated_limit,
+                    jib_garbage__simulated_dispose
+                ]
+            ];
+            _collectors apply {
+                _x params [
+                    "_all", "_collectible", "_limit", "_dispose"
+                ];
+                [
+                    [] call _all, _collectible, _limit
+                ] call jib_garbage__collect apply {
+                    [_x] call _dispose;
+                };
+                uiSleep jib_garbage__period / count _collectors;
             };
-            [
-                [] call jib_garbage__ground_all,
-                jib_garbage__ground_collectible,
-                jib_garbage__ground_limit
-            ] call jib_garbage__collect apply {
-                [_x] call jib_garbage__ground_dispose
-            };
-            [
-                [] call jib_garbage__simulated_all,
-                jib_garbage__simulated_collectible,
-                jib_garbage__simulated_limit
-            ] call jib_garbage__collect apply {
-                [_x] call jib_garbage__simulated_dispose
-            };
-            uiSleep jib_garbage__period;
         };
     };
 };
@@ -94,6 +110,20 @@ jib_garbage__collect = {
         _toDelete pushBack _x;
     };
     _toDelete;
+};
+
+jib_garbage__soldier_all = {
+    allDeadMen;
+};
+
+jib_garbage__soldier_collectible = {
+    params ["_soldier"];
+    _soldier getVariable ["jib_garbage__include", true];
+};
+
+jib_garbage__soldier_dispose = {
+    params ["_soldier"];
+    deleteVehicle _soldier;
 };
 
 jib_garbage__vehicle_all = {
