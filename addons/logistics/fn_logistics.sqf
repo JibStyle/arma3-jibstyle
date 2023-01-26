@@ -141,6 +141,7 @@ jib_logistics_unit_menu_delete = {
         deleteVehicleCrew _x;
         deleteVehicle _x;
     };
+    [] spawn {showCommandingMenu "#USER:jib_logistics_unit_menu"};
 };
 publicVariable "jib_logistics_unit_menu_delete";
 

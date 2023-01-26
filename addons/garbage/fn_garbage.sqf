@@ -1,18 +1,18 @@
 jib_garbage__vehicle_limit = 5;
-jib_garbage__ground_limit = 5;
-jib_garbage__simulated_limit = 5;
-jib_garbage__ttl_min = 5;
-jib_garbage__ttl_max = 10;
+jib_garbage__ground_limit = 15;
+jib_garbage__simulated_limit = 30;
+jib_garbage__ttl_min = 120;
+jib_garbage__ttl_max = 1800;
 jib_garbage__distance = 50;
 
-jib_garbage__period = 1;
+jib_garbage__period = 10;
 jib_garbage__sentinel = 1e+010;
 jib_garbage__handle = scriptNull;
 
 // Start garbage collector
 jib_garbage_start = {
     if (!isServer) exitWith {};
-    if (!isNull jib_garbage_handle) exitWith {};
+    if (!isNull jib_garbage__handle) exitWith {};
 
     jib_garbage__handle = [] spawn {
         while {true} do {
@@ -109,11 +109,9 @@ jib_garbage__vehicle_collectible = {
 };
 
 jib_garbage__vehicle_dispose = {
-    params ["_vehicles"];
-    _vehicles apply {
-        deleteVehicleCrew _x;
-        deleteVehicle _x;
-    };
+    params ["_vehicle"];
+    deleteVehicleCrew _vehicle;
+    deleteVehicle _vehicle;
 };
 
 jib_garbage__ground_all = {

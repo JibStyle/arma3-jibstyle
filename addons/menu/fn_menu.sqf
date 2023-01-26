@@ -51,6 +51,7 @@ jib_menu_alive_start = {
         [] call jib_menu_alive_profile_enable;
         [] call jib_menu_alive_opcom_enable;
     }] remoteExec ["spawn", 2];
+    [] spawn {showCommandingMenu "#USER:jib_menu_alive"};
 };
 publicVariable "jib_menu_alive_start";
 
@@ -59,16 +60,19 @@ jib_menu_alive_stop = {
         [] call jib_menu_alive_profile_disable;
         [] call jib_menu_alive_opcom_disable;
     }] remoteExec ["spawn", 2];
+    [] spawn {showCommandingMenu "#USER:jib_menu_alive"};
 };
 publicVariable "jib_menu_alive_stop";
 
 jib_menu_alive_registerEnable = {
     [] remoteExec ["jib_menu_alive_register_enable", 2];
+    [] spawn {showCommandingMenu "#USER:jib_menu_alive"};
 };
 publicVariable "jib_menu_alive_registerEnable";
 
 jib_menu_alive_registerDisable = {
     [] remoteExec ["jib_menu_alive_register_disable", 2];
+    [] spawn {showCommandingMenu "#USER:jib_menu_alive"};
 };
 publicVariable "jib_menu_alive_registerDisable";
 
@@ -112,17 +116,17 @@ publicVariable "jib_menu_group";
 
 jib_menu_group_top = {
     [player, groupSelectedUnits player] remoteExec [
-        "jib_menu_service_group_top", 2
+        "jib_menu_service_group_top", groupOwner group player
     ];
-    showCommandingMenu "#USER:jib_menu_group";
+    [] spawn {showCommandingMenu "#USER:jib_menu_group"};
 };
 publicVariable "jib_menu_group_top";
 
 jib_menu_group_bottom = {
     [player, groupSelectedUnits player] remoteExec [
-        "jib_menu_service_group_bottom", 2
+        "jib_menu_service_group_bottom", groupOwner group player
     ];
-    showCommandingMenu "#USER:jib_menu_group";
+    [] spawn {showCommandingMenu "#USER:jib_menu_group"};
 };
 publicVariable "jib_menu_group_bottom";
 

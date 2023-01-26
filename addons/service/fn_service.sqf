@@ -284,8 +284,8 @@ jib_service_heal = {
 
 jib_service_group_top = {
     params ["_leader", "_selected"];
-    if (!isServer) then {throw "Not server!"};
     private _group = group _leader;
+    if (!local _group) then {throw "Group not local!"};
     if (count _selected == 0) then {_selected = [_leader]};
     private _rest = units _group - _selected;
     private _i = count units _group;
@@ -303,13 +303,14 @@ jib_service_group_top = {
         _x joinAsSilent [_group, _i];
         _i = _i + 1;
     };
-    [_group, _leader] remoteExec ["selectLeader", groupOwner _group];
+    _group selectLeader _leader;
 };
+publicVariable "jib_service_group_top";
 
 jib_service_group_bottom = {
     params ["_leader", "_selected"];
-    if (!isServer) then {throw "Not server!"};
     private _group = group _leader;
+    if (!local _group) then {throw "Group not local!"};
     if (count _selected == 0) then {_selected = [_leader]};
     private _rest = units _group - _selected;
     private _i = count units _group;
@@ -327,8 +328,9 @@ jib_service_group_bottom = {
         _x joinAsSilent [_group, _i];
         _i = _i + 1;
     };
-    [_group, _leader] remoteExec ["selectLeader", groupOwner _group];
+    _group selectLeader _leader;
 };
+publicVariable "jib_service_group_bottom";
 
 jib_service_spawnUnit = {
     params ["_leader", "_type", "_position"];
