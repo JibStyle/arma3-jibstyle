@@ -16,7 +16,6 @@ jib_emitter_waypoint = {
         ["_speed", "UNCHANGED", [""]],
         ["_timeout", [0, 0, 0], [[]]],
         ["_statements", ["true", ""], [[]]],
-        ["_child", false, [false]],
         ["_enabled", true, [false]]
     ];
 
@@ -32,10 +31,7 @@ jib_emitter_waypoint = {
         _statements
     ];
 
-    _logic setVariable [
-        "jib_emitter_type",
-        if (_child) then {"child"} else {"waypoint"}
-    ];
+    _logic setVariable ["jib_emitter_type", "waypoint"];
     _logic setVariable ["jib_emitter_weight", _weight];
     _logic setVariable ["jib_emitter_enabled", _enabled];
     _logic setVariable [
@@ -43,6 +39,20 @@ jib_emitter_waypoint = {
     ];
 
     _serializedWaypoint;
+};
+
+// Register child path root
+jib_emitter_child = {
+    params [
+        "_logic",
+        ["_weight", 1, [0]],
+        ["_enabled", true, [false]]
+    ];
+
+    _logic setVariable ["jib_emitter_type", "child"];
+    _logic setVariable ["jib_emitter_weight", _weight];
+    _logic setVariable ["jib_emitter_enabled", _enabled];
+    _logic;
 };
 
 // Enable waypoint
@@ -717,33 +727,33 @@ jib_emitter__waypoint_search = {
     private _childPaths = [];
 
     private _relatives = [
-        _root, _path, _blacklist
+        _root, _path + _blacklist, _childPaths, _numChildPaths
     ] call jib_emitter__waypoint_getRelatives;
     while {count _relatives != 0} do {
         private _neighbor = selectRandomWeighted _relatives;
         _path pushBack _neighbor;
         _relatives = [
-            _neighbor, _path, _blacklist
+            _neighbor, _path + _blacklist, _childPaths, _numChildPaths
         ] call jib_emitter__waypoint_getRelatives;
     };
     [_path] + _childPaths;
 };
 
 jib_emitter__waypoint_getRelatives = {
-    params ["_node", "_path", "_blacklist"];
+    params ["_node", "_blacklist", "_childPaths", "_numChildPaths"];
     private _relatives = [
-        _node, _path, _blacklist, "waypoint"
+        _node, _blacklist, "waypoint"
     ] call jib_emitter__waypoint_getNeighbors;
     private _children = [
-        _node, _path, _blacklist, "child"
+        _node, _blacklist, "child"
     ] call jib_emitter__waypoint_getNeighbors;
-    if (count _children > 0 && _numChildPaths > 0) then {
+    if (count _children > 0) then {
         for "_i" from 0 to _numChildPaths - 1 do {
             private _child = selectRandomWeighted _children;
             _childPaths pushBack (
                 (
                     [
-                        _child, 0, _path
+                        _child, 0, _blacklist
                     ] call jib_emitter__waypoint_search
                 ) # 0
             );
@@ -754,12 +764,12 @@ jib_emitter__waypoint_getRelatives = {
 };
 
 jib_emitter__waypoint_getNeighbors = {
-    params ["_node", "_path", "_blacklist", "_type"];
+    params ["_node", "_blacklist", "_type"];
     private _synchronizedNodes = [];
     synchronizedObjects _node select {
         _x getVariable ["jib_emitter_type", ""] == _type
             && _x getVariable ["jib_emitter_enabled", false]
-            && !(_x in _path) && !(_x in _blacklist)
+            && !(_x in _blacklist)
     } apply {
         _synchronizedNodes pushBack _x;
         _synchronizedNodes pushBack (
