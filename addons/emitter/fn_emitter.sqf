@@ -291,7 +291,7 @@ jib_emitter_enable_motorized = {
         0, 1, 0, 6,
         0, 0, 0, 0,
         1, 0, [10, 10, 10],
-        1, 1.1, 0, 0, 0, 120
+        1, 1.1, 0, 0, 0, 600
     ] call jib_emitter_enable;
 };
 
@@ -303,7 +303,7 @@ jib_emitter_enable_air = {
         0, 1, 0, 6,
         0, 0, 0, 0,
         1, 0, [10, 10, 10],
-        1, 1.1, 0, 0, 0, 300
+        1, 1.1, 0, 0, 0, 600
     ] call jib_emitter_enable;
 };
 
