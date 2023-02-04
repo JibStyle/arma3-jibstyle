@@ -7,6 +7,7 @@ class CfgPatches {
             "jib_ai",
             "jib_debug",
             "jib_draw",
+            "jib_emitter",
             "jib_earplugs",
             "jib_handler",
             "jib_hc",
