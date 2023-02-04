@@ -14,7 +14,7 @@ jib_garbage_simulated_limit = 10;
 jib_garbage_simulated_distance = 50;
 jib_garbage_simulated_ttl_min = 120;
 jib_garbage_simulated_ttl_max = 1200;
-jib_garbage_debug = true;
+jib_garbage_debug = false;
 
 jib_garbage__period = 10;
 jib_garbage__sentinel = 1e+010;
@@ -101,6 +101,12 @@ jib_garbage_stop = {
     terminate (
         missionNamespace getVariable ["jib_garbage__handle", scriptNull]
     );
+};
+
+// Include or exempt object from collection
+jib_garbage_include = {
+    params ["_object", "_include"];
+    _object setVariable ["jib_garbage__include", _include];
 };
 
 jib_garbage__collect = {
