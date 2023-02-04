@@ -270,8 +270,6 @@ jib_logistics_menu_setup = {
     ];
 };
 
-// [] spawn jib_logistics_menu_setup;
-
 // Register a logistics vehicle
 jib_logistics_vehicle = {
     params [
@@ -293,32 +291,46 @@ jib_logistics_vehicle = {
 
 // Register a logistics crate
 jib_logistics_crate = {
-    params ["_logic", "_name"];
+    params [
+        "_logic",
+        ["_name", "", [""]]
+    ];
+    if (_name == "") then {
+        synchronizedObjects _logic apply {
+            if (_x call BIS_fnc_objectType select 1 == "AmmoBox") exitWith {
+                _name = getText (
+                    configFile >> "CfgVehicles" >> typeOf _x >> "displayName"
+                );
+            };
+        };
+    };
     _logic setVariable ["jib_logistics__type", "crate"];
     _logic setVariable ["jib_logistics__name", _name];
 };
 
 // Add logistics menu to object
 jib_logistics_menu = {
-    params ["_logic", "_object"];
+    params [
+        "_logic",
+        "_object",
+        ["_name", "Logistics Menu", [""]]
+    ];
     if (!isServer) exitWith {};
     private _menu_var = [] call jib_logistics__new_menu;
     private _page_menu_vars = [];
-    private _vehicle_logics = synchronizedObjects _logic select {
-        _x getVariable ["jib_logistics__type", ""] == "vehicle"
+    private _logics = synchronizedObjects _logic select {
+        _x getVariable ["jib_logistics__type", ""] in ["crate", "vehicle"]
     };
-    private _num_pages = ceil (count _vehicle_logics / 9);
+    private _num_pages = ceil (count _logics / 9);
     for "_page" from 0 to _num_pages - 1 do {
-        private _page_logics = _vehicle_logics select [_page * 9, 9];
+        private _page_logics = _logics select [_page * 9, 9];
         private _page_menu_var = format ["%1_%2", _menu_var, _page];
         _page_menu_vars pushBack _page_menu_var;
-        private _menu_items = [["Spawn Vehicle", true]];
+        private _menu_items = [[_name, true]];
         for "_i" from 0 to count _page_logics - 1 do {
             private _expression = format [
-                "[%1] remoteExec [""jib_logistics_activate_vehicle"", 2]",
-                [
-                    _page_logics # _i, "jib_logistics__vehicle_"
-                ] call BIS_fnc_objectVar
+                "[%1] remoteExec [""jib_logistics__activate"", 2]",
+                [_page_logics # _i, "jib_logistics__"] call BIS_fnc_objectVar
             ];
             _menu_items pushBack [
                 _page_logics # _i getVariable [
@@ -333,13 +345,12 @@ jib_logistics_menu = {
             ];
         };
         missionNamespace setVariable [_page_menu_var, _menu_items, true];
-        _page = _page + 1;
     };
     missionNamespace setVariable [_menu_var, _page_menu_vars, true];
     [
         _object,
         [
-            "Spawn Vehicle",
+            _name,
             {
                 params ["_target", "_caller", "_actionId", "_arguments"];
                 _arguments params ["_menu_var"];
@@ -369,3 +380,19 @@ jib_logistics__new_menu = {
     };
     _var;
 };
+
+jib_logistics__activate = {
+    params ["_logic"];
+    switch (_logic getVariable ["jib_logistics__type", ""]) do
+    {
+        case ("crate"): {
+            [_logic] call jib_logistics_activate_crate;
+        };
+        case ("vehicle"): {
+            [_logic] call jib_logistics_activate_vehicle;
+        };
+        default {throw "Invalid logistics type!"};
+    };
+};
+
+// [] spawn jib_logistics_menu_setup;
