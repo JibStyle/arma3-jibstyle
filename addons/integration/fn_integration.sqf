@@ -82,6 +82,13 @@ publicVariable "jib_zeus_moduleValidate";
 jib_logistics_main_menu = jib_handler_isMainMenu;
 jib_logistics_admin = jib_zeus_admin;
 jib_logistics_activate_crate = jib_emitter_crate;
+jib_logistics_activate_unit = {
+    _this spawn {
+        params ["_emitter", "_player"];
+        private _unit = [_emitter] call jib_emitter_single select 3 select 0;
+        [_unit] join _player;
+    };
+};
 jib_logistics_activate_vehicle = jib_emitter_single;
 jib_menu_alive_opcom_disable = jib_alive_opcomDisable;
 jib_menu_alive_opcom_enable = jib_alive_opcomEnable;
