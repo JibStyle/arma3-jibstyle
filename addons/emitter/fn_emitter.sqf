@@ -484,7 +484,7 @@ jib_emitter__deserialize_batch = {
     private _paths = [
         _emitter, count _groups - 1
     ] call jib_emitter__waypoint_search;
-    if (count _paths != count _groups) then {
+    if (count _paths < count _groups) then {
         throw format [
             "Num paths expected: %1, actual: %2",
             count _groups, count _paths
@@ -875,6 +875,9 @@ jib_emitter__waypoint_search = {
         _relatives = [
             _neighbor, _path + _blacklist, _childPaths, _numChildPaths
         ] call jib_emitter__waypoint_getRelatives;
+    };
+    while {count _childPaths < _numChildPaths} do {
+        _childPaths pushBack [];
     };
     [_path] + _childPaths;
 };
