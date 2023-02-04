@@ -39,7 +39,7 @@ jib_service_teleport_init = {
                         systemChat "Teleported player.";
                     };
                 },
-                [_other], 10, false, true, "", "true", 2
+                [_other], 10, true, true, "", "true", 2
             ];
         };
     }] remoteExec ["spawn", 0, true];
@@ -54,7 +54,7 @@ jib_service_respawn_init = {
         params ["_object"];
         _object addAction [
             "Respawn (without counting death)",
-            {forceRespawn player}, [], 10, false, true, "", "true", 2
+            {forceRespawn player}, [], 5, true, true, "", "true", 2
         ];
     }] remoteExec ["spawn", 0, true];
 };
@@ -76,7 +76,7 @@ jib_service_fak_init = {
                     [_x] remoteExec ["jib_service_heal", 2];
                 };
                 systemChat format ["Healed %1 units", count _units];
-            }, [], 10, false, true, "", "true", 2
+            }, [], 10, true, true, "", "true", 2
         ];
     }] remoteExec ["spawn", 0, true];
 };
