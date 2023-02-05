@@ -277,7 +277,7 @@ jib_emitter_enable_infantry = {
     [
         _emitter, [1, 1, 2], // emitter, emission
         0, 0, 0, 16,         // concurrent B, V, G, U
-        0, 0, 0, 0,          // budget B, V, G, U
+        0, 0, 0, 80,          // budget B, V, G, U
         1, 0, [0, 0, 0],     // coef mem, coef rand, rand
         1, 1.1, 0, 0, 0, 120 // coef exp, exp, coef pow, pow, min, max
     ] call jib_emitter_enable;
@@ -289,7 +289,7 @@ jib_emitter_enable_motorized = {
     [
         _emitter, [1, 1, 1],
         0, 1, 0, 6,
-        0, 0, 0, 0,
+        0, 6, 0, 0,
         1, 0, [10, 10, 10],
         1, 1.1, 0, 0, 0, 600
     ] call jib_emitter_enable;

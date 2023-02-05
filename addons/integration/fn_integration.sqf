@@ -86,8 +86,13 @@ jib_logistics_activate_unit = {
     _this spawn {
         params ["_emitter", "_player"];
         private _unit = [_emitter] call jib_emitter_single select 3 select 0;
+        [[_unit, _player], {
+            params ["_unit", "_player"];
+            [_unit] join group _player;
+            waitUntil {alive _unit && group _unit == group _player};
+            doStop _unit;
+        }] remoteExec ["spawn", _player];
         [_unit] join _player;
-        doStop _unit;
     };
 };
 jib_logistics_activate_vehicle = jib_emitter_single;
