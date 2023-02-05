@@ -3,6 +3,7 @@ jib_logistics_main_menu;
 jib_logistics_activate_crate;
 jib_logistics_activate_unit;
 jib_logistics_activate_vehicle;
+jib_logistics_menu_unit;
 
 jib_logistics_debug = true;
 jib_logistics_delay = 0.3;
@@ -336,6 +337,42 @@ jib_logistics_menu = {
         ["_name", "Logistics Menu", [""]]
     ];
     if (!isServer) exitWith {};
+    private _menu_var = [_logic, _name] call jib_logistics__create_menu;
+    private _menu = format ["#USER:%1_%2", _menu_var, 0];
+    [
+        _object,
+        [
+            _name,
+            {
+                params ["_target", "_caller", "_actionId", "_arguments"];
+                _arguments params ["_menu"];
+                showCommandingMenu _menu;
+            },
+            [_menu], 5, true, true, "", "true", 2
+        ]
+    ] remoteExec ["addAction", 0, true];
+};
+
+// Add logistics menu to player
+jib_logistics_player = {
+    params [
+        "_player",
+        ["_name", "Logistics Menu", [""]]
+    ];
+    if (!isServer) exitWith {};
+    private _menu_var = [_player, _name] call jib_logistics__create_menu;
+    private _menu = format ["#USER:%1_%2", _menu_var, 0];
+
+    [
+        _player, [[_name, "leader player == player", _menu]]
+    ] call jib_logistics_menu_unit;
+};
+
+jib_logistics__create_menu = {
+    params [
+        "_logic",
+        ["_name", "Logistics Menu", [""]]
+    ];
     private _menu_var = [] call jib_logistics__new_menu;
     private _page_menu_vars = [];
     private _logics = synchronizedObjects _logic select {
@@ -351,8 +388,9 @@ jib_logistics_menu = {
         private _menu_items = [[_name, true]];
         for "_i" from 0 to count _page_logics - 1 do {
             private _expression = format [
-                "[%1, player] remoteExec [""jib_logistics__activate"", 2]",
-                [_page_logics # _i, "jib_logistics__"] call BIS_fnc_objectVar
+                "[%1, player, ""%2""] call jib_logistics__client",
+                [_page_logics # _i, "jib_logistics__"] call BIS_fnc_objectVar,
+                format ["#USER:%1_0", _menu_var]
             ];
             _menu_items pushBack [
                 _page_logics # _i getVariable [
@@ -369,18 +407,6 @@ jib_logistics_menu = {
         missionNamespace setVariable [_page_menu_var, _menu_items, true];
     };
     missionNamespace setVariable [_menu_var, _page_menu_vars, true];
-    [
-        _object,
-        [
-            _name,
-            {
-                params ["_target", "_caller", "_actionId", "_arguments"];
-                _arguments params ["_menu_var"];
-                showCommandingMenu format ["#USER:%1_%2", _menu_var, 0];
-            },
-            [_menu_var], 5, true, true, "", "true", 2
-        ]
-    ] remoteExec ["addAction", 0, true];
     _menu_var;
 };
 
@@ -403,7 +429,17 @@ jib_logistics__new_menu = {
     _var;
 };
 
-jib_logistics__activate = {
+jib_logistics__client = {
+    params ["_logic", "_player", "_menu"];
+    [_logic, _player] remoteExec ["jib_logistics__server", 2];
+    [_menu] spawn {
+        params ["_menu"];
+        showCommandingMenu _menu;
+    };
+};
+publicVariable "jib_logistics__client";
+
+jib_logistics__server = {
     params ["_logic", "_player"];
     switch (_logic getVariable ["jib_logistics__type", ""]) do
     {

@@ -12,6 +12,7 @@ jib_menu_objective_capture_start;
 jib_menu_objective_capture_stop;
 jib_menu_service_group_bottom;
 jib_menu_service_group_top;
+jib_menu_service_group_delete;
 jib_menu_zeus_admin;
 
 jib_menu_admin = [
@@ -110,6 +111,10 @@ jib_menu_group = [
     [
         "Selected Units to Bottom", [3], "", -5,
         [["expression", "[] call jib_menu_group_bottom"]], "1", "1"
+    ],
+    [
+        "Delete Selected Units", [4], "", -5,
+        [["expression", "[] call jib_menu_group_delete"]], "1", "1"
     ]
 ];
 publicVariable "jib_menu_group";
@@ -130,6 +135,14 @@ jib_menu_group_bottom = {
 };
 publicVariable "jib_menu_group_bottom";
 
+jib_menu_group_delete = {
+    [player, groupSelectedUnits player] remoteExec [
+        "jib_menu_service_group_delete", groupOwner group player
+    ];
+    [] spawn {showCommandingMenu "#USER:jib_menu_group"};
+};
+publicVariable "jib_menu_group_bottom";
+
 jib_menu_setup = {
     if (!isServer) exitWith {};
     if (!canSuspend) exitWith {};
@@ -142,9 +155,57 @@ jib_menu_setup = {
     [_admin, "jib_menu_admin"] remoteExecCall [
         "BIS_fnc_addCommMenuItem", _admin
     ];
-    [_admin, "jib_menu_group"] remoteExecCall [
-        "BIS_fnc_addCommMenuItem", _admin
-    ];
+    // [_admin, "jib_menu_group"] remoteExecCall [
+    //     "BIS_fnc_addCommMenuItem", _admin
+    // ];
 };
 
 [] spawn jib_menu_setup;
+
+// Set menus of unit
+jib_menu_unit = {
+    params ["_unit", "_menus"];
+
+    // Temp hack
+    _menus pushBack [
+        "Group Menu",
+        "leader player == player",
+        "#USER:jib_menu_group"
+    ];
+
+    [[_unit, _menus], {
+        params ["_unit", "_menus"];
+        _menus apply {
+            _x params ["_name", "_condition", "_menu"];
+            _unit addAction [
+                _name,
+                {
+                    params ["", "", "", "_arguments"];
+                    _arguments params ["_menu"];
+                    showCommandingMenu _menu;
+                },
+                [_menu], 5, false, true, "", _condition, 2
+            ];
+        };
+
+        _unit setVariable ["jib_menu__unit", _menus];
+        _unit setVariable [
+            "jib_menu__respawn",
+            _unit addEventHandler ["Respawn", {
+                params ["_unit", "_corpse"];
+                _unit getVariable ["jib_menu__unit", []] apply {
+                    _x params ["_name", "_condition", "_menu"];
+                    _unit addAction [
+                        _name,
+                        {
+                            params ["", "", "", "_arguments"];
+                            _arguments params ["_menu"];
+                            showCommandingMenu _menu;
+                        },
+                        [_menu], 5, false, true, "", _condition, 2
+                    ];
+                };
+            }]
+        ];
+    }] remoteExec ["spawn", 0, true];
+};

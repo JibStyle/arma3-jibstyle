@@ -332,6 +332,19 @@ jib_service_group_bottom = {
 };
 publicVariable "jib_service_group_bottom";
 
+jib_service_group_delete = {
+    params ["_leader", "_selected"];
+    private _deleteVehicles = [];
+    _selected apply {
+        _deleteVehicles pushBackUnique vehicle _x;
+    };
+    _deleteVehicles apply {
+        deleteVehicleCrew _x;
+        deleteVehicle _x;
+    };
+};
+publicVariable "jib_service_group_delete";
+
 jib_service_spawnUnit = {
     params ["_leader", "_type", "_position"];
     private _unit =
