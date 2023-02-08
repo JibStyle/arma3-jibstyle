@@ -617,7 +617,8 @@ jib_emitter__deserialize_soldier = {
         "_skill",
         "_combatBehaviour",
         "_combatMode",
-        "_loadout"
+        "_loadout",
+        "_canTriggerDynamicSimulation"
     ];
     private _soldier =
         _group createUnit [_type, _posATL, [], 0, "NONE"];
@@ -629,6 +630,7 @@ jib_emitter__deserialize_soldier = {
     _soldier setCombatBehaviour _combatBehaviour;
     _soldier setUnitCombatMode _combatMode;
     _soldier setUnitLoadout _loadout; // TODO: Maybe refresh backpack
+    _soldier triggerDynamicSimulation _canTriggerDynamicSimulation;
     _soldier;
 };
 
@@ -817,7 +819,8 @@ jib_emitter__serialize_soldier = {
         skill _soldier,
         combatBehaviour _soldier,
         combatMode _soldier,
-        getUnitLoadout _soldier
+        getUnitLoadout _soldier,
+        canTriggerDynamicSimulation _soldier
     ];
 };
 
