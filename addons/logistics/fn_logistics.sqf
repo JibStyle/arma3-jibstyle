@@ -357,15 +357,16 @@ jib_logistics_menu = {
 jib_logistics_player = {
     params [
         "_player",
+        "_logic",
         ["_name", "Logistics Menu", [""]]
     ];
     if (!isServer) exitWith {};
-    private _menu_var = [_player, _name] call jib_logistics__create_menu;
+    private _menu_var = [_logic, _name] call jib_logistics__create_menu;
     private _menu = format ["#USER:%1_%2", _menu_var, 0];
 
     [
         _player, [[_name, "leader player == player", _menu]]
-    ] call jib_logistics_menu_unit;
+    ] spawn jib_logistics_menu_unit;
 };
 
 jib_logistics__create_menu = {

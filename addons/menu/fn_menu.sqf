@@ -141,7 +141,7 @@ jib_menu_group_delete = {
     ];
     [] spawn {showCommandingMenu "#USER:jib_menu_group"};
 };
-publicVariable "jib_menu_group_bottom";
+publicVariable "jib_menu_group_delete";
 
 jib_menu_setup = {
     if (!isServer) exitWith {};
@@ -165,6 +165,7 @@ jib_menu_setup = {
 // Set menus of unit
 jib_menu_unit = {
     params ["_unit", "_menus"];
+    waitUntil {alive _unit};
 
     // Temp hack
     _menus pushBack [
@@ -207,5 +208,5 @@ jib_menu_unit = {
                 };
             }]
         ];
-    }] remoteExec ["spawn", 0, true];
+    }] remoteExec ["spawn", 0];
 };
