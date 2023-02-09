@@ -117,3 +117,14 @@ publicVariable "jib_misc_moduleReplaceTo";
 publicVariable "jib_misc_moduleReplaceToUncrewed";
 publicVariable "jib_misc_modulePushGroupIDs";
 [] call jib_misc_pushGroupIDs;
+
+// Attach object to other and preserve direction
+jib_misc_attach = {
+    params ["_object", "_other"];
+    if (!isServer) exitWith {};
+    private _dir = getDir _object;
+    _object attachTo [_other];
+    _object setDir _dir;
+    _object attachTo [_other];
+    _object setDir _dir;
+};
