@@ -169,7 +169,7 @@ jib_garbage__soldier_dispose = {
 };
 
 jib_garbage__vehicle_all = {
-    vehicles select {_x isKindOf "WeaponHolderSimulated" == false};
+    vehicles select {count fullCrew [_x, "", true] > 0};
 };
 
 jib_garbage__vehicle_collectible = {
