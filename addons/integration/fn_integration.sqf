@@ -92,7 +92,6 @@ jib_logistics_activate_unit = {
             waitUntil {alive _unit && group _unit == group _player};
             doStop _unit;
         }] remoteExec ["spawn", _player];
-        [_unit] join _player;
     };
 };
 jib_logistics_activate_vehicle = jib_emitter_single;
