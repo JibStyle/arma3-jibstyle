@@ -99,27 +99,27 @@ jib_service_depot_init = {
         };
         if (_service) then {
             _object addAction [
-                "Full Vehicle Service",
+                "Service Vehicle",
                 {
                     private _vehicle = vehicle player;
-                    private _commander = effectiveCommander _vehicle;
-                    private _oldCrew = crew _vehicle;
+                    // private _commander = effectiveCommander _vehicle;
+                    // private _oldCrew = crew _vehicle;
                     _vehicle setVehicleAmmo 1;
                     _vehicle setFuel 1;
                     _vehicle setDamage 0;
-                    _oldCrew apply {
-                        if (alive _x) then {
-                            [_x] remoteExec ["jib_service_heal", 2];
-                            [[_x]] remoteExec [
-                                "jib_service_loadout_load", 2
-                            ];
-                        } else {
-                            _vehicle deleteVehicleCrew _x;
-                        };
-                    };
-                    createVehicleCrew _vehicle;
-                    private _newCrew = crew _vehicle - _oldCrew;
-                    _newCrew join _commander;
+                    // _oldCrew apply {
+                    //     if (alive _x) then {
+                    //         [_x] remoteExec ["jib_service_heal", 2];
+                    //         [[_x]] remoteExec [
+                    //             "jib_service_loadout_load", 2
+                    //         ];
+                    //     } else {
+                    //         _vehicle deleteVehicleCrew _x;
+                    //     };
+                    // };
+                    // createVehicleCrew _vehicle;
+                    // private _newCrew = crew _vehicle - _oldCrew;
+                    // _newCrew join _commander;
                 },
                 [], 10, true, true, "",
                 "[] call jib_service_depot_allowed", 30
