@@ -79,8 +79,6 @@ publicVariable "jib_wp_paraUnload";
 publicVariable "jib_zeus_log";
 publicVariable "jib_zeus_moduleValidate";
 
-jib_logistics_main_menu = jib_handler_isMainMenu;
-jib_logistics_admin = jib_zeus_admin;
 jib_logistics_activate_crate = jib_emitter_crate;
 jib_logistics_activate_unit = {
     _this spawn {
