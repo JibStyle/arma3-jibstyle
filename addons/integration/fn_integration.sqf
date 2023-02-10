@@ -101,8 +101,6 @@ jib_menu_alive_profile_enable = jib_alive_profileEnable;
 jib_menu_alive_register_disable = jib_alive_registerDisable;
 jib_menu_alive_register_enable = jib_alive_registerEnable;
 jib_menu_handler_main_menu = jib_handler_isMainMenu;
-jib_menu_objective_capture_start = jib_objective_capture_start;
-jib_menu_objective_capture_stop = jib_objective_capture_stop;
 jib_menu_service_group_bottom = jib_service_group_bottom;
 jib_menu_service_group_top = jib_service_group_top;
 jib_menu_service_group_delete = jib_service_group_delete;
@@ -113,8 +111,6 @@ publicVariable "jib_menu_alive_profile_disable";
 publicVariable "jib_menu_alive_profile_enable";
 publicVariable "jib_menu_alive_register_disable";
 publicVariable "jib_menu_alive_register_enable";
-publicVariable "jib_menu_objective_capture_start";
-publicVariable "jib_menu_objective_capture_stop";
 publicVariable "jib_menu_service_group_bottom";
 publicVariable "jib_menu_service_group_top";
 

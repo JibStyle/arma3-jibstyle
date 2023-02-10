@@ -17,8 +17,7 @@ jib_menu_zeus_admin;
 
 jib_menu_admin = [
     ["Admin Menu", true],
-    ["ALiVE", [2], "#USER:jib_menu_alive", -5, [], "1", "1"],
-    ["Capture", [3], "#USER:jib_menu_capture", -5, [], "1", "1"]
+    ["ALiVE", [2], "#USER:jib_menu_alive", -5, [], "1", "1"]
 ];
 publicVariable "jib_menu_admin";
 
@@ -76,31 +75,6 @@ jib_menu_alive_registerDisable = {
     [] spawn {showCommandingMenu "#USER:jib_menu_alive"};
 };
 publicVariable "jib_menu_alive_registerDisable";
-
-jib_menu_capture = [
-    ["Capture", true],
-    [
-        "Capture Start", [2], "", -5, [
-            ["expression", "[] call jib_menu_capture_start"]
-        ], "1", "1"
-    ],
-    [
-        "Capture Stop", [3], "", -5, [
-            ["expression", "[] call jib_menu_capture_stop"]
-        ], "1", "1"
-    ]
-];
-publicVariable "jib_menu_capture";
-
-jib_menu_capture_start = {
-    [] remoteExec ["jib_menu_objective_capture_start", 0];
-};
-publicVariable "jib_menu_capture_start";
-
-jib_menu_capture_stop = {
-    [] remoteExec ["jib_menu_objective_capture_stop", 0];
-};
-publicVariable "jib_menu_capture_stop";
 
 jib_menu_group = [
     ["Group Menu", true],
