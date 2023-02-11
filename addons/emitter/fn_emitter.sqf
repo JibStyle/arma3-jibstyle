@@ -466,11 +466,11 @@ jib_emitter__deserialize_batch = {
         "_serializedGroups",
         "_serializedSeats"
     ];
-    private _vehicles = _serializedVehicles apply {
-        [_x] call jib_emitter__deserialize_vehicle;
-    };
     private _groups = _serializedGroups apply {
         [_x] call jib_emitter__deserialize_group;
+    };
+    private _vehicles = _serializedVehicles apply {
+        [_x] call jib_emitter__deserialize_vehicle;
     };
     [
         _vehicles, _groups, _serializedSeats
@@ -620,8 +620,9 @@ jib_emitter__deserialize_soldier = {
         "_loadout",
         "_canTriggerDynamicSimulation"
     ];
-    private _soldier =
-        _group createUnit [_type, _posATL, [], 0, "NONE"];
+    private _soldier = _group createUnit [
+        _type, [_posATL # 0, _posATL # 1, 0], [], 0, "NONE"
+    ];
     _soldier allowDamage false;
     [_soldier] call jib_emitter__addtocurators;
     _soldier setDir _direction;
@@ -641,14 +642,24 @@ jib_emitter__deserialize_vehicle = {
         "_type", "_posATL", "_direction", "_special",
         "_serializedInventory"
     ];
-    private _vehicle =
-        createVehicle [_type, _posATL, [], 0, _special];
+    private _vehicle = createVehicle [_type, _posATL, [], 0, _special];
     _vehicle allowDamage false;
     [_vehicle] call jib_emitter__addtocurators;
     _vehicle setDir _direction;
     [
         _vehicle, _serializedInventory
     ] call jib_emitter__deserialize_inventory;
+    // Hack to fix planes
+    if (_vehicle isKindOf "Plane") then {
+        [_vehicle] spawn {
+            params ["_vehicle"];
+            waitUntil {
+                uiSleep jib_emitter_delay_physics;
+                !alive _vehicle || alive driver _vehicle;
+            };
+            _vehicle setVelocityModelSpace [0, 200, 0];
+        }
+    };
     _vehicle;
 };
 
