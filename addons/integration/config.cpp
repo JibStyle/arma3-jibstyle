@@ -13,6 +13,7 @@ class CfgPatches {
             "jib_hc",
             "jib_log",
             "jib_logistics",
+            "jib_menu",
             "jib_misc",
             "jib_module",
             "jib_para",

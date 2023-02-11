@@ -94,6 +94,8 @@ jib_logistics_activate_unit = {
 };
 jib_logistics_activate_vehicle = jib_emitter_single;
 jib_logistics_menu_unit = jib_menu_unit;
+jib_logistics_menu_create = jib_menu_create;
+jib_logistics_menu_action = jib_menu_action;
 jib_menu_alive_opcom_disable = jib_alive_opcomDisable;
 jib_menu_alive_opcom_enable = jib_alive_opcomEnable;
 jib_menu_alive_profile_disable = jib_alive_profileDisable;
