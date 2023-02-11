@@ -1,5 +1,3 @@
-if (!isServer) exitWith {};
-
 // Init object to teleport to other objects
 // [a, [[b, "Bravo"], [c, "Charlie"]]] call jib_service_teleport_init;
 jib_service_teleport_init = {
@@ -144,131 +142,6 @@ jib_service_depot_init = {
     }] remoteExec ["spawn", 0, true];
 };
 
-// Init object to provide loadout service
-jib_service_loadout_init = {
-    params ["_object"];
-    if (!isServer) exitWith {};
-    [[_object], {
-        params ["_object"];
-        _object addAction [
-            "Loadout Menu",
-            {showCommandingMenu "#USER:jib_service_loadout_menu"},
-            [], 10, true, true, "", "true", 2
-        ];
-    }] remoteExec ["spawn", 0, true];
-};
-
-jib_service_loadout_menu = [
-    ["Loadout Menu", true],
-    [
-        "Save Loadout", [2], "", -5,
-        [["expression", "[] call jib_service_loadout_menu_save"]],
-        "1", "1"
-    ],
-    [
-        "Load Loadout", [3], "", -5,
-        [["expression", "[] call jib_service_loadout_menu_load"]],
-        "1", "1"
-    ],
-    [
-        "Reset Loadout", [4], "", -5,
-        [["expression", "[] call jib_service_loadout_menu_reset"]],
-        "1", "1"
-    ]
-];
-publicVariable "jib_service_loadout_menu";
-
-jib_service_loadout_menu_save = {
-    private _selected = groupSelectedUnits player;
-    if (leader player == player && count _selected > 0) then {
-        private _units = _selected select {_x distance player < 10};
-        [_units] remoteExec ["jib_service_loadout_save", 2];
-        systemChat format ["Saved %1 loadouts.", count _units];
-    } else {
-        [[player]] remoteExec ["jib_service_loadout_save", 2];
-        systemChat "Saved player loadout.";
-    };
-};
-publicVariable "jib_service_loadout_menu_save";
-
-jib_service_loadout_menu_load = {
-    private _selected = groupSelectedUnits player;
-    if (leader player == player && count _selected > 0) then {
-        private _units = _selected select {_x distance player < 10};
-        [_units] remoteExec ["jib_service_loadout_load", 2];
-        systemChat format ["Loaded %1 loadouts.", count _units];
-    } else {
-        [[player]] remoteExec ["jib_service_loadout_load", 2];
-        systemChat "Loaded player loadout.";
-    };
-};
-publicVariable "jib_service_loadout_menu_load";
-
-jib_service_loadout_menu_reset = {
-    private _selected = groupSelectedUnits player;
-    if (leader player == player && count _selected > 0) then {
-        private _units = _selected select {_x distance player < 10};
-        [_units] remoteExec ["jib_service_loadout_reset", 2];
-        systemChat format ["Reset %1 loadouts.", count _units];
-    } else {
-        [[player]] remoteExec ["jib_service_loadout_reset", 2];
-        systemChat "Reset player loadout.";
-    };
-};
-publicVariable "jib_service_loadout_menu_reset";
-
-// Save loadout of units
-jib_service_loadout_save = {
-    params ["_units"];
-    if (!isServer) then {throw "Not server!"};
-    _units apply {
-        _x setVariable ["jib_service_loadout", getUnitLoadout _x]
-    };
-    if (not isNil "jib_service_loadout_handler") then {
-        removeMissionEventHandler [
-            "EntityRespawned", jib_service_loadout_handler
-        ];
-    };
-    jib_service_loadout_handler = addMissionEventHandler [
-        "EntityRespawned", {
-            params ["_unit", "_corpse"];
-            private _loadout =
-                _corpse getVariable ["jib_service_loadout", false];
-            _unit setVariable ["jib_service_loadout", _loadout];
-            if (typeName _loadout == "BOOL") then {
-                _unit setUnitLoadout typeOf _unit;
-            } else {
-                _unit setUnitLoadout [_loadout, true];
-            };
-        }
-    ];
-};
-
-// Load loadout of units
-jib_service_loadout_load = {
-    params ["_units"];
-    if (!isServer) then {throw "Not server!"};
-    _units apply {
-        private _loadout =
-            _x getVariable ["jib_service_loadout", false];
-        if (typeName _loadout == "BOOL") then {
-            _x setUnitLoadout typeOf _x;
-        } else {
-            _x setUnitLoadout [_loadout, true];
-        };
-    };
-};
-
-// Reset loadout of units
-jib_service_loadout_reset = {
-    params ["_units"];
-    if (!isServer) then {throw "Not server!"};
-    _units apply {
-        _x setVariable ["jib_service_loadout", false];
-        _x setUnitLoadout typeOf _x;
-    };
-};
-
 // Heal a unit
 jib_service_heal = {
     params ["_unit"];
@@ -282,11 +155,26 @@ jib_service_heal = {
     };
 };
 
-jib_service_group_top = {
-    params ["_leader", "_selected"];
-    private _group = group _leader;
+jib_service_group_menu = [
+    "Group Menu",
+    [
+        ["Selected Up", "[] call jib_service__group_top", "1", true],
+        ["Selected Down", "[] call jib_service__group_bottom", "1", true],
+        [
+            "Delete Selected", "", "1", false, [
+                "Confirm Delete?", [
+                    ["CONFIRM", "[] call jib_service__group_delete", "1"]
+                ]
+            ]
+        ]
+    ]
+];
+
+jib_service__group_top = {
+    private _group = group player;
+    private _selected = groupSelectedUnits player;
     if (!local _group) then {throw "Group not local!"};
-    if (count _selected == 0) then {_selected = [_leader]};
+    if (count _selected == 0) then {_selected = [player]};
     private _rest = units _group - _selected;
     private _i = count units _group;
     private _base = 100;
@@ -303,15 +191,15 @@ jib_service_group_top = {
         _x joinAsSilent [_group, _i];
         _i = _i + 1;
     };
-    _group selectLeader _leader;
+    [_group, player] remoteExec ["selectLeader", _group];
 };
-publicVariable "jib_service_group_top";
+publicVariable "jib_service__group_top";
 
-jib_service_group_bottom = {
-    params ["_leader", "_selected"];
-    private _group = group _leader;
+jib_service__group_bottom = {
+    private _group = group player;
+    private _selected = groupSelectedUnits player;
     if (!local _group) then {throw "Group not local!"};
-    if (count _selected == 0) then {_selected = [_leader]};
+    if (count _selected == 0) then {_selected = [player]};
     private _rest = units _group - _selected;
     private _i = count units _group;
     private _base = 100;
@@ -328,12 +216,12 @@ jib_service_group_bottom = {
         _x joinAsSilent [_group, _i];
         _i = _i + 1;
     };
-    _group selectLeader _leader;
+    [_group, player] remoteExec ["selectLeader", _group];
 };
-publicVariable "jib_service_group_bottom";
+publicVariable "jib_service__group_bottom";
 
-jib_service_group_delete = {
-    params ["_leader", "_selected"];
+jib_service__group_delete = {
+    private _selected = groupSelectedUnits player;
     private _deleteVehicles = [];
     _selected apply {
         _deleteVehicles pushBackUnique vehicle _x;
@@ -343,44 +231,4 @@ jib_service_group_delete = {
         deleteVehicle _x;
     };
 };
-publicVariable "jib_service_group_delete";
-
-jib_service_spawnUnit = {
-    params ["_leader", "_type", "_position"];
-    private _unit =
-        group _leader createUnit [_type, _position, [], 0, "NONE"];
-    doStop _unit;
-};
-publicVariable "jib_service_spawnUnit";
-
-jib_service_spawnVehicle = {
-    params ["_leader", "_type", "_position"];
-    private _vehicle = _type createVehicle _position;
-    _vehicle setVariable ["jib_service_disposable", true, true];
-    createVehicleCrew _vehicle;
-    crew _vehicle join _leader;
-    doStop effectiveCommander _vehicle;
-};
-publicVariable "jib_service_spawnVehicle";
-
-jib_service_despawn = {
-    params ["_leader", "_selected"];
-    _selected select {
-        isPlayer _x == false
-    } apply {
-        if (vehicle _x == _x) then {
-            deleteVehicle _x;
-        } else {
-            private _vehicle = vehicle _x;
-            _vehicle deleteVehicleCrew _x;
-            if (
-                _vehicle getVariable [
-                    "jib_service_disposable", false
-                ] && count crew _vehicle == 0
-            ) then {
-                deleteVehicle _vehicle;
-            };
-        };
-    };
-};
-publicVariable "jib_service_despawn";
+publicVariable "jib_service__group_delete";

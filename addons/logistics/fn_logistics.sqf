@@ -71,11 +71,10 @@ jib_logistics_player = {
         ["_name", "Logistics", [""]]
     ];
     [
-        _player, _logic, _name,
+        _player, _logic, _name, 3, false,
         if (_leader) then {
             "leader player == player && _target == player"
-        } else {"_target == player"},
-        false
+        } else {"_target == player"}
     ] call jib_logistics__menu;
 };
 
@@ -86,11 +85,11 @@ jib_logistics_object = {
         "_logic",
         ["_name", "Logistics", [""]]
     ];
-    [_object, _logic, _name, "true", true] call jib_logistics__menu;
+    [_object, _logic, _name, 5, true, "true"] call jib_logistics__menu;
 };
 
 jib_logistics__menu = {
-    params ["_object", "_logic", "_name", "_condition", "_window"];
+    params ["_object", "_logic", "_name", "_priority", "_window", "_condition"];
     if (!isServer) exitWith {};
     private _expression_format =
         "[%1, player] remoteExec [""jib_logistics__server"", 2]";
@@ -116,7 +115,7 @@ jib_logistics__menu = {
                     }
                 ] call jib_logistics_menu_create
             ],
-            5, _window, true, "", _condition, 2
+            _priority, _window, true, "", _condition, 2
         ]
     ] call jib_logistics_menu_action;
 };

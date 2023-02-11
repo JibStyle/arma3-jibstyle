@@ -147,6 +147,36 @@ publicVariable "jib_alive_moduleProfileDisable";
 publicVariable "jib_alive_moduleProfileEnable";
 publicVariable "jib_alive_moduleValidate";
 
+jib_alive_menu = [
+    "ALiVE Menu",
+    [
+        [
+            "Register Disable",
+            "[] remoteExec [""jib_alive_registerDisable"", 2]", "1", true
+        ],
+        [
+            "Register Enable",
+            "[] remoteExec [""jib_alive_registerEnable"", 2]", "1", true
+        ],
+        [
+            "Profile Disable",
+            "[] remoteExec [""jib_alive_profileDisable"", 2]", "1", true
+        ],
+        [
+            "Profile Enable",
+            "[] remoteExec [""jib_alive_profileEnable"", 2]", "1", true
+        ],
+        [
+            "OPCOM Disable",
+            "[] remoteExec [""jib_alive_opcomDisable"", 2]", "1", true
+        ],
+        [
+            "OPCOM Enable",
+            "[] remoteExec [""jib_alive_opcomEnable"", 2]", "1", true
+        ]
+    ]
+];
+
 [] call jib_alive_registerDisable;
 [] call jib_alive_opcomDisable;
 [] call jib_alive_profileDisable;

@@ -96,25 +96,8 @@ jib_logistics_activate_vehicle = jib_emitter_single;
 jib_logistics_menu_unit = jib_menu_unit;
 jib_logistics_menu_create = jib_menu_create;
 jib_logistics_menu_action = jib_menu_action;
-jib_menu_alive_opcom_disable = jib_alive_opcomDisable;
-jib_menu_alive_opcom_enable = jib_alive_opcomEnable;
-jib_menu_alive_profile_disable = jib_alive_profileDisable;
-jib_menu_alive_profile_enable = jib_alive_profileEnable;
-jib_menu_alive_register_disable = jib_alive_registerDisable;
-jib_menu_alive_register_enable = jib_alive_registerEnable;
-jib_menu_handler_main_menu = jib_handler_isMainMenu;
-jib_menu_service_group_bottom = jib_service_group_bottom;
-jib_menu_service_group_top = jib_service_group_top;
-jib_menu_service_group_delete = jib_service_group_delete;
-jib_menu_zeus_admin = jib_zeus_admin;
-publicVariable "jib_menu_alive_opcom_disable";
-publicVariable "jib_menu_alive_opcom_enable";
-publicVariable "jib_menu_alive_profile_disable";
-publicVariable "jib_menu_alive_profile_enable";
-publicVariable "jib_menu_alive_register_disable";
-publicVariable "jib_menu_alive_register_enable";
-publicVariable "jib_menu_service_group_bottom";
-publicVariable "jib_menu_service_group_top";
+jib_menu_alive = jib_alive_menu;
+jib_menu_group = jib_service_group_menu;
 
 // Run the mission start handlers
 [] call jib_handler_integrationDone;
