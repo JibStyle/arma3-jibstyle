@@ -94,7 +94,7 @@ jib_logistics__menu = {
     private _expression_format =
         "[%1, player] remoteExec [""jib_logistics__server"", 2]";
     [
-        _object, true, [
+        _object, [
             _name,
             {showCommandingMenu (_this # 3 # 0)},
             [

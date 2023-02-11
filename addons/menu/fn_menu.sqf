@@ -7,7 +7,7 @@ jib_menu_player = {
     params ["_player"];
     if (!isServer) exitWith {};
     [
-        _player, true, [
+        _player, [
             "Admin Menu", {showCommandingMenu (_this # 3 # 0)},
             [
                 [
@@ -23,7 +23,7 @@ jib_menu_player = {
         ]
     ] call jib_menu_action;
     [
-        _player, true, [
+        _player, [
             "Group Menu", {showCommandingMenu (_this # 3 # 0)},
             [jib_menu_group call jib_menu_create],
             4, false, true, "",
@@ -32,16 +32,13 @@ jib_menu_player = {
     ] call jib_menu_action;
 };
 
-// Add optionally persistent (respawn safe) action to object on all clients
+// Add respawn safe action to object on all clients
 jib_menu_action = {
-    params ["_object", "_persistent", "_action"];
+    params ["_object", "_action"];
     if (!isServer) exitWith {};
-
     [
         _object, [_action], [] call jib_menu__unique
     ] remoteExec ["jib_menu__action_add", 0, _object];
-
-    if (!_persistent) exitWith {};
     private _respawn = {
         params ["_unit", "_corpse"];
         [
