@@ -2,25 +2,52 @@
 jib_menu_alive;
 jib_menu_group;
 
-// Add respawn-safe action to object
-//
-// Example:
-//
-// [
-//     player, "Foo", "true", {systemChat (_this # 3 # 0)}, ["foo"]
-// ] call jib_menu_action;
+// Add global player menu actions
+jib_menu_player = {
+    params ["_player"];
+    if (!isServer) exitWith {};
+    [
+        _player, true, [
+            "Admin Menu", {showCommandingMenu (_this # 3 # 0)},
+            [
+                [
+                    "Admin Menu",
+                    [["ALiVE", "", "1", false, jib_menu_alive]]
+                ] call jib_menu_create
+            ],
+            4, false, true, "",
+            toString {
+                (!isMultiplayer || serverCommandAvailable "#kick")
+                    && _target == player
+            }, 2
+        ]
+    ] call jib_menu_action;
+    [
+        _player, true, [
+            "Group Menu", {showCommandingMenu (_this # 3 # 0)},
+            [jib_menu_group call jib_menu_create],
+            4, false, true, "",
+            "leader player == player && _target == player", 2
+        ]
+    ] call jib_menu_action;
+};
+
+// Add optionally persistent (respawn safe) action to object on all clients
 jib_menu_action = {
-    params ["_object", "_action"];
+    params ["_object", "_persistent", "_action"];
     if (!isServer) exitWith {};
 
     [
         _object, [_action], [] call jib_menu__unique
     ] remoteExec ["jib_menu__action_add", 0, _object];
+
+    if (!_persistent) exitWith {};
     private _respawn = {
         params ["_unit", "_corpse"];
-        [_unit, _unit getVariable ["jib_menu__actions", []]] remoteExec [
-            "jib_menu__action_add", 0, _unit
-        ];
+        [
+            _unit,
+            _unit getVariable ["jib_menu__actions", []]
+        ] remoteExec ["jib_menu__action_add", 0, _unit];
     };
     isNil {
         private _actions = _object getVariable ["jib_menu__actions", []];
@@ -131,38 +158,3 @@ jib_menu__unique = {
     };
     format ["jib_menu__%1", _count];
 };
-
-jib_menu__players = {
-    if (!isServer) exitWith {};
-    private _created = {
-        params ["_entity"];
-        if (!isPlayer _entity) exitWith {};
-        [
-            _entity, [
-                "Admin Menu", {showCommandingMenu (_this # 3 # 0)},
-                [
-                    [
-                        "Admin Menu",
-                        [["ALiVE", "", "1", false, jib_menu_alive]]
-                    ] call jib_menu_create
-                ],
-                4, false, true, "", "serverCommandAvailable ""#kick""", 2
-            ]
-        ] call jib_menu_action;
-        [
-            _entity, [
-                "Group Menu", {showCommandingMenu (_this # 3 # 0)},
-                [jib_menu_group call jib_menu_create],
-                4, false, true, "", "leader player == player", 2
-            ]
-        ] call jib_menu_action;
-    };
-    isNil {
-        if (isNil "jib_menu__entity_created") then {
-            jib_menu__entity_created =
-                addMissionEventHandler ["EntityCreated", _created];
-        };
-    };
-};
-
-[] call jib_menu__players;
