@@ -16,21 +16,3 @@ class CfgFunctions {
         };
     };
 };
-
-class CfgCommunicationMenu {
-    class jib_menu_mission {
-        text = "Mission Menu";
-        submenu = "#USER:jib_menu_mission";
-        // icon = "\a3\Ui_f\data\GUI\Cfg\CommunicationMenu\call_ca.paa";
-    };
-    class jib_menu_admin {
-        text = "Admin Menu";
-        submenu = "#USER:jib_menu_admin";
-        // icon = "\a3\Ui_f\data\GUI\Cfg\CommunicationMenu\call_ca.paa";
-    };
-    class jib_menu_group {
-        text = "Group Menu";
-        submenu = "#USER:jib_menu_group";
-        // icon = "\a3\Ui_f\data\GUI\Cfg\CommunicationMenu\call_ca.paa";
-    };
-};
