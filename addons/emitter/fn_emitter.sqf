@@ -54,6 +54,12 @@ jib_emitter_child = {
     _logic;
 };
 
+// Register allow fleeing for a single unit (1 - coward, 0 - no fleeing)
+jib_emitter_fleeing = {
+    params ["_unit", "_fleeing"];
+    _unit setVariable ["jib_emitter__fleeing", _fleeing];
+};
+
 // Enable waypoint
 jib_emitter_waypoint_enable = {
     params ["_waypoint"];
@@ -185,7 +191,7 @@ jib_emitter_enable = {
             private _cycleCount = 0;
             private _cycleMemory = 0;
 
-            while {true} do {
+            while {alive _emitter} do {
                 if (
                     {
                         _x params ["_spent", "_budget"];
@@ -478,8 +484,14 @@ jib_emitter__deserialize_batch = {
     private _batch = [_vehicles, _groups];
 
     uiSleep jib_emitter_delay_physics;
-    _vehicles apply {_x allowDamage true};
-    _groups apply {units _x apply {_x allowDamage true}};
+    _vehicles apply {
+        _x allowDamage (_x getVariable ["jib_emitter__damage", true])
+    };
+    _groups apply {
+        units _x apply {
+            _x allowDamage (_x getVariable ["jib_emitter__damage", true])
+        }
+    };
 
     private _paths = [
         _emitter, count _groups - 1
@@ -510,11 +522,12 @@ jib_emitter__deserialize_crate = {
     uiSleep jib_emitter_delay_physics;
     params ["_serializedCrate"];
     _serializedCrate params [
-        "_type", "_posATL", "_direction", "_serializedInventory"
+        "_type", "_pos", "_direction",
+        "_isDamageAllowed","_serializedInventory"
     ];
 
     private _crate =
-        createVehicle [_type, _posATL, [], 0, "NONE"];
+        createVehicle [_type, _pos, [], 0, "NONE"];
     _crate allowDamage false;
     [_crate] call jib_emitter__addtocurators;
     _crate setDir _direction;
@@ -523,7 +536,7 @@ jib_emitter__deserialize_crate = {
     ] call jib_emitter__deserialize_inventory;
 
     uiSleep jib_emitter_delay_physics;
-    _crate allowDamage true;
+    _crate allowDamage _isDamageAllowed;
     [_emitter, _crate] call jib_emitter__addDeserializedCrate;
     _crate;
 };
@@ -547,6 +560,11 @@ jib_emitter__deserialize_group = {
     _group setSpeedMode _speedMode;
     _serializedUnits apply {
         [_group, _x] call jib_emitter__deserialize_soldier;
+    };
+    units _group apply {
+        if (_x getVariable ["jib_emitter__leader", false]) then {
+            _group selectLeader _x;
+        };
     };
     _serializedWaypoints apply {
         [_group, _x] call jib_emitter__deserialize_waypoint;
@@ -611,19 +629,24 @@ jib_emitter__deserialize_soldier = {
     params ["_group", "_serializedSoldier"];
     _serializedSoldier params [
         "_type",
-        "_posATL",
+        "_pos",
         "_direction",
         "_rank",
         "_skill",
         "_combatBehaviour",
         "_combatMode",
         "_loadout",
-        "_canTriggerDynamicSimulation"
+        "_canTriggerDynamicSimulation",
+        "_isDamageAllowed",
+        "_leader",
+        "_fleeing"
     ];
     private _soldier = _group createUnit [
-        _type, [_posATL # 0, _posATL # 1, 0], [], 0, "NONE"
+        _type, [_pos # 0, _pos # 1, 0], [], 0, "NONE"
     ];
     _soldier allowDamage false;
+    _soldier setVariable ["jib_emitter__damage", _isDamageAllowed];
+    _soldier setVariable ["jib_emitter__leader", _leader];
     [_soldier] call jib_emitter__addtocurators;
     _soldier setDir _direction;
     _soldier setRank _rank;
@@ -632,6 +655,10 @@ jib_emitter__deserialize_soldier = {
     _soldier setUnitCombatMode _combatMode;
     _soldier setUnitLoadout _loadout; // TODO: Maybe refresh backpack
     _soldier triggerDynamicSimulation _canTriggerDynamicSimulation;
+    if (_fleeing != -1) then {
+        _soldier allowFleeing _fleeing;
+        _soldier setVariable ["jib_emitter__fleeing", _fleeing]; // debug
+    };
     _soldier;
 };
 
@@ -639,11 +666,12 @@ jib_emitter__deserialize_vehicle = {
     uiSleep jib_emitter_delay_physics;
     params ["_serializedVehicle"];
     _serializedVehicle params [
-        "_type", "_posATL", "_direction", "_special",
-        "_serializedInventory"
+        "_type", "_pos", "_direction",
+        "_isDamageAllowed", "_special", "_serializedInventory"
     ];
-    private _vehicle = createVehicle [_type, _posATL, [], 0, _special];
+    private _vehicle = createVehicle [_type, _pos, [], 0, _special];
     _vehicle allowDamage false;
+    _vehicle setVariable ["jib_emitter__damage", _isDamageAllowed];
     [_vehicle] call jib_emitter__addtocurators;
     _vehicle setDir _direction;
     [
@@ -657,6 +685,7 @@ jib_emitter__deserialize_vehicle = {
                 uiSleep jib_emitter_delay_physics;
                 !alive _vehicle || alive driver _vehicle;
             };
+            [_vehicle, 10, 0] call BIS_fnc_setPitchBank;
             _vehicle setVelocityModelSpace [0, 200, 0];
         }
     };
@@ -666,7 +695,7 @@ jib_emitter__deserialize_vehicle = {
 jib_emitter__deserialize_waypoint = {
     params ["_group", "_serializedWaypoint"];
     _serializedWaypoint params [
-        "_posATL",
+        "_pos",
         "_radius",
         "_type",
         "_formation",
@@ -677,7 +706,7 @@ jib_emitter__deserialize_waypoint = {
         "_statements"
     ];
     private _index = count waypoints _group;
-    _group addWaypoint [_posATL, _radius];
+    _group addWaypoint [_pos, _radius];
     [_group, _index] setWaypointType _type;
     [_group, _index] setWaypointFormation _formation;
     [_group, _index] setWaypointBehaviour _behaviour;
@@ -747,8 +776,9 @@ jib_emitter__serialize_crate = {
     params ["_crate"];
     [
         typeOf _crate,
-        getPosATL _crate,
+        getPos _crate,
         direction _crate,
+        isDamageAllowed _crate,
         [_crate] call jib_emitter__serialize_inventory
     ];
 };
@@ -824,14 +854,17 @@ jib_emitter__serialize_soldier = {
     params ["_soldier"];
     [
         typeOf _soldier,
-        getPosATL _soldier,
+        getPos _soldier,
         direction _soldier,
         rank _soldier,
         skill _soldier,
         combatBehaviour _soldier,
         combatMode _soldier,
         getUnitLoadout _soldier,
-        canTriggerDynamicSimulation _soldier
+        canTriggerDynamicSimulation _soldier,
+        isDamageAllowed _soldier,
+        leader _soldier == _soldier,
+        _soldier getVariable ["jib_emitter__fleeing", 0] // HACK
     ];
 };
 
@@ -839,8 +872,9 @@ jib_emitter__serialize_vehicle = {
     params ["_vehicle"];
     [
         typeOf _vehicle,
-        getPosATL _vehicle,
+        getPos _vehicle,
         direction _vehicle,
+        isDamageAllowed _vehicle,
         if (isTouchingGround _vehicle) then {"NONE"} else {"FLY"},
         [_vehicle] call jib_emitter__serialize_inventory
     ];

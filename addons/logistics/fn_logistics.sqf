@@ -70,6 +70,7 @@ jib_logistics_player = {
         "_leader",
         ["_name", "Logistics", [""]]
     ];
+    if (!canSuspend) then {throw "Cannot suspend!"};
     [
         _player, _logic, _name, 3, false,
         if (_leader) then {
@@ -85,6 +86,7 @@ jib_logistics_object = {
         "_logic",
         ["_name", "Logistics", [""]]
     ];
+    if (!canSuspend) then {throw "Cannot suspend!"};
     [_object, _logic, _name, 5, true, "true"] call jib_logistics__menu;
 };
 
