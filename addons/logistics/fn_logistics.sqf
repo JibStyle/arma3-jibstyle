@@ -70,13 +70,12 @@ jib_logistics_player = {
         "_leader",
         ["_name", "Logistics", [""]]
     ];
-    if (!canSuspend) then {throw "Cannot suspend!"};
     [
         _player, _logic, _name, 3, false,
         if (_leader) then {
             "leader player == player && _target == player"
         } else {"_target == player"}
-    ] call jib_logistics__menu;
+    ] spawn jib_logistics__menu;
 };
 
 // Add logistics menu to an object
@@ -86,13 +85,13 @@ jib_logistics_object = {
         "_logic",
         ["_name", "Logistics", [""]]
     ];
-    if (!canSuspend) then {throw "Cannot suspend!"};
-    [_object, _logic, _name, 5, true, "true"] call jib_logistics__menu;
+    [_object, _logic, _name, 5, true, "true"] spawn jib_logistics__menu;
 };
 
 jib_logistics__menu = {
     params ["_object", "_logic", "_name", "_priority", "_window", "_condition"];
     if (!isServer) exitWith {};
+    if (!canSuspend) then {throw "Must be spawned!"};
     private _expression_format =
         "[%1, player] remoteExec [""jib_logistics__server"", 2]";
     [
