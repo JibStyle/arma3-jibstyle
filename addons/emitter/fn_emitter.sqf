@@ -340,6 +340,22 @@ jib_emitter_single = {
     [[_batch], _vehicles, _groups, _units];
 };
 
+// Emit one batch when all synced triggers activated
+jib_emitter_trigger = {
+    params ["_emitter"];
+    if (!isServer) exitWith {};
+    [_emitter] spawn {
+        params ["_emitter"];
+        waitUntil {
+            uiSleep 1;
+            {
+                _x isKindOf "EmptyDetector" && !triggerActivated _x
+            } count synchronizedObjects _emitter == 0;
+        };
+        [_emitter] call jib_emitter_single;
+    };
+};
+
 // Emit one crate
 jib_emitter_crate = {
     params [
