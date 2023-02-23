@@ -315,3 +315,37 @@ publicVariable "jib_ai_moduleLaserControlEnable";
 publicVariable "jib_ai_moduleLaserControlDisable";
 publicVariable "jib_ai_moduleMonitorTargets";
 publicVariable "jib_ai_moduleMonitorReset";
+
+// Continuously suppress area
+jib_ai_arty = {
+    params [
+        "_group",    // group
+        "_magazine", // classname
+        "_rounds",   // num rounds in volley
+        "_reload",   // seconds between volleys
+        "_area"      // [pos, [a, b, angle, isRect, c]]
+    ];
+    if (!local _group) exitWith {};
+    [_group, _magazine, _rounds, _reload, _area] spawn {
+        params ["_group", "_magazine", "_rounds", "_reload", "_area"];
+        private _vics = {
+            private _result = units _group apply {vehicle _x};
+            _result arrayIntersect _result;
+        };
+        while {count call _vics > 0} do {
+            waitUntil {
+                uiSleep 1;
+                {unitReady _x} count call _vics == count call _vics;
+            };
+            sleep _reload;
+            call _vics apply {
+                _x setVehicleAmmo 1;
+                _x commandArtilleryFire [
+                    _area call BIS_fnc_randomPosTrigger,
+                    _magazine,
+                    _rounds
+                ];
+            };
+        };
+    };
+};
