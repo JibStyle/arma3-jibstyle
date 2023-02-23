@@ -1,4 +1,4 @@
-jib_garbage_debug = false;
+jib_garbage_debug = true;
 
 jib_garbage__collectors = [
     [
@@ -24,7 +24,7 @@ jib_garbage__collectors = [
     [
         "crates", 50, 5, 10, 1200, 1e10,
         {entities "ReammoBox_F"},
-        {isDamageAllowed _this},
+        {isDamageAllowed _this && simulationEnabled _this},
         {deleteVehicle _this}
     ],
     [
@@ -47,7 +47,6 @@ jib_garbage__collectors = [
     ]
 ];
 jib_garbage__period = 10;
-jib_garbage__sentinel = 1e+010;
 
 // Start garbage collector
 jib_garbage_start = {
@@ -76,8 +75,10 @@ jib_garbage_include = {
 
 jib_garbage__cycle = {
     jib_garbage__collectors apply {
+        if (canSuspend) then {
+            uiSleep (jib_garbage__period / count jib_garbage__collectors);
+        };
         _x call jib_garbage__collect;
-        uiSleep (jib_garbage__period / count jib_garbage__collectors);
     };
 };
 
@@ -96,15 +97,18 @@ jib_garbage__collect = {
 
     // Mark collection
     _collection apply {
-        if (_x call _collectible) then {
-            if (
-                _x getVariable ["jib_garbage__start", jib_garbage__sentinel]
-                    == jib_garbage__sentinel
-            ) then {
-                _x setVariable ["jib_garbage__start", time];
+        if (isNil {_x getVariable "jib_garbage__created"}) then {
+            _x setVariable ["jib_garbage__created", time];
+        };
+        if (
+            _x call _collectible
+                && [_x] call jib_garbage__playerDistance > _distance
+        ) then {
+            if (isNil {_x getVariable "jib_garbage__dirty"}) then {
+                _x setVariable ["jib_garbage__dirty", time];
             };
         } else {
-            _x setVariable ["jib_garbage__start", jib_garbage__sentinel];
+            _x setVariable ["jib_garbage__dirty", nil];
         };
     };
 
@@ -114,8 +118,10 @@ jib_garbage__collect = {
 
     // Sort
     _collection = [
-        _collection, [],
-        {_x getVariable ["jib_garbage__start", jib_garbage__sentinel]}
+        _collection, [], {_x getVariable ["jib_garbage__created", -1]}
+    ] call BIS_fnc_sortBy;
+    _collection = [
+        _collection, [], {_x getVariable ["jib_garbage__dirty", 1e10]}
     ] call BIS_fnc_sortBy;
 
     // Garbage after count max
@@ -131,18 +137,21 @@ jib_garbage__collect = {
         [_x] call jib_garbage__playerDistance > _distance
     };
 
+    // Assert dirty mark
+    _collection apply {
+        if (isNil {_x getVariable "jib_garbage__dirty"}) then {
+            throw "Missing dirty mark after narrowing";
+        };
+    };
+
     // Narrow by time min
     _collection = _collection select {
-        (_x getVariable ["jib_garbage__start", jib_garbage__sentinel])
-            + _ttl_min < time
+        time - _ttl_min > _x getVariable "jib_garbage__dirty"
     };
 
     // Garbage after time max
     _collection = _collection select {
-        if (
-            (_x getVariable ["jib_garbage__start", jib_garbage__sentinel])
-                + _ttl_max < time
-        ) then {
+        if (time - _ttl_max > (_x getVariable "jib_garbage__dirty")) then {
             _garbage pushBack _x;
             false;
         } else {
