@@ -8,6 +8,8 @@ jib_para_interval = 0.2;
 // Workaround because they magically die a lot.
 jib_para_invincible = true;
 
+jib_para_chute = "Steerable_Parachute_F";
+
 // Association list of vehicle type to array of light offsets
 jib_para_lights = [
     ["VTOL_01_base_F", [
@@ -272,7 +274,7 @@ jib_para_jump = {
         position _unit # 2 < _height;
     };
     _unit moveInDriver createVehicle [
-        "Steerable_Parachute_F",
+        jib_para_chute,
         getPosATL _unit
     ];
     [_unit, _invincible] spawn {
