@@ -18,7 +18,7 @@ jib_menu_player = {
             4, false, true, "",
             toString {
                 (!isMultiplayer || serverCommandAvailable "#kick")
-                    && _target == player
+                    && _originalTarget == player
             }, 2
         ]
     ] call jib_menu_action;
@@ -27,7 +27,7 @@ jib_menu_player = {
             "Group Menu", {showCommandingMenu (_this # 3 # 0)},
             [jib_menu_group call jib_menu_create],
             4, false, true, "",
-            "leader player == player && _target == player", 2
+            "leader player == player && _originalTarget == player", 2
         ]
     ] call jib_menu_action;
 };
