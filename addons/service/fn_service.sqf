@@ -102,9 +102,12 @@ jib_service_depot_init = {
                     private _vehicle = vehicle player;
                     // private _commander = effectiveCommander _vehicle;
                     // private _oldCrew = crew _vehicle;
-                    _vehicle setVehicleAmmo 1;
-                    _vehicle setFuel 1;
-                    _vehicle setDamage 0;
+                    [[_vehicle], {
+                        params ["_vehicle"];
+                        _vehicle setVehicleAmmo 1;
+                        _vehicle setFuel 1;
+                        _vehicle setDamage 0;
+                    }] remoteExec ["spawn", 0];
                     // _oldCrew apply {
                     //     if (alive _x) then {
                     //         [_x] remoteExec ["jib_service_heal", 2];
