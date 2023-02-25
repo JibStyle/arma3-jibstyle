@@ -9,6 +9,7 @@ jib_para_interval = 0.2;
 jib_para_invincible = true;
 
 jib_para_chute = "Steerable_Parachute_F";
+publicVariable "jib_para_chute";
 
 // Association list of vehicle type to array of light offsets
 jib_para_lights = [
