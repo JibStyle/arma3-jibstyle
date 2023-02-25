@@ -12,7 +12,7 @@ jib_hc_selectPlayerHandler = {
 
     // Update MARTA
     if (count hcAllGroups player > 0) then {
-        setGroupIconsVisible [true, false];
+        // setGroupIconsVisible [true, false];
     } else {
         setGroupIconsVisible [false, false];
     };
@@ -76,11 +76,12 @@ jib_hc_promote = {
 
     // Enable MARTA
     [[], {
-        setGroupIconsVisible [true, false];
+        // setGroupIconsVisible [true, false];
         if (isNil "jib_hc_promoteDidRegisterEH") then {
             addMissionEventHandler ["CommandModeChanged", {
                 params ["_isHighCommand", "_isForced"];
-                setGroupIconsVisible [true, false];
+                // setGroupIconsVisible [true, false];
+                // setGroupIconsVisible [_isHighCommand, false];
             }];
         };
         jib_hc_promoteDidRegisterEH = true;
