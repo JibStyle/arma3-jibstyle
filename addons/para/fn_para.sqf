@@ -153,7 +153,7 @@ jib_para_cargoCollect = {
         // Collect groups
         private _vehicle = _x;
         private _cargo = crew _vehicle select {
-            _x in units group effectiveCommander _vehicle == false;
+            _x in units group driver _vehicle == false;
         };
         private _groups = [];
         _cargo apply {_groups pushBackUnique group _x};
