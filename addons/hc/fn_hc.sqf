@@ -81,7 +81,7 @@ jib_hc_promote = {
             addMissionEventHandler ["CommandModeChanged", {
                 params ["_isHighCommand", "_isForced"];
                 // setGroupIconsVisible [true, false];
-                // setGroupIconsVisible [_isHighCommand, false];
+                setGroupIconsVisible [_isHighCommand, false];
             }];
         };
         jib_hc_promoteDidRegisterEH = true;
