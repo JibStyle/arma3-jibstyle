@@ -1,3 +1,36 @@
+jib_hc_menu = {
+    [
+        "High Command Menu",
+        [
+            ["Selected Up", "[] call jib_hc__top", "1", true],
+            ["Selected Down", "[] call jib_hc__bottom", "1", true],
+            [
+                "Save HC Group Compositions",
+                "hcSelected player apply {[_x] call jib_group__save}",
+                "1", true
+            ],
+            [
+                "Load HC Group Compositions",
+                "hcSelected player apply {[_x] call jib_group__load}",
+                "1", true
+            ]
+        ]
+    ]
+};
+publicVariable "jib_hc_menu;";
+
+jib_hc__bottom = {
+
+};
+publicVariable "jib_hc__bottom";
+
+jib_hc__top = {
+
+};
+publicVariable "jib_hc__top";
+
+// OLD CODE
+
 // Setup HC
 if (!isServer) exitWith {};
 

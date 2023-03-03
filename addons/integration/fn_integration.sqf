@@ -97,7 +97,15 @@ jib_logistics_menu_unit = jib_menu_unit;
 jib_logistics_menu_create = jib_menu_create;
 jib_logistics_menu_action = jib_menu_action;
 jib_menu_alive = jib_alive_menu;
-jib_menu_group = jib_service_group_menu;
+jib_group_serialize_soldier = jib_cereal_serialize_soldier;
+jib_group_deserialize_soldiers = jib_cereal_deserialize_soldiers;
+jib_group_menu_dynamic = jib_menu_dynamic;
+jib_emitter_deserialize_batch = jib_cereal_deserialize_batch;
+jib_emitter_deserialize_crate = jib_cereal_deserialize_crate;
+jib_emitter_deserialize_waypoint = jib_cereal_deserialize_waypoint;
+jib_emitter_serialize_batch = jib_cereal_serialize_batch;
+jib_emitter_serialize_crate = jib_cereal_serialize_crate;
+jib_emitter_serialize_waypoint = jib_cereal_serialize_waypoint_manual;
 
 // Run the mission start handlers
 [] call jib_handler_integrationDone;

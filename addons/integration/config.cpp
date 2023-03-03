@@ -5,10 +5,12 @@ class CfgPatches {
         requiredVersion = 1.60;
         requiredAddons[] = {
             "jib_ai",
+            "jib_cereal",
             "jib_debug",
             "jib_draw",
             "jib_emitter",
             "jib_earplugs",
+            "jib_group",
             "jib_handler",
             "jib_hc",
             "jib_log",
@@ -20,6 +22,7 @@ class CfgPatches {
             "jib_objective",
             "jib_random",
             "jib_selectPlayer",
+            "jib_service",
             "jib_spawn",
             "jib_sync",
             "jib_teleport",
