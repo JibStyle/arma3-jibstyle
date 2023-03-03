@@ -1,5 +1,7 @@
 jib_cereal_delay_physics = 0.3;
+publicVariable "jib_cereal_delay_physics";
 jib_cereal_debug = true;
+publicVariable "jib_cereal_debug";
 
 jib_cereal_deserialize_batch = {
     params ["_serializedBatch"];
@@ -292,6 +294,7 @@ jib_cereal__deserialize_soldier = {
     };
     _soldier;
 };
+publicVariable "jib_cereal__deserialize_soldier";
 
 jib_cereal__deserialize_vehicle = {
     uiSleep jib_cereal_delay_physics;
@@ -420,8 +423,13 @@ jib_cereal__serialize_waypoint = {
 jib_cereal__curator_register = {
     params ["_object"];
     if (jib_cereal_debug) then {
-        allCurators apply {
-            _x addCuratorEditableObjects [[_object], false];
-        };
+        // NOTE: Called frequently, may cause network bottleneck
+        [[_object], {
+            params ["_object"];
+            allCurators apply {
+                _x addCuratorEditableObjects [[_object], false];
+            };
+        }] remoteExec ["spawn", 2];
     };
 };
+publicVariable "jib_cereal__curator_register";

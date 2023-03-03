@@ -1,3 +1,4 @@
+jib_group_action;
 jib_group_menu_dynamic;
 jib_group_serialize_soldier;
 jib_group_deserialize_soldiers;
@@ -12,7 +13,14 @@ jib_group_menu = {
             {[] call jib_group__menu call jib_group_menu_dynamic},
             [], 4, false, true, "", toString {leader player == player}, 2
         ]
-    ] call jib_menu_action;
+    ] call jib_group_action;
+};
+
+// Set respawn position of group AI
+jib_group_rally = {
+    params ["_group", "_pos"];
+    if (!isServer) exitWith {};
+    _group setVariable ["jib_group__rally", _pos, true];
 };
 
 jib_group__menu = {
@@ -125,13 +133,12 @@ publicVariable "jib_group__save";
 
 // Load missing units from group
 jib_group__load = {
-    params [
-        "_group",
-        ["_pos", [], [[]]]
-    ];
-    [[_group, _pos], {
-        params ["_group", "_pos"];
+    params ["_group"];
+    [[_group], {
+        params ["_group"];
         private _data = _group getVariable ["jib_group__data", []];
+        private _pos =
+            _group getVariable ["jib_group__rally", getPosATL leader _group];
         private _new_soldiers = [
             _group,
             _data select {
@@ -146,12 +153,14 @@ jib_group__load = {
         private _index = 0;
         private _new_data = _data apply {
             _x params ["_serialized_soldier", "_soldier"];
+            private _result = [];
             if (_soldier in units _group) then {
-                [_serialized_soldier, _soldier];
+                _result = [_serialized_soldier, _soldier];
             } else {
-                [_serialized_soldier, _new_soldiers # _index];
+                _result = [_serialized_soldier, _new_soldiers # _index];
                 _index = _index + 1;
             };
+            _result;
         };
         _group setVariable ["jib_group__data", _new_data, true];
     }] remoteExec ["spawn", leader _group];

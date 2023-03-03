@@ -180,6 +180,7 @@ jib_menu_dynamic = {
     };
     [0] call _page_id;
 };
+publicVariable "jib_menu_dynamic";
 
 jib_menu__action_add = {
     params ["_object", "_actions", ["_unique", "", [""]]];
