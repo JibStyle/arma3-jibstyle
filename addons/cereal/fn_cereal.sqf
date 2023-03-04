@@ -10,12 +10,11 @@ jib_cereal_deserialize_batch = {
         "_serializedGroups",
         "_serializedSeats"
     ];
-    // TODO: Try vehicles first with sim disabled
-    private _groups = _serializedGroups apply {
-        [_x] call jib_cereal__deserialize_group;
-    };
     private _vehicles = _serializedVehicles apply {
         [_x] call jib_cereal__deserialize_vehicle;
+    };
+    private _groups = _serializedGroups apply {
+        [_x] call jib_cereal__deserialize_group;
     };
     [
         _vehicles, _groups, _serializedSeats
@@ -31,6 +30,11 @@ jib_cereal_deserialize_batch = {
             _x allowDamage (_x getVariable ["jib_cereal__damage", true])
         }
     };
+    [[_vehicles, _groups], {
+        params ["_vehicles", "_groups"];
+        _vehicles apply {_x enableSimulationGlobal true};
+        _groups apply {units _x apply {_x enableSimulationGlobal true}};
+    }] remoteExec ["spawn", 2];
 
     _batch;
 };
@@ -46,6 +50,7 @@ jib_cereal_deserialize_crate = {
     private _crate =
         createVehicle [_type, _pos, [], 0, "NONE"];
     _crate allowDamage false;
+    [_crate, false] remoteExec ["enableSimulationGlobal", 2];
     [_crate] call jib_cereal__curator_register;
     _crate setDir _direction;
     [
@@ -54,6 +59,7 @@ jib_cereal_deserialize_crate = {
 
     uiSleep jib_cereal_delay_physics;
     _crate allowDamage _isDamageAllowed;
+    [_crate, true] remoteExec ["enableSimulationGlobal", 2];
     _crate;
 };
 
@@ -73,6 +79,10 @@ jib_cereal_deserialize_soldiers = {
     _soldiers apply {
         _x allowDamage (_x getVariable ["jib_cereal__damage", true]);
     };
+    [[_soldiers], {
+        params ["_soldiers"];
+        _soldiers apply {_x enableSimulationGlobal true};
+    }] remoteExec ["spawn", 2];
     _soldiers;
 };
 
@@ -278,6 +288,7 @@ jib_cereal__deserialize_soldier = {
         _type, [_pos # 0, _pos # 1, 0], [], 0, "NONE"
     ];
     _soldier allowDamage false;
+    [_soldier, false] remoteExec ["enableSimulationGlobal", 2];
     _soldier setVariable ["jib_cereal__damage", _isDamageAllowed];
     _soldier setVariable ["jib_cereal__leader", _leader];
     [_soldier] call jib_cereal__curator_register;
@@ -305,6 +316,7 @@ jib_cereal__deserialize_vehicle = {
     ];
     private _vehicle = createVehicle [_type, _pos, [], 0, _special];
     _vehicle allowDamage false;
+    [_vehicle, false] remoteExec ["enableSimulationGlobal", 2];
     _vehicle setVariable ["jib_cereal__damage", _isDamageAllowed];
     [_vehicle] call jib_cereal__curator_register;
     _vehicle setDir _direction;
