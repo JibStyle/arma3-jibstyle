@@ -96,7 +96,6 @@ jib_logistics_activate_vehicle = jib_emitter_single;
 jib_logistics_menu_unit = jib_menu_unit;
 jib_logistics_menu_create = jib_menu_create;
 jib_logistics_menu_action = jib_menu_action;
-jib_menu_alive = jib_alive_menu;
 jib_group_serialize_soldier = jib_cereal_serialize_soldier;
 publicVariable "jib_group_serialize_soldier";
 jib_group_deserialize_soldiers = jib_cereal_deserialize_soldiers;

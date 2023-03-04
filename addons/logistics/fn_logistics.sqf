@@ -72,7 +72,9 @@ jib_logistics_player = {
     ];
     [
         _player, _logic, _name, 3, false,
-        if (_leader) then {"leader player == player"} else {"true"}
+        if (_leader) then {
+            "leader player == player && _originalTarget == player"
+        } else {"_originalTarget == player"}
     ] spawn jib_logistics__menu;
 };
 

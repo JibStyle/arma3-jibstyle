@@ -11,7 +11,9 @@ jib_group_menu = {
         _player, [
             "Group Menu",
             {[] call jib_group__menu call jib_group_menu_dynamic},
-            [], 4, false, true, "", toString {leader player == player}, 2
+            [], 4, false, true, "", toString {
+                leader player == player && _originalTarget == player
+            }, 2
         ]
     ] call jib_group_action;
 };

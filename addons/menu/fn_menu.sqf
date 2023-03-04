@@ -1,25 +1,3 @@
-// Dependencies
-jib_menu_alive;
-
-// Add global player menu actions
-jib_menu_player = {
-    params ["_player"];
-    if (!isServer) exitWith {};
-    [
-        _player, [
-            "Admin Menu", {showCommandingMenu (_this # 3 # 0)},
-            [
-                [
-                    "Admin Menu",
-                    [["ALiVE", "", "1", false, jib_menu_alive]]
-                ] call jib_menu_create
-            ],
-            4, false, true, "",
-            toString {!isMultiplayer || serverCommandAvailable "#kick"}, 2
-        ]
-    ] call jib_menu_action;
-};
-
 // Add respawn safe action to object on all clients
 jib_menu_action = {
     params ["_object", "_action"];

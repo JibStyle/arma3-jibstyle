@@ -598,3 +598,54 @@ publicVariable "jib_objective_moduleHostageEast";
 publicVariable "jib_objective_moduleHostageIndependent";
 publicVariable "jib_objective_moduleHostageCivilian";
 publicVariable "jib_objective_moduleValidate";
+
+// Add hold action to objects to show markers on alive arrows
+jib_objective_intel = {
+    params ["_objects", "_compositions", "_message_fn"];
+    _compositions apply {
+        _x params ["_markers", "_arrows"];
+        _markers apply {_x setMarkerAlpha 0};
+    };
+    [[_objects, _compositions, _message_fn], {
+        params ["_objects", "_compositions", "_message_fn"];
+        _objects apply {
+            [
+                _x,
+                "Examine Intel",
+                "\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_search_ca.paa",
+                "\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_search_ca.paa",
+                "true",
+                "true",
+                {},
+                {},
+                {
+                    params ["_target", "_caller", "_actionId", "_arguments"];
+                    _arguments params [
+                        "_objects", "_compositions", "_message_fn"
+                    ];
+                    // _objects apply {deleteVehicle _x};
+                    _compositions apply {
+                        _x params ["_markers", "_arrows"];
+                        private _alive_arrows = _arrows select {!isNull _x};
+                        if (count _alive_arrows > count _markers) then {
+                            throw "More arrows than markers!";
+                        };
+                        private _index = 0;
+                        _alive_arrows apply {
+                            private _marker = _markers # _index;
+                            _marker setMarkerPosLocal getPosATL _x;
+                            _marker setMarkerAlphaLocal 1;
+                            _index = _index + 1;
+                        };
+                    };
+                    hint call _message_fn;
+                    uiSleep 10;
+                    hintSilent "";
+                },
+                {},
+                [_objects, _compositions, _message_fn],
+                5
+            ] call BIS_fnc_holdActionAdd;
+        };
+    }] remoteExec ["spawn", 0, true];
+};

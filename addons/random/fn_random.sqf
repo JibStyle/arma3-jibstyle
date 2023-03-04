@@ -199,9 +199,21 @@ jib_random_logicBuckets = {
             false
         ] call BIS_fnc_synchronizedObjects apply {
             private _childLogic = _x;
+            private _result = [];
             synchronizedObjects _childLogic select {
                 _x != _childLogic && _x != _logic;
+            } apply {
+                if (_x isKindOf "EmptyDetector") then {
+                    _result = _result + (
+                        [
+                            [getPosATL _x] + triggerArea _x
+                        ] call jib_random_areaObjects
+                    );
+                } else {
+                    _result pushBack _x;
+                };
             };
+            _result;
         }
     );
 };
