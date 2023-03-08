@@ -4,6 +4,7 @@ class CfgPatches {
         author = "JibStyle";
         requiredVersion = 1.60;
         requiredAddons[] = {
+            "jib_acre",
             "jib_ai",
             "jib_cereal",
             "jib_debug",

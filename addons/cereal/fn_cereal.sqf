@@ -1,3 +1,5 @@
+jib_cereal_loadout;
+
 jib_cereal_delay_physics = 0.3;
 publicVariable "jib_cereal_delay_physics";
 jib_cereal_debug = true;
@@ -297,7 +299,7 @@ jib_cereal__deserialize_soldier = {
     _soldier setSkill _skill;
     _soldier setCombatBehaviour _combatBehaviour;
     _soldier setUnitCombatMode _combatMode;
-    _soldier setUnitLoadout _loadout; // TODO: Maybe refresh backpack
+    [_soldier, _loadout] call jib_cereal_loadout;
     _soldier triggerDynamicSimulation _canTriggerDynamicSimulation;
     if (_fleeing != -1) then {
         _soldier allowFleeing _fleeing;
