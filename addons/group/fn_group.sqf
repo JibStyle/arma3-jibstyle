@@ -119,14 +119,17 @@ jib_group__save = {
     private _data = _group getVariable ["jib_group__data", []];
     private _new_data = units _group apply {
         private _soldier = _x;
+        private _soldier_id =
+            _soldier getVariable ["jib_group__id", call jib_group__id_fn];
+        _soldier setVariable ["jib_group__id", _soldier_id];
         private _matches = _data select {
-            _x params ["_data_serialized_soldier", "_data_soldier"];
-            _data_soldier == _soldier;
+            _x params ["_data_soldier", "_data_id"];
+            _data_id == _soldier_id;
         };
         if (count _matches > 0) then {
             _matches # 0;
         } else {
-            [[_soldier] call jib_group_serialize_soldier, _soldier];
+            [[_soldier] call jib_group_serialize_soldier, _soldier_id];
         };
     };
     _group setVariable ["jib_group__data", _new_data, true];
@@ -144,22 +147,30 @@ jib_group__load = {
         private _new_soldiers = [
             _group,
             _data select {
-                _x params ["_serialized_soldier", "_soldier"];
-                _soldier in units _group == false;
+                _x params ["_data_soldier", "_data_id"];
+                {
+                    _x getVariable ["jib_group__id", -1] == _data_id
+                } count units _group == 0;
             } apply {
-                _x params ["_serialized_soldier", "_soldier"];
-                _serialized_soldier;
+                _x params ["_data_soldier", "_data_id"];
+                _data_soldier;
             },
             _pos
         ] call jib_group_deserialize_soldiers;
         private _index = 0;
         private _new_data = _data apply {
-            _x params ["_serialized_soldier", "_soldier"];
+            _x params ["_data_soldier", "_data_id"];
             private _result = [];
-            if (_soldier in units _group) then {
-                _result = [_serialized_soldier, _soldier];
+            if (
+                _data_id in (
+                    units _group apply {_x getVariable ["jib_group__id", -1]}
+                )
+            ) then {
+                _result = [_data_soldier, _data_id];
             } else {
-                _result = [_serialized_soldier, _new_soldiers # _index];
+                private _id = call jib_group__id_fn;
+                _new_soldiers # _index setVariable ["jib_group__id", _id];
+                _result = [_data_soldier, _id];
                 _index = _index + 1;
             };
             _result;
@@ -168,3 +179,16 @@ jib_group__load = {
     }] remoteExec ["spawn", leader _group];
 };
 publicVariable "jib_group__load";
+
+jib_group__id_fn = {
+    private _id = -1;
+    isNil {
+        if (isNil "jib_group__id_index") then {
+            jib_group__id_index = 0;
+        };
+        _id = jib_group__id_index;
+        jib_group__id_index = jib_group__id_index + 1;
+    };
+    format ["jib_group__id_%1", _id];
+};
+publicVariable "jib_group__id_fn";
