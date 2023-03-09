@@ -207,11 +207,9 @@ publicVariable "jib_group__id_fn";
 jib_group__setup = {
     private _handler_mission = {
         params ["_network_id", "_player"];
-        systemChat format ["jib_group__setup mission %1", _this];
         [_player] call jib_group__menu;
         private _handler_player = {
             params ["_player"];
-            systemChat format ["jib_group__setup player %1", _this];
             [_player] call jib_group__menu;
         };
         isNil {
