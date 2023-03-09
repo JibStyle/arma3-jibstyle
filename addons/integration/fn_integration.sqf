@@ -110,6 +110,7 @@ jib_emitter_serialize_batch = jib_cereal_serialize_batch;
 jib_emitter_serialize_crate = jib_cereal_serialize_crate;
 jib_emitter_serialize_waypoint = jib_cereal_serialize_waypoint_manual;
 jib_cereal_loadout = jib_acre_setUnitLoadout;
+publicVariable "jib_cereal_loadout";
 
 // Run the mission start handlers
 [] call jib_handler_integrationDone;
