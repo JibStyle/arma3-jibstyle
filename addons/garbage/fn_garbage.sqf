@@ -1,4 +1,6 @@
-jib_garbage_debug = true;
+if (!isServer) exitWith {};
+
+jib_garbage_debug = false;
 
 jib_garbage__collectors = [
     [
@@ -199,3 +201,5 @@ jib_garbage__performance = {
         ] # 0;
     };
 };
+
+[] call jib_garbage_start;
