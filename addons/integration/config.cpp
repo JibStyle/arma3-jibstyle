@@ -21,7 +21,6 @@ class CfgPatches {
             "jib_module",
             "jib_para",
             "jib_objective",
-            "jib_random",
             "jib_selectPlayer",
             "jib_service",
             "jib_spawn",
