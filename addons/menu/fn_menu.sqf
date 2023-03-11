@@ -1,3 +1,37 @@
+jib_menu_group_data;
+jib_menu_group_condition;
+jib_menu_hc_condition;
+jib_menu_hc_data;
+
+// Setup
+jib_menu_setup = {
+    private _handler_mission = {
+        params ["_network_id", "_player"];
+        [_player] call jib_menu__player;
+        private _handler_player = {
+            params ["_player"];
+            [_player] call jib_menu__player;
+        };
+        isNil {
+            _player removeEventHandler [
+                "Local", _player getVariable ["jib_menu__handler_player", -1]
+            ];
+            _player setVariable [
+                "jib_menu__handler_player",
+                _player addEventHandler ["Local", _handler_player]
+            ];
+        };
+    };
+    isNil {
+        removeMissionEventHandler [
+            "OnUserSelectedPlayer",
+            missionNamespace getVariable ["jib_menu__handler_mission", -1]
+        ];
+        jib_menu__handler_mission =
+            addMissionEventHandler ["OnUserSelectedPlayer", _handler_mission];
+    };
+};
+
 // Add respawn safe action to object on all clients
 jib_menu_action = {
     params ["_object", "_action"];
@@ -188,4 +222,43 @@ jib_menu__unique = {
         missionNamespace setVariable ["jib_menu__unique_count", _count + 1];
     };
     format ["jib_menu__%1", _count];
+};
+
+jib_menu_player_menus_fn = {
+    [
+        // TODO: Add admin menu
+        [jib_menu_group_data, jib_menu_group_condition],
+        [jib_menu_hc_data, jib_menu_hc_condition]
+    ]
+};
+
+jib_menu__player = {
+    params [
+        "_player"
+    ];
+    if (!isServer) exitWith {};
+    [[_player, call jib_menu_player_menus_fn], {
+        params ["_player", "_menus"];
+        private _actions = _menus apply {
+            _x params ["_menu_data_fn", "_condition_fn"];
+            [
+                call _menu_data_fn # 0,
+                {
+                    params ["_target", "_caller", "_actionId", "_arguments"];
+                    _arguments params ["_menu_data_fn"];
+                    [] call _menu_data_fn call jib_menu_dynamic
+                },
+                [_menu_data_fn], 4, false, true, "", toString _condition_fn, 2
+            ];
+        };
+        isNil {
+            _player getVariable ["jib_menu__player_actions", []] apply {
+                _player removeAction _x;
+            };
+            _player setVariable [
+                "jib_menu__player_actions",
+                _actions apply {_player addAction _x}
+            ];
+        };
+    }] remoteExec ["spawn", _player];
 };

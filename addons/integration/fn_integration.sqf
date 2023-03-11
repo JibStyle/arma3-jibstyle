@@ -98,9 +98,6 @@ jib_group_serialize_soldier = jib_cereal_serialize_soldier;
 publicVariable "jib_group_serialize_soldier";
 jib_group_deserialize_soldiers = jib_cereal_deserialize_soldiers;
 publicVariable "jib_group_deserialize_soldiers";
-jib_group_action = jib_menu_action;
-jib_group_menu_dynamic = jib_menu_dynamic;
-publicVariable "jib_group_menu_dynamic";
 jib_emitter_deserialize_batch = jib_cereal_deserialize_batch;
 jib_emitter_deserialize_crate = jib_cereal_deserialize_crate;
 jib_emitter_deserialize_waypoint = jib_cereal_deserialize_waypoint;
@@ -109,6 +106,15 @@ jib_emitter_serialize_crate = jib_cereal_serialize_crate;
 jib_emitter_serialize_waypoint = jib_cereal_serialize_waypoint_manual;
 jib_cereal_loadout = jib_acre_setUnitLoadout;
 publicVariable "jib_cereal_loadout";
+jib_hc_group_save = jib_group_save;
+publicVariable "jib_hc_group_save";
+jib_hc_group_load = jib_group_load;
+publicVariable "jib_hc_group_load";
+jib_menu_group_data = jib_group_menu_data;
+jib_menu_group_condition = jib_group_menu_condition;
+jib_menu_hc_data = jib_hc_menu_data;
+jib_menu_hc_condition = jib_hc_menu_condition;
+[] call jib_menu_setup;
 
 // Run the mission start handlers
 [] call jib_handler_integrationDone;

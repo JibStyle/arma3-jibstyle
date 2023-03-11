@@ -1,23 +1,31 @@
-jib_hc_menu = {
+if (!isServer) exitWith {};
+
+jib_hc_group_save;
+jib_hc_group_load;
+
+jib_hc_menu_condition = {
+    hcLeader group player == player && _originalTarget == player;
+};
+
+jib_hc_menu_data = {
     [
         "High Command Menu",
         [
-            ["Selected Up", "[] call jib_hc__top", "1", true],
-            ["Selected Down", "[] call jib_hc__bottom", "1", true],
+            // ["Selected Up", "[] call jib_hc__top", "1", true],
+            // ["Selected Down", "[] call jib_hc__bottom", "1", true],
             [
                 "Save HC Group Compositions",
-                "hcSelected player apply {[_x] call jib_group__save}",
+                "hcSelected player apply {[_x] call jib_hc_group_save}",
                 "1", true
             ],
             [
                 "Load HC Group Compositions",
-                "hcSelected player apply {[_x] call jib_group__load}",
+                "hcSelected player apply {[_x] call jib_hc_group_load}",
                 "1", true
             ]
         ]
     ]
 };
-publicVariable "jib_hc_menu;";
 
 jib_hc__bottom = {
 

@@ -1,7 +1,5 @@
 if (!isServer) exitWith {};
 
-jib_group_action;
-jib_group_menu_dynamic;
 jib_group_serialize_soldier;
 jib_group_deserialize_soldiers;
 
@@ -12,31 +10,11 @@ jib_group_rally = {
     _group setVariable ["jib_group__rally", _pos, true];
 };
 
-// Add group menu to player
-jib_group__menu = {
-    params ["_player"];
-    if (!isServer) exitWith {};
-    [[_player], {
-        params ["_player"];
-        private _action = [
-            "Group Menu",
-            {[] call jib_group__menu_data call jib_group_menu_dynamic},
-            [], 4, false, true, "", toString {
-                leader player == player && _originalTarget == player
-            }, 2
-        ];
-        isNil {
-            _player removeAction (
-                _player getVariable ["jib_group__menu_action", -1]
-            );
-            _player setVariable [
-                "jib_group__menu_action", _player addAction _action
-            ];
-        };
-    }] remoteExec ["spawn", _player];
+jib_group_menu_condition = {
+    leader player == player && _originalTarget == player;
 };
 
-jib_group__menu_data = {
+jib_group_menu_data = {
     [
         "Group Menu",
         [
@@ -44,11 +22,11 @@ jib_group__menu_data = {
             ["Selected Down", "[] call jib_group__bottom", "1", true],
             [
                 "Save Group Composition",
-                "[group player] call jib_group__save", "1", true
+                "[group player] call jib_group_save", "1", true
             ],
             [
                 "Load Group Composition",
-                "[group player] call jib_group__load", "1", true
+                "[group player] call jib_group_load", "1", true
             ],
             [
                 "Delete Selected", "", "1", false, [
@@ -60,7 +38,6 @@ jib_group__menu_data = {
         ]
     ]
 };
-publicVariable "jib_group__menu_data";
 
 jib_group__top = {
     private _group = group player;
@@ -125,7 +102,7 @@ jib_group__delete = {
 };
 publicVariable "jib_group__delete";
 
-jib_group__save = {
+jib_group_save = {
     params ["_group"];
     private _data = _group getVariable ["jib_group__data", []];
     private _new_data = units _group apply {
@@ -145,10 +122,10 @@ jib_group__save = {
     };
     _group setVariable ["jib_group__data", _new_data, true];
 };
-publicVariable "jib_group__save";
+publicVariable "jib_group_save";
 
 // Load missing units from group
-jib_group__load = {
+jib_group_load = {
     params ["_group"];
     [[_group], {
         params ["_group"];
@@ -189,7 +166,7 @@ jib_group__load = {
         _group setVariable ["jib_group__data", _new_data, true];
     }] remoteExec ["spawn", leader _group];
 };
-publicVariable "jib_group__load";
+publicVariable "jib_group_load";
 
 jib_group__id_fn = {
     private _id = -1;
@@ -203,32 +180,3 @@ jib_group__id_fn = {
     format ["jib_group__id_%1", _id];
 };
 publicVariable "jib_group__id_fn";
-
-jib_group__setup = {
-    private _handler_mission = {
-        params ["_network_id", "_player"];
-        [_player] call jib_group__menu;
-        private _handler_player = {
-            params ["_player"];
-            [_player] call jib_group__menu;
-        };
-        isNil {
-            _player removeEventHandler [
-                "Local", _player getVariable ["jib_group__handler_player", -1]
-            ];
-            _player setVariable [
-                "jib_group__handler_player",
-                _player addEventHandler ["Local", _handler_player]
-            ];
-        };
-    };
-    isNil {
-        removeMissionEventHandler [
-            "OnUserSelectedPlayer",
-            missionNamespace getVariable ["jib_group__handler_mission", -1]
-        ];
-        jib_group__handler_mission =
-            addMissionEventHandler ["OnUserSelectedPlayer", _handler_mission];
-    };
-};
-[] call jib_group__setup;
