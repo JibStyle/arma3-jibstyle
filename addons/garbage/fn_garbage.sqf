@@ -201,5 +201,3 @@ jib_garbage__performance = {
         ] # 0;
     };
 };
-
-[] call jib_garbage_start;
