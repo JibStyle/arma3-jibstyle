@@ -2,6 +2,14 @@ jib_menu_group_data;
 jib_menu_group_condition;
 jib_menu_hc_condition;
 jib_menu_hc_data;
+jib_menu_mission_condition = {
+    (!isMultiplayer || serverCommandAvailable "#kick")
+        && _originalTarget == player
+};
+jib_menu_mission_data =
+    {["Mission Menu", [["Test", toString {systemChat "Test Succeeded."}]]]};
+jib_menu_service_condition;
+jib_menu_service_data;
 
 // Setup
 jib_menu_setup = {
@@ -228,7 +236,9 @@ jib_menu_player_menus_fn = {
     [
         // TODO: Add admin menu
         [jib_menu_group_data, jib_menu_group_condition],
-        [jib_menu_hc_data, jib_menu_hc_condition]
+        [jib_menu_hc_data, jib_menu_hc_condition],
+        [jib_menu_mission_data, jib_menu_mission_condition],
+        [jib_menu_service_data, jib_menu_service_condition]
     ]
 };
 

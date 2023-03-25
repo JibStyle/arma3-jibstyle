@@ -1,3 +1,39 @@
+jib_service_group_rally;
+
+jib_service_menu_condition = {
+    alive getAssignedCuratorLogic player && _originalTarget == player;
+};
+
+jib_service_menu_data = {
+    [
+        "Service Menu",
+        [
+            [
+                "Update Rally",
+                toString {[player] remoteExec ["jib_service_rally", 2]},
+                "1", true
+            ]
+        ]
+    ]
+};
+
+// Move field teleporter to player
+jib_service_rally = {
+    params ["_player"];
+    if (!isServer) exitWith {};
+    jib_service_rally_base hideObjectGlobal false;
+    jib_service_rally_field hideObjectGlobal false;
+    jib_service_rally_field setVehiclePosition [
+        getPos _player, [], 0, "NONE"
+    ];
+    "jib_service_rally_marker" setMarkerAlphaLocal 1;
+    "jib_service_rally_marker" setMarkerPos _player;
+    allGroups apply {
+        // TODO: Fix group addon dependency
+        [_x, getPos _player] call jib_service_group_rally;
+    };
+};
+
 // Init object to teleport to other objects
 // [a, [[b, "Bravo"], [c, "Charlie"]]] call jib_service_teleport_init;
 jib_service_teleport_init = {
