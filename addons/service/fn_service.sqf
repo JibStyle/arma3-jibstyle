@@ -21,15 +21,42 @@ jib_service_menu_data = {
 jib_service_rally = {
     params ["_player"];
     if (!isServer) exitWith {};
+
+    if (
+        !alive (
+            missionNamespace getVariable ["jib_service_rally_base", objNull]
+        )
+    ) then {
+        jib_service_rally_base =
+            "Land_Laptop_unfolded_F" createVehicle position _player;
+    };
+    if (
+        !alive (
+            missionNamespace getVariable ["jib_service_rally_field", objNull]
+        )
+    ) then {
+        jib_service_rally_field =
+            "Land_TentDome_F" createVehicle position _player;
+    };
+    [
+        jib_service_rally_base, [[jib_service_rally_field, "Rally Point"]]
+    ] call jib_service_teleport_init;
+    [
+        jib_service_rally_field, [[jib_service_rally_base, "Base"]]
+    ] call jib_service_teleport_init;
     jib_service_rally_base hideObjectGlobal false;
     jib_service_rally_field hideObjectGlobal false;
     jib_service_rally_field setVehiclePosition [
         getPos _player, [], 0, "NONE"
     ];
+
+    if (getMarkerType "jib_service_rally_marker" == "") then {
+        createMarker ["jib_service_rally_marker", _player];
+        // "jib_service_rally_marker" setMarkerType "mil_join";
+    };
     "jib_service_rally_marker" setMarkerAlphaLocal 1;
     "jib_service_rally_marker" setMarkerPos _player;
     allGroups apply {
-        // TODO: Fix group addon dependency
         [_x, getPos _player] call jib_service_group_rally;
     };
 };
@@ -41,41 +68,48 @@ jib_service_teleport_init = {
     if (!isServer) exitWith {};
     [[_object, _destinations], {
         params ["_object", "_destinations"];
-        _destinations apply {
-            _x params ["_other", "_name"];
-            _object addAction [
-                format ["Teleport to %1", _name],
-                {
-                    params ["", "", "", "_arguments"];
-                    _arguments params ["_other"];
-                    private _teleport = {
-                        params ["_unit"];
-                        _unit setVehiclePosition [
-                            getPos _other, [], 0, "NONE"
-                        ];
-                    };
-                    private _selected = units group player;
-                    if (
-                        leader player == player && count _selected > 0
-                    ) then {
-                        private _units = _selected select {
-                            _x distance player < 10
-                        };
-                        _units apply {
-                            [_x] call _teleport;
-                            uiSleep 0.3;
-                        };
-                        systemChat format [
-                            "Teleported %1 units.", count _units
-                        ];
-                    } else {
-                        [player] call _teleport;
-                        systemChat "Teleported player.";
-                    };
-                },
-                [_other], 10, true, true, "", "true", 2
-            ];
+        _object getVariable ["jib_service_teleport_actions", []] apply {
+            _object removeAction _x;
         };
+        _object setVariable [
+            "jib_service_teleport_actions",
+            _destinations apply {
+                _x params ["_other", "_name"];
+                _object addAction [
+                    format ["Teleport to %1", _name],
+                    {
+                        params ["", "", "", "_arguments"];
+                        _arguments params ["_other"];
+                        if (isNull _other) exitWith {};
+                        private _teleport = {
+                            params ["_unit"];
+                            _unit setVehiclePosition [
+                                getPos _other, [], 0, "NONE"
+                            ];
+                        };
+                        private _selected = units group player;
+                        if (
+                            leader player == player && count _selected > 0
+                        ) then {
+                            private _units = _selected select {
+                                _x distance player < 10
+                            };
+                            _units apply {
+                                [_x] call _teleport;
+                                uiSleep 0.3;
+                            };
+                            systemChat format [
+                                "Teleported %1 units.", count _units
+                            ];
+                        } else {
+                            [player] call _teleport;
+                            systemChat "Teleported player.";
+                        };
+                    },
+                    [_other], 10, true, true, "", "true", 2
+                ];
+            }
+        ];
     }] remoteExec ["spawn", 0, true];
 };
 
