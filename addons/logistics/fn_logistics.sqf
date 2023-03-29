@@ -1,7 +1,6 @@
 jib_logistics_activate_crate;
 jib_logistics_activate_unit;
 jib_logistics_activate_vehicle;
-jib_logistics_menu_unit;
 jib_logistics_menu_create;
 jib_logistics_menu_action;
 

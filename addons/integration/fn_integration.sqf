@@ -91,7 +91,6 @@ jib_logistics_activate_unit = {
     };
 };
 jib_logistics_activate_vehicle = jib_emitter_single;
-jib_logistics_menu_unit = jib_menu_unit;
 jib_logistics_menu_create = jib_menu_create;
 jib_logistics_menu_action = jib_menu_action;
 jib_group_serialize_soldier = jib_cereal_serialize_soldier;
