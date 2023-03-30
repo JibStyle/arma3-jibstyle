@@ -357,7 +357,7 @@ jib_ai_cqb = {
         ["_group_weight_guard", 0, [0]],  // Guard WP
         ["_group_weight_engage", 0, [0]], // Combat mode RED
         ["_group_weight_static", 1, [0]], // Static defense
-        ["_unit_static_prob", 0.5, [0]],  // Disable AI "TARGET" or "PATH"
+        ["_unit_static_prob", 0.5, [0]],  // Disable AI "TARGET" and "PATH"
         ["_unit_static_dist", -1, [0]]    // Distance to disable static
     ];
     if (!local _group) exitWith {};
@@ -377,7 +377,7 @@ jib_ai_cqb = {
                     doStop _x;
                     if (random 1 < _unit_static_prob) then {
                         _x disableAI "TARGET";
-                        // _x disableAI "PATH";
+                        _x disableAI "PATH";
                     };
                 };
                 _group setVariable [
