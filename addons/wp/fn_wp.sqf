@@ -178,6 +178,50 @@ jib_wp_rtb = {
     ] call jib_wp_add;
 };
 
+// Make current waypoint follow target group while condition true
+jib_wp_follow = {
+    params [
+        "_group",
+        "_target_group",
+        "_condition",
+        ["_period", 5, [0]],
+        ["_radius", -1, [0]],
+        ["_completionRadius", 0, [0]]
+    ];
+    if (!isServer) exitWith {};
+    isNil {
+        terminate (_group getVariable ["jib_wp__follow", scriptNull]);
+        _group setVariable [
+            "jib_wp__follow",
+            [
+                _group, _target_group, _condition, _period,
+                _radius, _completionRadius
+            ] spawn {
+                params [
+                    "_group", "_target_group", "_condition",
+                    "_period", "_radius", "_completionRadius"
+                ];
+                while _condition do {
+                    private _nearest = leader _target_group;
+                    units _target_group apply {
+                        if (
+                            leader _group distance _x
+                                < leader _group distance _nearest
+                        ) then {_nearest = _x};
+                    };
+                    [_group, currentWaypoint _group] setWaypointPosition [
+                        getPosASL vehicle _nearest, _radius
+                    ];
+                    [
+                        _group, currentWaypoint _group
+                    ] setWaypointCompletionRadius _completionRadius;
+                    uiSleep _period;
+                };
+            }
+        ];
+    };
+};
+
 // PRIVATE BELOW HERE
 
 // Common code to add a waypoint
