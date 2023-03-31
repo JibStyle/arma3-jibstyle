@@ -54,6 +54,27 @@ jib_objective_minefield = {
     };
 };
 
+// Update synchronized task destination to logic position
+jib_objective_task_destination = {
+    params ["_logic", ["_notification", false, [false]]];
+    if (!isServer) exitWith {};
+    private _triggers = _logic call BIS_fnc_moduleTriggers;
+    waitUntil {
+        uiSleep 0.5;
+        {triggerActivated _x} count _triggers == count _triggers;
+    };
+    private _modules = _logic call BIS_fnc_moduleModules;
+    private _module = objNull;
+    {
+        if (typeOf _x == "ModuleTaskCreate_F") exitWith {_module = _x}
+    } forEach _modules;
+    if (isNull _module) exitWith {false};
+    private _task = _module getVariable ["ID", ""];
+    if (_task == "") exitWith {false};
+    _dest = position _logic;
+    [_task,nil,nil,_dest,nil,nil,_notification] call bis_fnc_setTask;
+};
+
 // Setup data terminal objective
 jib_objective_dataTerminal = {
     params [
