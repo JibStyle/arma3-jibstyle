@@ -4,18 +4,16 @@ jib_service_menu_condition = {
     alive getAssignedCuratorLogic player && _originalTarget == player;
 };
 
-jib_service_menu_data = {
+jib_service_menu_data = [
+    "Service Menu",
     [
-        "Service Menu",
         [
-            [
-                "Update Rally",
-                toString {[player] remoteExec ["jib_service_rally", 2]},
-                "1", true
-            ]
+            "Update Rally",
+            toString {[player] remoteExec ["jib_service_rally", 2]},
+            "1", true
         ]
     ]
-};
+];
 
 // Move field teleporter to player
 jib_service_rally = {

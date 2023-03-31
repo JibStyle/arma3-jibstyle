@@ -14,30 +14,28 @@ jib_group_menu_condition = {
     leader player == player && _originalTarget == player;
 };
 
-jib_group_menu_data = {
+jib_group_menu_data = [
+    "Group Menu",
     [
-        "Group Menu",
+        ["Selected Up", "[] call jib_group__top", "1", true],
+        ["Selected Down", "[] call jib_group__bottom", "1", true],
         [
-            ["Selected Up", "[] call jib_group__top", "1", true],
-            ["Selected Down", "[] call jib_group__bottom", "1", true],
-            [
-                "Save Group Composition",
-                "[group player] call jib_group_save", "1", true
-            ],
-            [
-                "Load Group Composition",
-                "[group player] call jib_group_load", "1", true
-            ],
-            [
-                "Delete Selected", "", "1", false, [
-                    "Confirm Delete?", [
-                        ["CONFIRM", "[] call jib_group__delete", "1"]
-                    ]
+            "Save Group Composition",
+            "[group player] call jib_group_save", "1", true
+        ],
+        [
+            "Load Group Composition",
+            "[group player] call jib_group_load", "1", true
+        ],
+        [
+            "Delete Selected", "", "1", false, [
+                "Confirm Delete?", [
+                    ["CONFIRM", "[] call jib_group__delete", "1"]
                 ]
             ]
         ]
     ]
-};
+];
 
 jib_group__top = {
     private _group = group player;

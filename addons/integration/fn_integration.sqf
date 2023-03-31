@@ -109,12 +109,14 @@ jib_hc_group_save = jib_group_save;
 publicVariable "jib_hc_group_save";
 jib_hc_group_load = jib_group_load;
 publicVariable "jib_hc_group_load";
-jib_menu_group_data = jib_group_menu_data;
+
 jib_menu_group_condition = jib_group_menu_condition;
-jib_menu_hc_data = jib_hc_menu_data;
+jib_menu_group_data = jib_group_menu_data;
 jib_menu_hc_condition = jib_hc_menu_condition;
+jib_menu_hc_data = jib_hc_menu_data;
 jib_menu_service_condition = jib_service_menu_condition;
 jib_menu_service_data = jib_service_menu_data;
+
 jib_service_group_rally = jib_group_rally;
 
 // Run the mission start handlers
