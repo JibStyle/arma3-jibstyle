@@ -10,10 +10,12 @@ jib_menu_condition_admin = {
     (!isMultiplayer || serverCommandAvailable "#kick")
         && _originalTarget == player
 };
+publicVariable "jib_menu_condition_admin";
 
 jib_menu_condition_zeus = {
     alive getAssignedCuratorLogic player && _originalTarget == player;
 };
+publicVariable "jib_menu_condition_zeus";
 
 // Setup player menus
 jib_menu_setup = {
@@ -36,12 +38,7 @@ jib_menu_setup = {
             private _do_register = {
                 player setVariable [
                     "jib_menu__player_actions",
-                    [
-                        // TODO: Add admin menu
-                        [jib_menu_group_condition, jib_menu_group_data],
-                        [jib_menu_hc_condition, jib_menu_hc_data],
-                        [jib_menu_service_condition, jib_menu_service_data]
-                    ] apply {
+                    _menus apply {
                         _x params ["_condition", "_menu_data"];
                         [
                             player, _condition, _menu_data
