@@ -5,6 +5,28 @@ if (!isServer) exitWith {};
 // Dependency injected from integration.
 jib_ai_moduleValidate = {};
 
+// Infinite fuel vehicle
+jib_ai_infinite_fuel = {
+    params ["_vehicle", ["_period", 10, [1]]];
+    if (!isServer) exitWith {};
+    isNil {
+        terminate (
+            _vehicle getVariable ["jib_ai__infinite_fuel", scriptNull]
+        );
+        _vehicle setVariable [
+            "jib_ai__infinite_fuel",
+            [_vehicle, _period] spawn {
+                params ["_vehicle", "_period"];
+                private _driver = driver _vehicle;
+                while {alive _vehicle && driver _vehicle == _driver} do {
+                    uiSleep _period;
+                    _vehicle setFuel 1;
+                };
+            }
+        ];
+    };
+};
+
 // Dependency to draw
 jib_ai_drawAdd = {};
 

@@ -183,7 +183,7 @@ jib_wp_follow = {
     params [
         "_group",
         "_target_group",
-        "_condition",
+        ["_condition", {true}, [{}]],
         ["_period", 5, [0]],
         ["_radius", -1, [0]],
         ["_completionRadius", 0, [0]]
@@ -201,7 +201,12 @@ jib_wp_follow = {
                     "_group", "_target_group", "_condition",
                     "_period", "_radius", "_completionRadius"
                 ];
-                while _condition do {
+                private _condition_base = {
+                    {alive _x} count units _group > 0
+                        && {alive _x} count units _target_group > 0
+                };
+                uiSleep _period;
+                while {call _condition_base && call _condition} do {
                     private _nearest = leader _target_group;
                     units _target_group apply {
                         if (
