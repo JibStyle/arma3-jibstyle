@@ -94,11 +94,24 @@ jib_eden_loadout_standard = {
     };
 
     // Standard linked items
+    private _old_hmd = hmd _unit;
     removeAllAssignedItems _unit; // map,compass,watch,radio,GPS,NVG,bino
     _unit linkItem "ItemCompass";
     _unit linkItem "ItemMap";
     _unit linkItem "ItemWatch";
-    _unit linkItem "ACE_NVG_Wide_Green";
+
+    // NVG
+    private _hmd_map = [
+        [["NVGoggles"], "ACE_NVG_Wide"],
+        [["NVGoggles_OPFOR"], "ACE_NVG_Wide_Black"],
+        [["NVGoggles_INDEP"], "ACE_NVG_Wide_Green"],
+        [["NVGoggles_tna_F"], "ACE_NVG_Wide_Green"]
+    ];
+    _hmd_map apply {
+        _x params ["_froms", "_to"];
+        if (_old_hmd in _froms) exitWith {_unit linkItem _to};
+    };
+    if (hmd _unit == "") then {_unit linkItem _old_hmd};
 
     // Standard container items
     removeAllItemsWithMagazines _unit;
