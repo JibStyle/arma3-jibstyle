@@ -148,8 +148,8 @@ jib_objective_hostage = {
     params [
         "_hostage",          // Hostage
         ["_injured", false], // True if injured (not ACE compatible)
-        ["_owner", true],    // Bool, object, group, side, or array
-        ["_assign", true]    // Auto assign task with notification
+        ["_owner", false],    // Bool, object, group, side, or array
+        ["_assign", false]    // Auto assign task with notification
     ];
     if (!isServer) then {throw "Not server!"};
     if (!alive _hostage) then {throw "Hostage not alive!"};
