@@ -28,13 +28,15 @@ jib_menu_setup = {
     [[_menus], {
         params ["_menus"];
         if (!hasInterface) exitWith {};
+        if (!isNil "jib_menu__player_watchdog") then {
+            terminate jib_menu__player_watchdog;
+        };
         jib_menu__player_watchdog = [_menus] spawn {
             params ["_menus"];
-            private _should_register = {
-                alive player && count (
-                    player getVariable ["jib_menu__player_actions", []]
-                ) == 0
-            };
+            jib_menu__player_menus = _menus;
+            jib_menu__player_units = [];
+            private _should_register =
+                {alive player && !(player in jib_menu__player_units)};
             private _do_register = {
                 player setVariable [
                     "jib_menu__player_actions",
@@ -45,6 +47,7 @@ jib_menu_setup = {
                         ] call jib_menu_dynamic_action;
                     }
                 ];
+                jib_menu__player_units pushBack player;
             };
             while {true} do {
                 uiSleep 1;
