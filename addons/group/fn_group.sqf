@@ -102,23 +102,26 @@ publicVariable "jib_group__delete";
 
 jib_group_save = {
     params ["_group"];
-    private _data = _group getVariable ["jib_group__data", []];
-    private _new_data = units _group apply {
-        private _soldier = _x;
-        private _soldier_id =
-            _soldier getVariable ["jib_group__id", call jib_group__id_fn];
-        _soldier setVariable ["jib_group__id", _soldier_id];
-        private _matches = _data select {
-            _x params ["_data_soldier", "_data_id"];
-            _data_id == _soldier_id;
+    [[_group], {
+        params ["_group"];
+        private _data = _group getVariable ["jib_group__data", []];
+        private _new_data = units _group apply {
+            private _soldier = _x;
+            private _soldier_id =
+                _soldier getVariable ["jib_group__id", call jib_group__id_fn];
+            _soldier setVariable ["jib_group__id", _soldier_id, true];
+            private _matches = _data select {
+                _x params ["_data_soldier", "_data_id"];
+                _data_id == _soldier_id;
+            };
+            if (count _matches > 0) then {
+                _matches # 0;
+            } else {
+                [[_soldier] call jib_group_serialize_soldier, _soldier_id];
+            };
         };
-        if (count _matches > 0) then {
-            _matches # 0;
-        } else {
-            [[_soldier] call jib_group_serialize_soldier, _soldier_id];
-        };
-    };
-    _group setVariable ["jib_group__data", _new_data, true];
+        _group setVariable ["jib_group__data", _new_data, true];
+    }] remoteExec ["spawn", leader _group];
 };
 publicVariable "jib_group_save";
 
@@ -155,7 +158,9 @@ jib_group_load = {
                 _result = [_data_soldier, _data_id];
             } else {
                 private _id = call jib_group__id_fn;
-                _new_soldiers # _index setVariable ["jib_group__id", _id];
+                _new_soldiers # _index setVariable [
+                    "jib_group__id", _id, true
+                ];
                 _result = [_data_soldier, _id];
                 _index = _index + 1;
             };
