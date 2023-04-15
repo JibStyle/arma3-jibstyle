@@ -80,7 +80,8 @@ jib_objective_dataTerminal = {
     params [
         "_dataTerminal",  // Data terminal to setup
         ["_owner", true], // Bool, object, group, side, or array
-        ["_assign", true] // Auto assign task with notification
+        ["_assign", true], // Auto assign task with notification
+        ["_completion", {}] // Called on server when hack complete
     ];
     if (!isServer) then {throw "Not server!"};
 
@@ -129,7 +130,7 @@ jib_objective_dataTerminal = {
     };
 
     // Setup clients
-    [_dataTerminal] remoteExec [
+    [_dataTerminal, _completion] remoteExec [
         "jib_objective_dataTerminalHoldActionAdd",
         0,
         true
@@ -281,7 +282,7 @@ jib_objective_dataTerminalHoldActionIcon =
 
 // Complete data terminal objective
 jib_objective_dataTerminalComplete = {
-    params ["_dataTerminal"];
+    params ["_dataTerminal", "_completion"];
     if (!isServer) then {throw "Not server!"};
 
     // Cleanup clients
@@ -304,6 +305,9 @@ jib_objective_dataTerminalComplete = {
             "SUCCEEDED"
         ] call BIS_fnc_taskSetState;
     };
+
+    // Call completion
+    call _completion;
 };
 
 // Data terminal remove hold action (local).
@@ -320,7 +324,7 @@ jib_objective_dataTerminalHoldActionRemove = {
 
 // Data terminal add hold action (local).
 jib_objective_dataTerminalHoldActionAdd = {
-    params ["_dataTerminal"];
+    params ["_dataTerminal", "_completion"];
 
     [_dataTerminal] call jib_objective_dataTerminalHoldActionRemove;
 
@@ -338,7 +342,7 @@ jib_objective_dataTerminalHoldActionAdd = {
             {_this call jib_objective_dataTerminalHoldActionProgress;},
             {_this call jib_objective_dataTerminalHoldActionComplete;},
             {_this call jib_objective_dataTerminalHoldActionInterrupt;},
-            [],     // args
+            [_completion],     // args
             7,      // duration
             1000,   // priority (default 1000)
             true,   // remove completed
@@ -368,11 +372,14 @@ jib_objective_dataTerminalHoldActionProgress = {
 // Hold action completion handler (local).
 jib_objective_dataTerminalHoldActionComplete = {
     params ["_target", "_caller", "_actionId", "_arguments"];
+    _arguments params ["_completion"];
     playSound3D [
         jib_objective_dataTerminalSoundComplete,
         _target
     ];
-    [_target] remoteExec ["jib_objective_dataTerminalComplete", 2];
+    [_target, _completion] remoteExec [
+        "jib_objective_dataTerminalComplete", 2
+    ];
 };
 
 // Hold action interrupt handler (local).
