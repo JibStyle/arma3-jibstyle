@@ -3,6 +3,66 @@ if (!isServer) exitWith {};
 jib_group_serialize_soldier;
 jib_group_deserialize_soldiers;
 
+jib_group_setup = {
+    if (!isServer) exitWith {};
+    removeMissionEventHandler [
+        "GroupCreated",
+        missionNamespace getVariable ["jib_group__group_created_handler", -1]
+    ];
+    jib_group__group_created_handler = addMissionEventHandler [
+        "GroupCreated", {
+	    params ["_group"];
+            [_group] call jib_group__setup_group;
+        }
+    ];
+    allGroups apply {
+        [_x] call jib_group__setup_group;
+    };
+};
+
+jib_group__setup_group = {
+    params ["_group"];
+    _group removeEventHandler [
+        "UnitJoined",
+        _group getVariable ["jib_group__unit_joined_handler", -1]
+    ];
+    _group removeEventHandler [
+        "UnitLeft",
+        _group getVariable ["jib_group__unit_left_handler", -1]
+    ];
+    _group setVariable [
+        "jib_group__unit_joined_handler",
+        _group addEventHandler ["UnitJoined", {
+	    params ["_group", "_newUnit"];
+            [_group] call jib_group__update_speakers;
+        }]
+    ];
+    _group setVariable [
+        "jib_group__unit_left_handler",
+        _group addEventHandler ["UnitLeft", {
+	    params ["_group", "_oldUnit"];
+            [_group] call jib_group__update_speakers;
+        }]
+    ];
+    [_x] call jib_group__update_speakers;
+};
+
+jib_group__update_speakers = {
+    params ["_group"];
+    if ({isPlayer _x} count units _group == count units _group) then {
+        units _group apply {
+            _x setVariable ["jib_group__unit_speaker", speaker _x];
+            [_x, "NoVoice"] remoteExec ["setSpeaker", 0, _x];
+        };
+    } else {
+        units _group apply {
+            [
+                _x, _x getVariable ["jib_group__unit_speaker", speaker _x]
+            ] remoteExec ["setSpeaker", 0, _x];
+        };
+    };
+};
+
 // Set respawn position of group AI
 jib_group_rally = {
     params ["_group", "_pos"];
@@ -58,7 +118,11 @@ jib_group__top = {
         _x joinAsSilent [_group, _i];
         _i = _i + 1;
     };
-    [_group, player] remoteExec ["selectLeader", _group];
+    [_group, player] spawn {
+        params ["_group", "_player"];
+        waitUntil {uiSleep 0.5; _player in units _group};
+        [_group, _player] remoteExec ["selectLeader", _group];
+    };
 };
 publicVariable "jib_group__top";
 
@@ -83,7 +147,11 @@ jib_group__bottom = {
         _x joinAsSilent [_group, _i];
         _i = _i + 1;
     };
-    [_group, player] remoteExec ["selectLeader", _group];
+    [_group, player] spawn {
+        params ["_group", "_player"];
+        waitUntil {uiSleep 0.5; _player in units _group};
+        [_group, _player] remoteExec ["selectLeader", _group];
+    };
 };
 publicVariable "jib_group__bottom";
 

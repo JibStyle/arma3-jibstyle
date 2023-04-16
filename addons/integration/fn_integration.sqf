@@ -82,11 +82,18 @@ jib_logistics_activate_unit = {
     _this spawn {
         params ["_emitter", "_player"];
         private _unit = [_emitter] call jib_emitter_single select 3 select 0;
-        [[_unit, _player], {
-            params ["_unit", "_player"];
+        private _loadout = getUnitLoadout _unit;
+        [[_unit, _player, _loadout], {
+            params ["_unit", "_player", "_loadout"];
             [_unit] join group _player;
-            waitUntil {alive _unit && group _unit == group _player};
+            waitUntil {
+                alive _unit && group _unit == group _player && local _unit
+            };
             doStop _unit;
+            _unit setUnitLoadout _loadout;
+            if (count (_loadout # 3) == 0) then {
+                systemChat "empty loadout!";
+            };
         }] remoteExec ["spawn", _player];
     };
 };
@@ -121,4 +128,5 @@ jib_service_group_rally = jib_group_rally;
 
 // Run the mission start handlers
 [] call jib_menu_setup;
+[] call jib_group_setup;
 [] call jib_handler_integrationDone;
