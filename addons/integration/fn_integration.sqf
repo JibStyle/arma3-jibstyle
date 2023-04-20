@@ -116,6 +116,10 @@ jib_hc_group_save = jib_group_save;
 publicVariable "jib_hc_group_save";
 jib_hc_group_load = jib_group_load;
 publicVariable "jib_hc_group_load";
+jib_hc_group_autoload = jib_group_autoload;
+publicVariable "jib_hc_group_autoload";
+jib_hc_group_autoload_off = jib_group_autoload_off;
+publicVariable "jib_hc_group_autoload_off";
 
 jib_menu_group_condition = jib_group_menu_condition;
 jib_menu_group_data = jib_group_menu_data;

@@ -2,6 +2,8 @@ if (!isServer) exitWith {};
 
 jib_hc_group_save;
 jib_hc_group_load;
+jib_hc_group_autoload;
+jib_hc_group_autoload_off;
 
 jib_hc_menu_condition = {
     hcLeader group player == player && _originalTarget == player;
@@ -12,16 +14,18 @@ jib_hc_menu_data = [
     [
         // ["Selected Up", "[] call jib_hc__top", "1", true],
         // ["Selected Down", "[] call jib_hc__bottom", "1", true],
-        [
-            "Save HC Group Compositions",
-            "hcSelected player apply {[_x] call jib_hc_group_save}",
-            "1", true
-        ],
-        [
-            "Load HC Group Compositions",
-            "hcSelected player apply {[_x] call jib_hc_group_load}",
-            "1", true
-        ]
+        ["HC Selected AI Save",
+         "hcSelected player apply {[_x] call jib_hc_group_save}", "1", true],
+        ["HC Selected AI Respawn",
+         "hcSelected player apply {[_x] call jib_hc_group_load}", "1", true],
+        ["HC Selected AI Auto Respawn",
+         "hcSelected player apply {[_x] call jib_hc_group_autoload}",
+         "1", true],
+        ["HC Selected AI Stop Respawn",
+         "hcSelected player apply {[_x] call jib_hc_group_autoload_stop}",
+         "1", true],
+        ["HC Fix Bug",
+         "[player] call jib_hc_fix"]
     ]
 ];
 
@@ -63,17 +67,15 @@ jib_hc_handlerMissionTeamSwitch = {
     [_oldUnit, _newUnit] call jib_hc_transfer;
 };
 
-// Setup a HC platoon all at once
-jib_hc_setup = {
-    params ["_leader", "_groups"];
-    if (!isServer) exitWith {};
-    [_leader, _groups] spawn {
-        params ["_leader", "_groups"];
-        [_leader] call jib_hc_promote;
-        _groups apply {
+// Fix HC bug by resetting state
+jib_hc_fix = {
+    params ["_leader"];
+    [_leader, {
+        params ["_leader"];
+        _leader getVariable ["jib_hc__groups", []] apply {
             [_leader, _x] call jib_hc_add;
         };
-    };
+    }] remoteExec ["spawn", 2];
 };
 
 // PRIVATE BELOW HERE
@@ -82,10 +84,9 @@ jib_hc_setup = {
 jib_hc_transfer = {
     params ["_oldUnit", "_newUnit"];
     if (!isServer) then {throw "Not server"};
-    {
-        _oldUnit hcRemoveGroup _x;
-        _newUnit hcSetGroup [_x];
-    } forEach hcAllGroups _oldUnit;
+    _oldUnit getVariable ["jib_hc__groups", []] apply {
+        [_new_unit, _x] call jib_hc_add;
+    };
 };
 
 // Make unit a commander.
@@ -144,8 +145,27 @@ jib_hc_add = {
         waitUntil { isNull hcLeader _group || time > _t };
         _commander hcSetGroup [_group];
         _t = time + _timeout;
-        waitUntil { hcLeader _group == _commander || time > _t};
+        waitUntil {hcLeader _group == _commander || time > _t};
     };
+    private _groups = _commander getVariable ["jib_hc__groups", []];
+    if !(_group in _groups) then {
+        _commander setVariable ["jib_hc__groups", _groups + [_group]];
+    };
+    _group setVariable ["jib_hc__leader", _commander];
+    _group removeEventHandler [
+        "UnitJoined", _group getVariable ["jib_hc__unitJoined", -1]
+    ];
+    _group setVariable [
+        "jib_hc__unitJoined",
+        _group addEventHandler ["UnitJoined", {
+	    params ["_group", "_newUnit"];
+            private _leader = _group getVariable ["jib_hc__leader", objNull];
+            if (hcLeader _group != _leader) then {
+                [_leader, _group] call jib_hc_add;
+            };
+        }]
+    ];
+
     true;
 };
 
@@ -262,7 +282,7 @@ jib_hc_moduleRemove = {
 };
 
 // Remote calls
-publicVariable "jib_hc_setup";
+publicVariable "jib_hc_fix";
 publicVariable "jib_hc_moduleValidate";
 publicVariable "jib_hc_modulePromote";
 publicVariable "jib_hc_moduleAdd";

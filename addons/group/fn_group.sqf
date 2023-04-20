@@ -3,6 +3,10 @@ if (!isServer) exitWith {};
 jib_group_serialize_soldier;
 jib_group_deserialize_soldiers;
 
+jib_group_autoload_delay;
+
+jib_group__sort_team_rbgy = true; // Sort RBGY instead of default RGBY
+
 jib_group_setup = {
     if (!isServer) exitWith {};
     removeMissionEventHandler [
@@ -77,83 +81,152 @@ jib_group_menu_condition = {
 jib_group_menu_data = [
     "Group Menu",
     [
-        ["Selected Up", "[] call jib_group__top", "1", true],
-        ["Selected Down", "[] call jib_group__bottom", "1", true],
-        [
-            "Save Group Composition",
-            "[group player] call jib_group_save", "1", true
-        ],
-        [
-            "Load Group Composition",
-            "[group player] call jib_group_load", "1", true
-        ],
-        [
-            "Delete Selected", "", "1", false, [
-                "Confirm Delete?", [
-                    ["CONFIRM", "[] call jib_group__delete", "1"]
-                ]
-            ]
-        ]
+        ["Sort Selected Up",
+         "[] call jib_group__sort_selected_up", "1", true],
+        ["Sort Selected Down",
+         "[] call jib_group__sort_selected_down", "1", true],
+        ["Sort Players Up",
+         "[] call jib_group__sort_players_up", "1", true],
+        ["Sort Players Down",
+         "[] call jib_group__sort_players_down", "1", true],
+        ["Sort by Fireteam",
+         "[] call jib_group__sort_team", "1", true],
+        ["AI Save",
+         "[group player] call jib_group_save", "1", true],
+        ["AI Respawn",
+         "[group player] call jib_group_load", "1", true],
+        ["AI Auto Respawn",
+         "[group player] call jib_group_autoload", "1", true],
+        ["AI Stop Respawn",
+         "[group player] call jib_group_autoload_off", "1", true],
+        ["Delete Selected", "", "1", false,
+         ["Confirm Delete?", [["CONFIRM", "[] call jib_group__delete", "1"]]]]
     ]
 ];
 
-jib_group__top = {
+jib_group__sort_selected_up = {
     private _group = group player;
     private _selected = groupSelectedUnits player;
-    if (!local _group) then {throw "Group not local!"};
     if (count _selected == 0) then {_selected = [player]};
     private _rest = units _group - _selected;
-    private _i = count units _group;
-    private _base = 100;
-    units _group apply {
-        _x joinAsSilent [_group, _base + _i];
-        _i = _i + 1;
-    };
-    _i = 0;
-    _selected apply {
-        _x joinAsSilent [_group, _i];
-        _i = _i + 1;
-    };
-    _rest apply {
-        _x joinAsSilent [_group, _i];
-        _i = _i + 1;
-    };
-    [_group, player] spawn {
-        params ["_group", "_player"];
-        waitUntil {uiSleep 0.5; _player in units _group};
-        [_group, _player] remoteExec ["selectLeader", _group];
-    };
+    [_group, player, _selected + _rest] spawn jib_group__rejoin;
 };
-publicVariable "jib_group__top";
+publicVariable "jib_group__sort_selected_up";
 
-jib_group__bottom = {
+jib_group__sort_selected_down = {
     private _group = group player;
     private _selected = groupSelectedUnits player;
-    if (!local _group) then {throw "Group not local!"};
     if (count _selected == 0) then {_selected = [player]};
     private _rest = units _group - _selected;
-    private _i = count units _group;
+    [_group, player, _rest + _selected] spawn jib_group__rejoin;
+};
+publicVariable "jib_group__sort_selected_down";
+
+jib_group__sort_players_up = {
+    private _group = group player;
+    private _units = [
+        units _group, [], {if (isPlayer _x) then {0} else {1}}
+    ] call BIS_fnc_sortBy;
+    [_group, player, _units] spawn jib_group__rejoin;
+};
+publicVariable "jib_group__sort_players_up";
+
+jib_group__sort_players_down = {
+    private _group = group player;
+    private _units = [
+        units _group, [], {if (isPlayer _x) then {1} else {0}}
+    ] call BIS_fnc_sortBy;
+    [_group, player, _units] spawn jib_group__rejoin;
+};
+publicVariable "jib_group__sort_players_down";
+
+jib_group__sort_team = {
+    private _group = group player;
+    private _units = [
+        units _group, [], {
+            if (jib_group__sort_team_rbgy) then {
+                switch (assignedTeam _x) do
+                {
+                    case "RED": {0};
+                    case "BLUE": {1};
+                    case "GREEN": {2};
+                    case "YELLOW": {3};
+                    default {4};
+                };
+            } else {
+                switch (assignedTeam _x) do
+                {
+                    case "RED": {0};
+                    case "GREEN": {1};
+                    case "BLUE": {2};
+                    case "YELLOW": {3};
+                    default {4};
+                };
+            };
+        }
+    ] call BIS_fnc_sortBy;
+    [_group, player, _units] spawn jib_group__rejoin;
+};
+publicVariable "jib_group__sort_team";
+
+jib_group__rejoin = {
+    params ["_group", "_leader", "_units"];
+    if (!local _group) then {throw "Group not local!"};
+
+    private _formMap = createHashMap;
+    _units apply {
+        _x setVariable [
+            "jib_group__data", [assignedTeam _x, currentCommand _x]
+        ];
+        _formMap set [
+            formLeader _x call BIS_fnc_netId,
+            [
+                formLeader _x,
+                expectedDestination formLeader _x select 0,
+                (
+                    _formMap getOrDefault [
+                        formLeader _x call BIS_fnc_netId, [objNull, [], []]
+                    ] select 2
+                ) + [_x]
+            ]
+        ];
+    };
+
+    private _i = 0;
     private _base = 100;
-    units _group apply {
+    _units apply {
         _x joinAsSilent [_group, _base + _i];
         _i = _i + 1;
     };
     _i = 0;
-    _rest apply {
+    _units apply {
         _x joinAsSilent [_group, _i];
         _i = _i + 1;
     };
-    _selected apply {
-        _x joinAsSilent [_group, _i];
-        _i = _i + 1;
+
+    waitUntil {uiSleep 0.2; _leader in units _group};
+    [_group, _leader] remoteExec ["selectLeader", _group];
+    waitUntil {uiSleep 0.2; leader _group == _leader && local _group};
+
+    _formMap apply {
+        _y params ["_formLeader", "_destination", "_units"];
+        if (_formLeader == _leader) then {continue};
+        _units doMove _destination;
     };
-    [_group, player] spawn {
-        params ["_group", "_player"];
-        waitUntil {uiSleep 0.5; _player in units _group};
-        [_group, _player] remoteExec ["selectLeader", _group];
+    units _group apply {
+        _x getVariable ["jib_group__data", []] params [
+            ["_assignedTeam", "MAIN"],
+            ["_currentCommand", ""]
+        ];
+        _x assignTeam _assignedTeam;
+        switch (_currentCommand) do
+        {
+            case "STOP": {doStop _x};
+            default {};
+        };
     };
 };
-publicVariable "jib_group__bottom";
+publicVariable "jib_group__rejoin";
 
 jib_group__delete = {
     private _selected = groupSelectedUnits player;
@@ -189,7 +262,9 @@ jib_group_save = {
             };
         };
         _group setVariable ["jib_group__data", _new_data, true];
-    }] remoteExec ["spawn", leader _group];
+    }] remoteExec [
+        "spawn", if !(isNull leader _group) then {leader _group} else {2}
+    ];
 };
 publicVariable "jib_group_save";
 
@@ -235,9 +310,54 @@ jib_group_load = {
             _result;
         };
         _group setVariable ["jib_group__data", _new_data, true];
-    }] remoteExec ["spawn", leader _group];
+    }] remoteExec [
+        "spawn", if !(isNull leader _group) then {leader _group} else {2}
+    ];
 };
 publicVariable "jib_group_load";
+
+jib_group_autoload = {
+    params ["_group"];
+    _group setVariable [
+        "jib_group__unitLeft",
+        _group addEventHandler ["UnitLeft", {
+            params ["_group", "_oldUnit"];
+            [_group, _oldUnit] spawn {
+                params ["_group", "_oldUnit"];
+                uiSleep 1;
+                if (alive _oldUnit) exitWith {};
+                terminate (
+                    _group getVariable ["jib_group__respawn", scriptNull]
+                );
+                _group setVariable [
+                    "jib_group__respawn",
+                    [_group] spawn {
+                        params ["_group"];
+                        uiSleep (
+                            missionNamespace getVariable [
+                                "jib_group_autoload_delay", 5
+                            ]
+                        );
+                        [_group] call jib_group_load;
+                    }
+                ];
+            };
+        }]
+    ];
+    [_group] call jib_group_load;
+};
+publicVariable "jib_group_autoload";
+
+jib_group_autoload_off = {
+    params ["_group"];
+    _group removeEventHandler [
+        "UnitLeft", _group getVariable ["jib_group__unitLeft", -1]
+    ];
+    terminate (
+        _group getVariable ["jib_group__respawn", scriptNull]
+    );
+};
+publicVariable "jib_group_autoload_off";
 
 jib_group__id_fn = {
     private _id = -1;
