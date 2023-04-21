@@ -246,11 +246,9 @@ jib_group_save = {
     [[_group], {
         params ["_group"];
         private _data = _group getVariable ["jib_group__data", []];
-        private _new_data = units _group apply {
+        private _new_data = units _group select {!isPlayer _x} apply {
             private _soldier = _x;
-            private _soldier_id =
-                _soldier getVariable ["jib_group__id", call jib_group__id_fn];
-            _soldier setVariable ["jib_group__id", _soldier_id, true];
+            private _soldier_id = _soldier call BIS_fnc_netId;
             private _matches = _data select {
                 _x params ["_data_soldier", "_data_id"];
                 _data_id == _soldier_id;
@@ -281,7 +279,7 @@ jib_group_load = {
             _data select {
                 _x params ["_data_soldier", "_data_id"];
                 {
-                    _x getVariable ["jib_group__id", -1] == _data_id
+                    _x call BIS_fnc_netId == _data_id
                 } count units _group == 0;
             } apply {
                 _x params ["_data_soldier", "_data_id"];
@@ -295,16 +293,15 @@ jib_group_load = {
             private _result = [];
             if (
                 _data_id in (
-                    units _group apply {_x getVariable ["jib_group__id", -1]}
+                    units _group apply {_x call BIS_fnc_netId}
                 )
             ) then {
                 _result = [_data_soldier, _data_id];
             } else {
-                private _id = call jib_group__id_fn;
-                _new_soldiers # _index setVariable [
-                    "jib_group__id", _id, true
+                _result = [
+                    _data_soldier,
+                    _new_soldiers # _index call BIS_fnc_netId
                 ];
-                _result = [_data_soldier, _id];
                 _index = _index + 1;
             };
             _result;
@@ -358,16 +355,3 @@ jib_group_autoload_off = {
     );
 };
 publicVariable "jib_group_autoload_off";
-
-jib_group__id_fn = {
-    private _id = -1;
-    isNil {
-        if (isNil "jib_group__id_index") then {
-            jib_group__id_index = 0;
-        };
-        _id = jib_group__id_index;
-        jib_group__id_index = jib_group__id_index + 1;
-    };
-    format ["jib_group__id_%1", _id];
-};
-publicVariable "jib_group__id_fn";
