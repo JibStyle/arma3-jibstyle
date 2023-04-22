@@ -19,7 +19,7 @@ jib_cereal_deserialize_batch = {
         [_x] call jib_cereal__deserialize_group;
     };
     [
-        _vehicles, _groups, _serializedSeats
+        _vehicles, _groups apply {units _x}, _serializedSeats
     ] call jib_cereal__deserialize_seats;
     private _batch = [_vehicles, _groups];
 
@@ -65,27 +65,32 @@ jib_cereal_deserialize_crate = {
     _crate;
 };
 
-jib_cereal_deserialize_soldiers = {
+jib_cereal_deserialize_partial_batch = {
     params [
-        "_group",
-        "_serializedSoldiers",
-        "_pos" // Optional
+        "_group", "_vehicle_pos", "_soldier_pos",
+        "_serialized_vehicles", "_serialized_soldiers", "_serialized_seats"
     ];
+    private _vehicles = _serialized_vehicles apply {
+        [_x, _vehicle_pos] call jib_cereal__deserialize_vehicle;
+    };
     private _soldiers = [];
-    _serializedSoldiers apply {
+    _serialized_soldiers apply {
         _soldiers pushBack (
-            [_group, _x, _pos] call jib_cereal__deserialize_soldier
+            [_group, _x, _soldier_pos] call jib_cereal__deserialize_soldier
         );
     };
+    [
+        _vehicles, [_soldiers], _serialized_seats
+    ] call jib_cereal__deserialize_seats;
     uiSleep jib_cereal_delay_physics;
-    _soldiers apply {
+    _vehicles + _soldiers apply {
         _x allowDamage (_x getVariable ["jib_cereal__damage", true]);
     };
-    [[_soldiers], {
-        params ["_soldiers"];
-        _soldiers apply {_x enableSimulationGlobal true};
+    [[_vehicles + _soldiers], {
+        params ["_objects"];
+        _objects apply {_x enableSimulationGlobal true};
     }] remoteExec ["spawn", 2];
-    _soldiers;
+    [_vehicles, _soldiers];
 };
 
 jib_cereal_deserialize_waypoint = {
@@ -116,7 +121,7 @@ jib_cereal_deserialize_waypoint = {
 jib_cereal_serialize_batch = {
     params ["_vehicles", "_groups"];
     private _serializedVehicles =
-        _vehicles apply {[_x] call jib_cereal__serialize_vehicle};
+        _vehicles apply {[_x] call jib_cereal_serialize_vehicle};
     private _serializedGroups =
         _groups apply {[_x] call jib_cereal__serialize_group};
     private _serializedSeats =
@@ -150,6 +155,18 @@ jib_cereal_serialize_soldier = {
         isDamageAllowed _soldier,
         leader _soldier == _soldier,
         _soldier getVariable ["jib_cereal__fleeing", 0] // HACK
+    ];
+};
+
+jib_cereal_serialize_vehicle = {
+    params ["_vehicle"];
+    [
+        typeOf _vehicle,
+        getPos _vehicle,
+        direction _vehicle,
+        isDamageAllowed _vehicle,
+        if (isTouchingGround _vehicle) then {"NONE"} else {"FLY"},
+        [_vehicle] call jib_cereal__serialize_inventory
     ];
 };
 
@@ -245,7 +262,7 @@ jib_cereal__deserialize_seats = {
         ];
         // TODO: Try addVehicle, see if fixes some guys dismounting
         private _vehicle = _vehicles # _vehicleIndex;
-        private _soldier = units (_groups # _groupIndex) # _unitIndex;
+        private _soldier = _groups # _groupIndex # _unitIndex;
         switch (_role) do
         {
             case "driver": {_soldier moveInDriver _vehicle};
@@ -311,11 +328,14 @@ publicVariable "jib_cereal__deserialize_soldier";
 
 jib_cereal__deserialize_vehicle = {
     uiSleep jib_cereal_delay_physics;
-    params ["_serializedVehicle"];
+    params ["_serializedVehicle", "_posArg"];
     _serializedVehicle params [
-        "_type", "_pos", "_direction",
+        "_type", "_posSerial", "_direction",
         "_isDamageAllowed", "_special", "_serializedInventory"
     ];
+    private _pos = if (
+        isNil {_posArg} || {count _posArg == 0}
+    ) then {_posSerial} else {_posArg};
     private _vehicle = createVehicle [_type, _pos, [], 0, _special];
     _vehicle allowDamage false;
     [_vehicle, false] remoteExec ["enableSimulationGlobal", 2];
@@ -406,18 +426,6 @@ jib_cereal__serialize_seats = {
         };
     };
     _serializedSeats;
-};
-
-jib_cereal__serialize_vehicle = {
-    params ["_vehicle"];
-    [
-        typeOf _vehicle,
-        getPos _vehicle,
-        direction _vehicle,
-        isDamageAllowed _vehicle,
-        if (isTouchingGround _vehicle) then {"NONE"} else {"FLY"},
-        [_vehicle] call jib_cereal__serialize_inventory
-    ];
 };
 
 jib_cereal__serialize_waypoint = {

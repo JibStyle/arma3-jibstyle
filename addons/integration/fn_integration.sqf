@@ -102,8 +102,15 @@ jib_logistics_menu_create = jib_menu_create;
 jib_logistics_menu_action = jib_menu_action;
 jib_group_serialize_soldier = jib_cereal_serialize_soldier;
 publicVariable "jib_group_serialize_soldier";
-jib_group_deserialize_soldiers = jib_cereal_deserialize_soldiers;
-publicVariable "jib_group_deserialize_soldiers";
+jib_group_serialize_vehicle = jib_cereal_serialize_vehicle;
+publicVariable "jib_group_serialize_vehicle";
+jib_group_deserialize_batch = jib_cereal_deserialize_partial_batch;
+publicVariable "jib_group_deserialize_batch";
+jib_group_rally_vehicle_pos = jib_service_rally_vehicle_pos;
+publicVariable "jib_group_rally_vehicle_pos";
+jib_group_rally_soldier_pos = jib_service_rally_soldier_pos;
+publicVariable "jib_group_rally_soldier_pos";
+jib_group_rtb = jib_wp_rtbComplete;
 jib_emitter_deserialize_batch = jib_cereal_deserialize_batch;
 jib_emitter_deserialize_crate = jib_cereal_deserialize_crate;
 jib_emitter_deserialize_waypoint = jib_cereal_deserialize_waypoint;
@@ -129,6 +136,7 @@ jib_menu_service_condition = jib_service_menu_condition;
 jib_menu_service_data = jib_service_menu_data;
 
 jib_service_group_rally = jib_group_rally;
+jib_service_group_rally_vehicle = jib_group_rally_vehicle;
 
 // Run the mission start handlers
 [] call jib_menu_setup;
