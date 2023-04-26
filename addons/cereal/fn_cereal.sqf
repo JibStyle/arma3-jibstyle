@@ -251,6 +251,7 @@ jib_cereal__deserialize_inventory = {
         // No way to add cargo
     };
 };
+publicVariable "jib_cereal__deserialize_inventory";
 
 jib_cereal__deserialize_seats = {
     uiSleep jib_cereal_delay_physics;
@@ -278,6 +279,7 @@ jib_cereal__deserialize_seats = {
         };
     };
 };
+publicVariable "jib_cereal__deserialize_seats";
 
 jib_cereal__deserialize_soldier = {
     uiSleep jib_cereal_delay_physics;
@@ -359,6 +361,7 @@ jib_cereal__deserialize_vehicle = {
     };
     _vehicle;
 };
+publicVariable "jib_cereal__deserialize_vehicle";
 
 jib_cereal__serialize_group = {
     params ["_group"];

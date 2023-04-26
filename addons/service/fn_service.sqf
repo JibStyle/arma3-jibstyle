@@ -32,8 +32,12 @@ jib_service_menu_data = [
     ]
 ];
 
-jib_service_rally_soldier_pos = {getPosATL jib_service_rally_field};
-jib_service_rally_vehicle_pos = {getPosATL jib_service_rally_vehicle};
+jib_service_rally_soldier_pos = {
+    getPosATL (missionNamespace getVariable "jib_service_rally_field");
+};
+jib_service_rally_vehicle_pos = {
+    getPosATL (missionNamespace getVariable "jib_service_rally_vehicle");
+};
 
 // Move field teleporter to player
 jib_service_rally_update_soldier = {

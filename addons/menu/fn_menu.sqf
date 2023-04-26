@@ -38,6 +38,9 @@ jib_menu_setup = {
             private _should_register =
                 {alive player && !(player in jib_menu__player_units)};
             private _do_register = {
+                player getVariable ["jib_menu__player_actions", []] apply {
+                    player removeAction _x;
+                };
                 player setVariable [
                     "jib_menu__player_actions",
                     _menus apply {

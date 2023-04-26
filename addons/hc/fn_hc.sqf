@@ -6,26 +6,42 @@ jib_hc_group_autoload;
 jib_hc_group_autoload_off;
 
 jib_hc_menu_condition = {
-    hcLeader group player == player && _originalTarget == player;
+    count hcAllGroups player > 0 && _originalTarget == player;
 };
 
 jib_hc_menu_data = [
     "High Command Menu",
     [
-        // ["Selected Up", "[] call jib_hc__top", "1", true],
-        // ["Selected Down", "[] call jib_hc__bottom", "1", true],
         ["HC Selected AI Save",
-         "hcSelected player apply {[_x] call jib_hc_group_save}", "1", true],
+         toString {
+             hcSelected player apply {
+                 [_x] remoteExecCall ["jib_hc_group_save", 2];
+             };
+         },
+         "1", true],
         ["HC Selected AI Respawn",
-         "hcSelected player apply {[_x] call jib_hc_group_load}", "1", true],
+         toString {
+             hcSelected player apply {
+                 [_x] remoteExecCall ["jib_hc_group_load", 2];
+             };
+         },
+         "1", true],
         ["HC Selected AI Auto Respawn",
-         "hcSelected player apply {[_x] call jib_hc_group_autoload}",
-         "1", true],
+         toString {
+             hcSelected player apply {
+                 [_x] remoteExecCall ["jib_hc_group_autoload", 2];
+             };
+         }, "1", true],
         ["HC Selected AI Stop Respawn",
-         "hcSelected player apply {[_x] call jib_hc_group_autoload_stop}",
-         "1", true],
+         toString {
+             hcSelected player apply {
+                 [_x] remoteExecCall ["jib_hc_group_autoload_off", 2];
+             };
+         }, "1", true],
         ["HC Fix Bug",
-         "[player] call jib_hc_fix"]
+         toString {
+             [player] remoteExecCall ["jib_hc_fix", 2];
+         }]
     ]
 ];
 
@@ -72,7 +88,10 @@ jib_hc_fix = {
     params ["_leader"];
     [_leader, {
         params ["_leader"];
-        _leader getVariable ["jib_hc__groups", []] apply {
+        private _groups =
+            _leader getVariable ["jib_hc__groups", []] select {!isNull _x};
+        [_leader] call jib_hc_demote;
+        _groups apply {
             [_leader, _x] call jib_hc_add;
         };
     }] remoteExec ["spawn", 2];
@@ -84,7 +103,7 @@ jib_hc_fix = {
 jib_hc_transfer = {
     params ["_oldUnit", "_newUnit"];
     if (!isServer) then {throw "Not server"};
-    _oldUnit getVariable ["jib_hc__groups", []] apply {
+    _oldUnit getVariable ["jib_hc__groups", []] select {!isNull _x} apply {
         [_new_unit, _x] call jib_hc_add;
     };
 };
@@ -147,10 +166,12 @@ jib_hc_add = {
         _t = time + _timeout;
         waitUntil {hcLeader _group == _commander || time > _t};
     };
-    private _groups = _commander getVariable ["jib_hc__groups", []];
+    private _groups =
+        _commander getVariable ["jib_hc__groups", []] select {!isNull _x};
     if !(_group in _groups) then {
-        _commander setVariable ["jib_hc__groups", _groups + [_group]];
+        _groups pushBack _group;
     };
+    _commander setVariable ["jib_hc__groups", _groups];
     _group setVariable ["jib_hc__leader", _commander];
     _group removeEventHandler [
         "UnitJoined", _group getVariable ["jib_hc__unitJoined", -1]
@@ -187,6 +208,7 @@ jib_hc_demote = {
 
     // Remove all groups
     hcRemoveAllGroups _leader;
+    _leader setVariable ["jib_hc__groups", []];
 
     // Disable MARTA
     [[], {
@@ -201,7 +223,12 @@ jib_hc_remove = {
     params ["_group"];
     if (not isServer) then {throw "Not server!"};
     if (isNull _group) then {throw "Null group!"};
-    hcLeader _group hcRemoveGroup _group;
+    private _leader = hcLeader _group;
+    _leader hcRemoveGroup _group;
+    private _groups =
+        (_leader getVariable ["jib_hc__groups", []] select {!isNull _x})
+        - [_group];
+    _leader setVariable ["jib_hc__groups", _groups];
     true;
 };
 
@@ -282,7 +309,6 @@ jib_hc_moduleRemove = {
 };
 
 // Remote calls
-publicVariable "jib_hc_fix";
 publicVariable "jib_hc_moduleValidate";
 publicVariable "jib_hc_modulePromote";
 publicVariable "jib_hc_moduleAdd";

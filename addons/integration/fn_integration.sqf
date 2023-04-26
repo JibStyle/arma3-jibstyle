@@ -90,6 +90,7 @@ jib_logistics_activate_unit = {
                 alive _unit && group _unit == group _player && local _unit
             };
             doStop _unit;
+            uiSleep 1;
             _unit setUnitLoadout _loadout;
             if (count (_loadout # 3) == 0) then {
                 systemChat "empty loadout!";
@@ -107,9 +108,7 @@ publicVariable "jib_group_serialize_vehicle";
 jib_group_deserialize_batch = jib_cereal_deserialize_partial_batch;
 publicVariable "jib_group_deserialize_batch";
 jib_group_rally_vehicle_pos = jib_service_rally_vehicle_pos;
-publicVariable "jib_group_rally_vehicle_pos";
 jib_group_rally_soldier_pos = jib_service_rally_soldier_pos;
-publicVariable "jib_group_rally_soldier_pos";
 jib_group_rtb = jib_wp_rtbComplete;
 jib_emitter_deserialize_batch = jib_cereal_deserialize_batch;
 jib_emitter_deserialize_crate = jib_cereal_deserialize_crate;
@@ -120,13 +119,9 @@ jib_emitter_serialize_waypoint = jib_cereal_serialize_waypoint_manual;
 jib_cereal_loadout = jib_acre_setUnitLoadout;
 publicVariable "jib_cereal_loadout";
 jib_hc_group_save = jib_group_save;
-publicVariable "jib_hc_group_save";
 jib_hc_group_load = jib_group_load;
-publicVariable "jib_hc_group_load";
 jib_hc_group_autoload = jib_group_autoload;
-publicVariable "jib_hc_group_autoload";
 jib_hc_group_autoload_off = jib_group_autoload_off;
-publicVariable "jib_hc_group_autoload_off";
 
 jib_menu_group_condition = jib_group_menu_condition;
 jib_menu_group_data = jib_group_menu_data;
