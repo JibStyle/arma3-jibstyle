@@ -29,6 +29,11 @@ jib_group_setup = {
     allGroups apply {
         [_x] call jib_group__setup_group;
     };
+    [[], {
+        if (!hasInterface) exitWith {};
+        waitUntil {uiSleep 1; alive player};
+        player setVariable ["jib_group__unit_speaker", speaker player, true];
+    }] remoteExec ["spawn", 0, true];
 };
 
 jib_group__setup_group = {
@@ -62,7 +67,10 @@ jib_group__update_speakers = {
     params ["_group"];
     if ({isPlayer _x} count units _group == count units _group) then {
         units _group apply {
-            _x setVariable ["jib_group__unit_speaker", speaker _x];
+            _x setVariable [
+                "jib_group__unit_speaker",
+                _x getVariable ["jib_group__unit_speaker", speaker _x]
+            ];
             [_x, "NoVoice"] remoteExec ["setSpeaker", 0, _x];
         };
     } else {
