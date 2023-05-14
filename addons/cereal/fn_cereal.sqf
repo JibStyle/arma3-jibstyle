@@ -308,6 +308,7 @@ jib_cereal__deserialize_soldier = {
     private _soldier = _group createUnit [
         _type, [_pos # 0, _pos # 1, 0], [], 0, "NONE"
     ];
+    [_soldier] joinSilent _group;
     _soldier allowDamage false;
     [_soldier, false] remoteExec ["enableSimulationGlobal", 2];
     _soldier setVariable ["jib_cereal__damage", _isDamageAllowed];

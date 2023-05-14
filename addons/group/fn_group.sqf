@@ -315,6 +315,20 @@ jib_group__soldier = {
     _soldier;
 };
 
+jib_group_saveautoload = {
+    params ["_group"];
+    if (!isServer) then {throw "Must be server execution!"};
+    if (canSuspend) then {throw "Must be unscheduled!"};
+    [_group] spawn {
+        params ["_group"];
+        waitUntil {uiSleep 1; alive leader _group};
+        isNil {
+            [_group] call jib_group_save;
+            [_group] call jib_group_autoload;
+        };
+    };
+};
+
 jib_group_save = {
     params ["_group"];
     if (!isServer) then {throw "Must be server execution!"};

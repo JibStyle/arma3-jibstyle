@@ -162,10 +162,6 @@ jib_ai_drawLines = {
 // Keeps daemon running
 jib_ai_laserControlVariable = "jib_ai_laserControlVariable";
 
-jib_ai_infiniteAmmoReloadTime = "jib_ai_infiniteAmmoReloadTime";
-
-jib_ai_infiniteAmmoFiredHandler = "jib_ai_infiniteAmmoFiredHandler";
-
 jib_ai_infiniteAmmoEnable = {
     params [
         "_unit",         // Unit
@@ -177,25 +173,38 @@ jib_ai_infiniteAmmoEnable = {
     [[_unit, _time], {
         params ["_unit", "_time"];
         _unit setVariable [
-            jib_ai_infiniteAmmoReloadTime,
+            "jib_ai__infiniteammo_reloadtime",
             _time
         ];
+        _unit removeEventHandler [
+            "Fired",
+            _unit getVariable ["jib_ai__infiniteammo_fired", -1]
+        ];
         _unit setVariable [
-            jib_ai_infiniteAmmoFiredHandler,
+            "jib_ai__infiniteammo_fired",
             _unit addEventHandler [
                 "Fired",
                 {
                     params ["_unit"];
-                    [_unit] spawn {
-                        params ["_unit"];
-                        uiSleep (
-                            _unit getVariable [
-                                jib_ai_infiniteAmmoReloadTime,
-                                20
-                            ]
-                        );
-                        _unit setVehicleAmmo 1;
-                    };
+                    terminate (
+                        _unit getVariable [
+                            "jib_ai__infiniteammo_reload",
+                            scriptNull
+                        ]
+                    );
+                    _unit setVariable [
+                        "jib_ai__infiniteammo_reload",
+                        [_unit] spawn {
+                            params ["_unit"];
+                            uiSleep (
+                                _unit getVariable [
+                                    "jib_ai__infiniteammo_reloadtime",
+                                    20
+                                ]
+                            );
+                            _unit setVehicleAmmo 1;
+                        }
+                    ];
                 }
             ]
         ];
@@ -212,7 +221,7 @@ jib_ai_infiniteAmmoDisable = {
         _unit removeEventHandler [
             "Fired",
             _unit getVariable [
-                jib_ai_infiniteAmmoFiredHandler,
+                "jib_ai__infiniteammo_fired",
                 -1
             ]
         ];
@@ -329,7 +338,6 @@ publicVariable "jib_ai_drawRemove";
 publicVariable "jib_ai_drawText";
 publicVariable "jib_ai_drawLines";
 publicVariable "jib_ai_moduleValidate";
-publicVariable "jib_ai_infiniteAmmoFiredHandler";
 publicVariable "jib_ai_laserControlVariable";
 publicVariable "jib_ai_moduleInfiniteAmmoEnable";
 publicVariable "jib_ai_moduleInfiniteAmmoDisable";

@@ -9,23 +9,32 @@ jib_service_menu_data = [
     "Service Menu",
     [
         [
-            "Update Rally Point",
+            "Update Infantry Rally",
             toString {
                 [player] remoteExec ["jib_service_rally_update_soldier", 2]
             },
             "1", true
         ],
         [
-            "Update Vehicle Staging",
+            "Update Vehicle Rally",
             toString {
                 [player] remoteExec ["jib_service_rally_update_vehicle", 2]
             },
             "1", true
         ],
         [
-            "Update Base",
+            "Update Infantry Base",
             toString {
                 [player] remoteExec ["jib_service_rally_update_base", 2]
+            },
+            "1", true
+        ],
+        [
+            "Update Vehicle Base",
+            toString {
+                [player] remoteExec [
+                    "jib_service_rally_update_basevehicle", 2
+                ]
             },
             "1", true
         ]
@@ -81,7 +90,7 @@ jib_service_rally_update_vehicle = {
     };
 };
 
-// Move vehicle spawn teleporter to player
+// Move base teleporter to player
 jib_service_rally_update_base = {
     params ["_player"];
     if (!isServer) exitWith {};
@@ -99,6 +108,24 @@ jib_service_rally_update_base = {
     "jib_service_rally_base_marker" setMarkerPos _player;
 };
 
+// Move base vehicle teleporter to player
+jib_service_rally_update_basevehicle = {
+    params ["_player"];
+    if (!isServer) exitWith {};
+
+    [_player] call jib_service__rally_setup;
+
+    jib_service_rally_basevehicle setVehiclePosition [
+        getPos _player, [], 0, "NONE"
+    ];
+    if (getMarkerType "jib_service_rally_basevehicle_marker" == "") then {
+        createMarker ["jib_service_rally_basevehicle_marker", _player];
+        // "jib_service_rally_basevehicle_marker" setMarkerType "mil_join";
+    };
+    "jib_service_rally_basevehicle_marker" setMarkerAlphaLocal 1;
+    "jib_service_rally_basevehicle_marker" setMarkerPos _player;
+};
+
 jib_service__rally_setup = {
     params ["_player"];
     if (!isServer) exitWith {};
@@ -112,6 +139,18 @@ jib_service__rally_setup = {
             "Land_Laptop_unfolded_F" createVehicle position _player;
         jib_service_rally_base allowdamage false;
         publicVariable "jib_service_rally_base";
+    };
+    if (
+        !alive (
+            missionNamespace getVariable [
+                "jib_service_rally_basevehicle", objNull
+            ]
+        )
+    ) then {
+        jib_service_rally_basevehicle =
+            "Land_RepairDepot_01_green_F" createVehicle position _player;
+        jib_service_rally_basevehicle allowdamage false;
+        publicVariable "jib_service_rally_basevehicle";
     };
     if (
         !alive (
@@ -138,25 +177,53 @@ jib_service__rally_setup = {
     };
     [
         jib_service_rally_base, [
-            [jib_service_rally_field, "Rally Point"],
-            [jib_service_rally_vehicle, "Vehicle Staging"]
+            [jib_service_rally_field, "Infantry Rally"],
+            [jib_service_rally_vehicle, "Vehicle Rally"],
+            [jib_service_rally_basevehicle, "Vehicle Base"]
         ]
     ] call jib_service_teleport_init;
     [
         jib_service_rally_field, [
-            [jib_service_rally_base, "Base"],
-            [jib_service_rally_vehicle, "Vehicle Staging"]
+            [jib_service_rally_base, "Infantry Base"],
+            [jib_service_rally_vehicle, "Vehicle Rally"],
+            [jib_service_rally_basevehicle, "Vehicle Base"]
         ], 3
     ] call jib_service_teleport_init;
     [
         jib_service_rally_vehicle, [
-            [jib_service_rally_base, "Base"],
-            [jib_service_rally_field, "Rally Point"]
+            [jib_service_rally_base, "Infantry Base"],
+            [jib_service_rally_field, "Infantry Rally"],
+            [jib_service_rally_basevehicle, "Vehicle Base"]
         ], 4
     ] call jib_service_teleport_init;
-    jib_service_rally_base hideObjectGlobal false;
-    jib_service_rally_field hideObjectGlobal false;
-    jib_service_rally_vehicle hideObjectGlobal false;
+    [
+        jib_service_rally_basevehicle, [
+            [jib_service_rally_vehicle, "Vehicle Rally"],
+            [jib_service_rally_base, "Infantry Base"],
+            [jib_service_rally_field, "Infantry Rally"]
+        ], 8
+    ] call jib_service_teleport_init;
+    [
+        jib_service_rally_basevehicle, [
+            [jib_service_rally_vehicle, "Vehicle Rally"]
+        ], 20
+    ] call jib_service_teleport_initvehicle;
+    [
+        jib_service_rally_vehicle, [
+            [jib_service_rally_basevehicle, "Vehicle Base"]
+        ], 20
+    ] call jib_service_teleport_initvehicle;
+    [
+        jib_service_rally_base,
+        jib_service_rally_field,
+        jib_service_rally_vehicle,
+        jib_service_rally_basevehicle
+    ] apply {
+        _x hideObjectGlobal false;
+        if (owner _x != owner _player) then {
+            _x setOwner owner _player;
+        };
+    };
 };
 
 // Init object to teleport to other objects
@@ -187,7 +254,7 @@ jib_service_teleport_init = {
                         };
                         private _selected = units group player;
                         if (
-                            leader player == player && count _selected > 0
+                            leader player == player && count _selected > 1
                         ) then {
                             private _units = _selected select {
                                 _x distance player < 10
@@ -204,7 +271,69 @@ jib_service_teleport_init = {
                             systemChat "Teleported player.";
                         };
                     },
-                    [_other], 10, true, true, "", "true", _distance
+                    [_other], 10, true, true, "", toString {
+                        vehicle player == player
+                    }, _distance
+                ];
+            }
+        ];
+    }] remoteExec ["spawn", 0, true];
+};
+
+// Init object to teleport to other objects
+// [a, [[b, "Bravo"], [c, "Charlie"]]] call jib_service_teleport_init;
+jib_service_teleport_initvehicle = {
+    params ["_object", "_destinations", ["_distance", 2, [0]]];
+    if (!isServer) exitWith {};
+    [[_object, _destinations, _distance], {
+        params ["_object", "_destinations", "_distance"];
+        _object getVariable [
+            "jib_service_teleport_actionsvehicle", []
+        ] apply {
+            _object removeAction _x;
+        };
+        _object setVariable [
+            "jib_service_teleport_actionsvehicle",
+            _destinations apply {
+                _x params ["_other", "_name"];
+                _object addAction [
+                    format ["Vehicle Teleport to %1", _name],
+                    {
+                        params ["", "", "", "_arguments"];
+                        _arguments params ["_other"];
+                        if (isNull _other) exitWith {};
+                        private _teleport = {
+                            params ["_vehicle"];
+                            _vehicle setVehiclePosition [
+                                getPos _other, [], 0, "NONE"
+                            ];
+                        };
+                        private _selected = [];
+                        units group player apply {
+                            _selected pushBackUnique vehicle _x;
+                        };
+                        if (
+                            leader player == player && count _selected > 1
+                        ) then {
+                            private _vehicles = _selected select {
+                                _x distance player < 50
+                            };
+                            _vehicles apply {
+                                [_x] call _teleport;
+                                uiSleep 0.3;
+                            };
+                            systemChat format [
+                                "Teleported %1 vehicles.", count _vehicles
+                            ];
+                        } else {
+                            [vehicle player] call _teleport;
+                            systemChat "Teleported player vehicle.";
+                        };
+                    },
+                    [_other], 10, true, true, "", toString {
+                        vehicle player != player
+                            && effectiveCommander vehicle player == player
+                    }, _distance
                 ];
             }
         ];

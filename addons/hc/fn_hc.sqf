@@ -104,7 +104,7 @@ jib_hc_transfer = {
     params ["_oldUnit", "_newUnit"];
     if (!isServer) then {throw "Not server"};
     _oldUnit getVariable ["jib_hc__groups", []] select {!isNull _x} apply {
-        [_new_unit, _x] call jib_hc_add;
+        [_new_unit, _x] spawn jib_hc_add;
     };
 };
 
@@ -153,6 +153,7 @@ jib_hc_promote = {
 jib_hc_add = {
     params ["_commander", "_group"];
     if (not isServer) then {throw "Not server!"};
+    if (not canSuspend) then {throw "Cannot suspend!"};
     if (isNull _commander) then {throw "Commander not alive!"};
     if (isNull _group) then {throw "Null group!"};
     private _timeout = 5;
@@ -182,7 +183,7 @@ jib_hc_add = {
 	    params ["_group", "_newUnit"];
             private _leader = _group getVariable ["jib_hc__leader", objNull];
             if (hcLeader _group != _leader) then {
-                [_leader, _group] call jib_hc_add;
+                [_leader, _group] spawn jib_hc_add;
             };
         }]
     ];
