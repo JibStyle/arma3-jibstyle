@@ -79,8 +79,8 @@ jib_objective_task_destination = {
 jib_objective_dataTerminal = {
     params [
         "_dataTerminal",  // Data terminal to setup
-        ["_owner", true], // Bool, object, group, side, or array
-        ["_assign", true], // Auto assign task with notification
+        ["_owner", false], // Bool, object, group, side, or array
+        ["_assign", false], // Auto assign task with notification
         ["_completion", {}] // Called on server when hack complete
     ];
     if (!isServer) then {throw "Not server!"};
@@ -150,10 +150,13 @@ jib_objective_hostage = {
         "_hostage",          // Hostage
         ["_injured", false], // True if injured (not ACE compatible)
         ["_owner", false],    // Bool, object, group, side, or array
-        ["_assign", false]    // Auto assign task with notification
+        ["_assign", false],    // Auto assign task with notification
+        ["_completion", {}] // Called on server when hostage freed
     ];
     if (!isServer) then {throw "Not server!"};
     if (!alive _hostage) then {throw "Hostage not alive!"};
+
+    _hostage setVariable ["jib_objective__hostage_completion", _completion];
 
     // Create task unless owner false
     if (typeName _owner != "BOOL" || {_owner}) then {
@@ -392,6 +395,10 @@ jib_objective_dataTerminalHoldActionInterrupt = {
 jib_objective_hostageComplete = {
     params ["_hostage"];
     if (!isServer) then {throw "Not server!"};
+
+    [] call (
+        _hostage getVariable ["jib_objective__hostage_completion", scriptNull]
+    );
 
     // Complete task
     private _taskID = _hostage getVariable [
