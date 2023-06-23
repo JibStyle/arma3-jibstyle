@@ -179,5 +179,5 @@ jib_alive_menu = [
 publicVariable "jib_alive_menu";
 
 [] call jib_alive_registerDisable;
-[] call jib_alive_opcomDisable;
-[] call jib_alive_profileDisable;
+// [] call jib_alive_opcomDisable;
+// [] call jib_alive_profileDisable;
