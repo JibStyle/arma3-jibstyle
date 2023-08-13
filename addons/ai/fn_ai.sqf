@@ -449,6 +449,7 @@ jib_ai_cqb = {
                 if (_nearestPlayer distance leader _group < _distance) then {
                     _group setVariable ["jib_ai__cqb_distance", nil];
                     units _group apply {_x enableAI "TARGET"};
+                    units _group apply {_x enableAI "PATH"};
                 };
                 uiSleep 0.3;
             };
