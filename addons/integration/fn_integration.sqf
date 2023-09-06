@@ -133,6 +133,8 @@ jib_menu_service_data = jib_service_menu_data;
 jib_service_group_rally = jib_group_rally;
 jib_service_group_rally_vehicle = jib_group_rally_vehicle;
 
+jib_acre_log = jib_log;
+
 // Run the mission start handlers
 [] call jib_menu_setup;
 [] call jib_group_setup;

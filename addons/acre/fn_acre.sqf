@@ -1,4 +1,7 @@
 if (!isServer) exitWith {};
+
+jib_acre_log;
+
 jib_acre_global = {
     params ["_preset_old", "_preset_new", "_names"];
     [
@@ -34,6 +37,13 @@ jib_acre_setUnitLoadout = {
     if (isNil "acre_api_fnc_filterUnitLoadout") then {
         _unit setUnitLoadout _loadout;
     } else {
-        _unit setUnitLoadout ([_loadout] call acre_api_fnc_filterUnitLoadout);
+        if (isNil "acre_player") then {
+            [
+                "jib_acre_setUnitLoadout: acre_player nil, skipping filter."
+            ] call jib_acre_log;
+            _unit setUnitLoadout _loadout;
+        } else {
+            _unit setUnitLoadout ([_loadout] call acre_api_fnc_filterUnitLoadout);
+        };
     };
 };
