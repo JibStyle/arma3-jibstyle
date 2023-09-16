@@ -90,3 +90,5 @@ publicVariable "jib_selectPlayer_moduleTo";
 publicVariable "jib_selectPlayer_moduleSelf";
 publicVariable "jib_selectPlayer_handlers";
 publicVariable "jib_selectPlayer_client";
+
+jib_selectPlayer = jib_selectPlayer_server;

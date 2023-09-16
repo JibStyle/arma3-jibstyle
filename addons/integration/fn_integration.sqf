@@ -3,20 +3,16 @@ if (!isServer) exitWith {};
 
 jib_handler_missionStart = [
     jib_transport_handlerMissionStart,
-    jib_zeus_handlerMissionStart,
     jib_draw_missionStart
 ];
 jib_handler_missionEntityRespawned = [
-    jib_transport_handlerMissionEntityRespawned,
-    jib_zeus_handlerMissionEntityRespawned
+    jib_transport_handlerMissionEntityRespawned
 ];
 jib_handler_missionTeamSwitch = [
     jib_hc_handlerMissionTeamSwitch,
-    jib_transport_handlerMissionTeamSwitch,
-    jib_zeus_handlerMissionTeamSwitch
+    jib_transport_handlerMissionTeamSwitch
 ];
 jib_handler_missionOnUserAdminStateChanged = [
-    jib_zeus_handlerMissionOnUserAdminStateChanged
 ];
 jib_selectPlayer_handlers = [
     jib_transport_selectPlayerHandler,
@@ -55,6 +51,7 @@ jib_wp_paraEffectIngress = jib_para_effectIngress;
 jib_wp_paraUnload = jib_para_unload;
 jib_zeus_moduleValidate = jib_module_validate;
 jib_zeus_log = jib_log;
+jib_zeus_selectPlayer = jib_selectPlayer_server;
 publicVariable "jib_ai_moduleValidate";
 publicVariable "jib_ai_drawAdd";
 publicVariable "jib_ai_drawRemove";
@@ -139,3 +136,4 @@ jib_acre_log = jib_log;
 [] call jib_menu_setup;
 [] call jib_group_setup;
 [] call jib_handler_integrationDone;
+[] call jib_zeus_init;

@@ -9,74 +9,59 @@ jib_zeus_moduleValidate = {};
 // Logging dependency.
 jib_zeus_log = {};
 
-// Event handler for mission start.
-jib_zeus_handlerMissionStart = {
-    if (!isServer) then {throw "Not server!"};
-    [] call jib_zeus_adminCreate;
-    [allCurators] call jib_zeus_setupInventory;
-    [allCurators] call jib_zeus_addRespawnPositions;
-    [] call jib_zeus_adminAssign;
-};
-
-// Mission event handler for entity respawn.
-jib_zeus_handlerMissionEntityRespawned = {
-    params ["_oldUnit", "_newUnit"];
-    if (!isServer) then {throw "Not server!"};
-    [
-        format [
-            "jib_zeus_handlerMissionEntityRespawned [%1, %2]",
-            _oldUnit,
-            _newUnit
-        ]
-    ] call jib_zeus_log;
-    [_oldUnit, _newUnit] spawn jib_zeus_transfer;
-
-    allCurators apply {
-        if (_oldUnit in curatorEditableObjects _x) then {
-            _x addCuratorEditableObjects [[_newUnit], true];
-        };
-    };
-};
-
-// Mission event handler for team switch.
-jib_zeus_handlerMissionTeamSwitch = {
-    params ["_oldUnit", "_newUnit"];
-    if (!isServer) then {throw "Not server!"};
-    [
-        format [
-            "jib_zeus_handlerMissionTeamSwitch [%1, %2]",
-            _oldUnit,
-            _newUnit
-        ]
-    ] call jib_zeus_log;
-    [_oldUnit, _newUnit] spawn jib_zeus_transfer;
-};
-
-// Mission event handler for admin state change.
-jib_zeus_handlerMissionOnUserAdminStateChanged = {
-    if (!isServer) then {throw "Not server!"};
-    [
-        "jib_zeus_handlerMissionOnUserAdminStateChanged"
-    ] call jib_zeus_log;
-    [] call jib_zeus_adminAssign;
-};
+// Select player dependency.
+jib_zeus_selectPlayer = {};
 
 // Event handler for select player.
 jib_zeus_selectPlayerHandler = {
     params ["_oldUnit", "_newUnit"];
-    [
-        format [
-            "jib_zeus_selectPlayerHandler [%1, %2]",
-            _oldUnit,
-            _newUnit
-        ],
-        2
-    ] call jib_zeus_log;
     [_oldUnit, _newUnit] remoteExec ["jib_zeus_transfer", 2];
     [false, false] call BIS_fnc_forceCuratorInterface;
 };
 
 // PRIVATE
+
+// Register mission event handlers
+removeMissionEventHandler [
+    "EntityRespawned",
+    missionNamespace getVariable ["jib_zeus_handlerEntityRespawned", -1]
+];
+missionNamespace setVariable [
+    "jib_zeus_handlerEntityRespawned",
+    addMissionEventHandler ["EntityRespawned", {
+        params ["_newUnit", "_oldUnit"];
+        [_oldUnit, _newUnit] spawn jib_zeus_transfer;
+        allCurators apply {
+            if (_oldUnit in curatorEditableObjects _x) then {
+                _x addCuratorEditableObjects [[_newUnit], true];
+            };
+        };
+    }]
+];
+removeMissionEventHandler [
+    "TeamSwitch",
+    missionNamespace getVariable ["jib_zeus_handlerTeamSwitch", -1]
+];
+missionNamespace setVariable [
+    "jib_zeus_handlerTeamSwitch",
+    addMissionEventHandler ["TeamSwitch", {
+        params ["_oldUnit", "_newUnit"];
+        [_oldUnit, _newUnit] spawn jib_zeus_transfer;
+    }]
+];
+removeMissionEventHandler [
+    "OnUserAdminStateChanged",
+    missionNamespace getVariable [
+        "jib_zeus_handlerOnUserAdminStateChanged", -1
+    ]
+];
+missionNamespace setVariable [
+    "jib_zeus_handlerOnUserAdminStateChanged",
+    addMissionEventHandler ["OnUserAdminStateChanged", {
+        params ["_networkId", "_loggedIn", "_votedIn"];
+        [] call jib_zeus_adminAssign;
+    }]
+];
 
 // Get admin
 jib_zeus_admin = {
@@ -97,28 +82,42 @@ jib_zeus_admin = {
 jib_zeus_adminAssign = {
     if (!isServer) then {throw "Not server!"};
     [] spawn {
-        waitUntil {alive ([] call jib_zeus_admin)};
-        [
-            jib_zeus_adminCurator,
-            [] call jib_zeus_admin
-        ] call jib_zeus_assign;
+        waitUntil {
+            uiSleep 0.5;
+            private _admin = [] call jib_zeus_admin;
+            alive _admin || damage _admin == 1;
+        };
+        private _admin = [] call jib_zeus_admin;
+        if (!alive _admin) then {
+            [_admin, jib_zeus_virtualCurator] call jib_zeus_selectPlayer;
+            [jib_zeus_curator, jib_zeus_virtualCurator] call jib_zeus_assign;
+        } else {
+            [jib_zeus_curator, _admin] call jib_zeus_assign;
+        };
     };
 };
 
 // Create special curator for admin
 jib_zeus_adminCreate = {
     if (!isServer) then {throw "Not server!"};
-    jib_zeus_adminCurator = createGroup sideLogic createUnit [
+    jib_zeus_curator = createGroup sideLogic createUnit [
         "ModuleCurator_F",
-        [500,500,0],
+        [500,500,10],
         [],
         0,
         "NONE"
     ];
-    jib_zeus_adminCurator setVariable ["Addons", 3];
-    jib_zeus_adminCurator setVariable ["owner", ""];
-    jib_zeus_adminCurator setVariable [
+    jib_zeus_curator setVariable ["Addons", 3];
+    jib_zeus_curator setVariable ["owner", ""];
+    jib_zeus_curator setVariable [
         "BIS_fnc_initModules_disableAutoActivation", false
+    ];
+    jib_zeus_virtualCurator = group jib_zeus_curator createUnit [
+        "VirtualCurator_F",
+        [500,500,10],
+        [],
+        0,
+        "NONE"
     ];
 };
 
@@ -466,5 +465,14 @@ publicVariable "jib_zeus_moduleRemoveAllIndependent";
 publicVariable "jib_zeus_moduleAddAllCivilian";
 publicVariable "jib_zeus_moduleRemoveAllCivilian";
 publicVariable "jib_zeus_moduleValidate";
-publicVariable "jib_zeus_handlerMissionStart";
-publicVariable "jib_zeus_selectPlayerHandler";
+
+// Init zeus module.
+jib_zeus_init = {
+    if (!isServer) then {throw "Not server!"};
+    [] call jib_zeus_adminCreate;
+    [allCurators] call jib_zeus_setupInventory;
+    [allCurators] call jib_zeus_addRespawnPositions;
+    [] call jib_zeus_adminAssign;
+};
+
+jib_zeus = jib_zeus_adminAssign;
