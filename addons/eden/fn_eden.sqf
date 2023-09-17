@@ -122,12 +122,15 @@ jib_eden_loadout_standard = {
         [2, "ACE_fieldDressing"],
         [1, "ACE_morphine"],
         [1, "ACE_tourniquet"],
-        [1, "ACRE_PRC343"],
         [1, "SmokeShell"],
         [1, "HandGrenade"],
         [2, "Chemlight_green"],
         [4, "ACE_CableTie"]
     ] apply {_x call _add_uniform_fn};
+    [
+        [1, "ACRE_PRC343"],
+        [1, "ItemAndroid"]
+    ] apply {_x call _add_vest_fn};
 
     // Special trait container items
     if (_unit getUnitTrait "Medic") then {
