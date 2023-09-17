@@ -419,17 +419,23 @@ jib_ai_cqb = {
                 _group setCombatMode "RED";
             };
             case "guard": {
+                units _group apply {
+                    _x disableAI "TARGET";
+                    _x disableAI "PATH";
+                };
+                _group setVariable ["jib_ai__cqb_guard", true];
                 private _wp = _group addWaypoint [getPos leader _group, 0];
                 _wp setWaypointType "GUARD";
+                _wp setWaypointPosition [getPosASL leader _group, -1];
             };
             default {};
         };
     };
 
     terminate (
-        missionNamespace getVariable ["jib_ai__cqb_monitor", scriptNull]
+        missionNamespace getVariable ["jib_ai__cqb_distance", scriptNull]
     );
-    jib_ai__cqb_monitor = [] spawn {
+    jib_ai__cqb_distance = [] spawn {
         private _groups = allGroups select {
             _x getVariable ["jib_ai__cqb_distance", -1] > 0
         };
@@ -453,10 +459,35 @@ jib_ai_cqb = {
                 };
                 uiSleep 0.3;
             };
-
             uiSleep 1;
             _groups = allGroups select {
                 _x getVariable ["jib_ai__cqb_distance", -1] > 0
+            };
+        };
+    };
+
+    terminate (
+        missionNamespace getVariable ["jib_ai__cqb_guard", scriptNull]
+    );
+    jib_ai__cqb_guard = [] spawn {
+        private _groups = allGroups select {
+            _x getVariable ["jib_ai__cqb_guard", false]
+        };
+        while {count _groups > 0} do {
+            _groups apply {
+                private _group = _x;
+                leader _group enableAI "TARGET";
+                leader _group enableAI "PATH";
+                if (currentCommand leader _group == "ATTACK AND FIRE") then {
+                    _group setVariable ["jib_ai__cqb_guard", nil];
+                    units _group apply {_x enableAI "TARGET"};
+                    units _group apply {_x enableAI "PATH"};
+                };
+                uiSleep 0.3;
+            };
+            uiSleep 1;
+            _groups = allGroups select {
+                _x getVariable ["jib_ai__cqb_guard", false]
             };
         };
     };
