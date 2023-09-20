@@ -126,7 +126,7 @@ jib_eden_loadout_standard = {
         [1, "HandGrenade"],
         [2, "Chemlight_green"],
         [4, "ACE_CableTie"]
-    ] apply {_x call _add_uniform_fn};
+    ] apply {_x call _add_fn};
     [
         [1, "ACRE_PRC343"],
         [1, "ItemAndroid"]
