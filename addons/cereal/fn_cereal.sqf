@@ -154,7 +154,20 @@ jib_cereal_serialize_soldier = {
         canTriggerDynamicSimulation _soldier,
         isDamageAllowed _soldier,
         leader _soldier == _soldier,
-        _soldier getVariable ["jib_cereal__fleeing", 0] // HACK
+        _soldier getVariable ["jib_cereal__fleeing", 0], // HACK
+        _soldier getVariable ["lambs_danger_disableAI", false],
+        [
+            _soldier skill "aimingAccuracy",
+            _soldier skill "aimingShake",
+            _soldier skill "aimingSpeed",
+            _soldier skill "endurance",
+            _soldier skill "spotDistance",
+            _soldier skill "spotTime",
+            _soldier skill "courage",
+            _soldier skill "reloadSpeed",
+            _soldier skill "commanding",
+            _soldier skill "general"
+        ]
     ];
 };
 
@@ -205,7 +218,8 @@ jib_cereal__deserialize_group = {
         "_combatMode",
         "_speedMode",
         "_serializedUnits",
-        "_serializedWaypoints"
+        "_serializedWaypoints",
+        "_lambs_danger_disableGroupAI"
     ];
     private _group = createGroup [_side, _deleteWhenEmpty];
     // _group setGroupIdGlobal [format "%1 %2", _name, random 1];
@@ -223,6 +237,9 @@ jib_cereal__deserialize_group = {
     _serializedWaypoints apply {
         [_group, _x] call jib_cereal_deserialize_waypoint;
     };
+    _group setVariable [
+        "lambs_danger_disableGroupAI", _lambs_danger_disableGroupAI
+    ];
     _group;
 };
 
@@ -300,7 +317,21 @@ jib_cereal__deserialize_soldier = {
         "_canTriggerDynamicSimulation",
         "_isDamageAllowed",
         "_leader",
-        "_fleeing"
+        "_fleeing",
+        "_lambs_danger_disableAI",
+        "_skillDetail"
+    ];
+    _skillDetail params [
+        "_skill_aimingAccuracy",
+        "_skill_aimingShake",
+        "_skill_aimingSpeed",
+        "_skill_endurance",
+        "_skill_spotDistance",
+        "_skill_spotTime",
+        "_skill_courage",
+        "_skill_reloadSpeed",
+        "_skill_commanding",
+        "_skill_general"
     ];
     private _pos = if (
         isNil {_posArg} || {count _posArg == 0}
@@ -325,6 +356,17 @@ jib_cereal__deserialize_soldier = {
         _soldier allowFleeing _fleeing;
         _soldier setVariable ["jib_cereal__fleeing", _fleeing]; // debug
     };
+    _soldier setVariable ["lambs_danger_disableAI", _lambs_danger_disableAI];
+    _soldier setSkill ["aimingAccuracy", _skill_aimingAccuracy];
+    _soldier setSkill ["aimingShake", _skill_aimingShake];
+    _soldier setSkill ["aimingSpeed", _skill_aimingSpeed];
+    _soldier setSkill ["endurance", _skill_endurance];
+    _soldier setSkill ["spotDistance", _skill_spotDistance];
+    _soldier setSkill ["spotTime", _skill_spotTime];
+    _soldier setSkill ["courage", _skill_courage];
+    _soldier setSkill ["reloadSpeed", _skill_reloadSpeed];
+    _soldier setSkill ["commanding", _skill_commanding];
+    _soldier setSkill ["general", _skill_general];
     _soldier;
 };
 publicVariable "jib_cereal__deserialize_soldier";
@@ -381,7 +423,8 @@ jib_cereal__serialize_group = {
             1, count waypoints _group - 1
         ] apply {
             _x call jib_cereal__serialize_waypoint;
-        }
+        },
+        _group getVariable ["lambs_danger_disableGroupAI", false]
     ];
 };
 
