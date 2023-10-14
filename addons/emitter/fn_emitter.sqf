@@ -38,7 +38,7 @@ jib_emitter_waypoint = {
 
     _logic setVariable ["jib_emitter__type", "waypoint"];
     _logic setVariable ["jib_emitter__weight", _weight];
-    _logic setVariable ["jib_emitter__enabled", _enabled];
+    _logic setVariable ["jib_emitter__wp_enabled", _enabled];
     _logic setVariable [
         "jib_emitter__serialized_waypoint", _serializedWaypoint
     ];
@@ -56,33 +56,14 @@ jib_emitter_child = {
 
     _logic setVariable ["jib_emitter__type", "child"];
     _logic setVariable ["jib_emitter__weight", _weight];
-    _logic setVariable ["jib_emitter__enabled", _enabled];
+    _logic setVariable ["jib_emitter__wp_enabled", _enabled];
     _logic;
-};
-
-// Register allow fleeing for a single unit (1 - coward, 0 - no fleeing)
-jib_emitter_fleeing = {
-    params ["_unit", "_fleeing"];
-    _unit setVariable ["jib_emitter__fleeing", _fleeing];
-};
-
-// Enable waypoint
-jib_emitter_waypoint_enable = {
-    params ["_waypoint"];
-    _waypoint setVariable ["jib_emitter__enabled", true];
-};
-
-// Disable waypoint
-jib_emitter_waypoint_disable = {
-    params ["_waypoint"];
-    _waypoint setVariable ["jib_emitter__enabled", false];
 };
 
 // Save batches and crates to emitter
 jib_emitter_save = {
     params ["_emitter"];
     if (!isServer) exitWith {};
-
     private _batches = [];
     private _crates = [];
 
@@ -139,189 +120,7 @@ jib_emitter_save = {
     [_batches, _crates, _serializedBatches, _serializedCrates];
 };
 
-// Emit continuously while under limit
-jib_emitter_enable = {
-    params [
-        "_emitter",
-        ["_emissionRandom",       [1, 1, 1],    [[]]],
-        ["_concurrentBatches",    0,            [0]],
-        ["_concurrentVehicles",   0,            [0]],
-        ["_concurrentGroups",     0,            [0]],
-        ["_concurrentUnits",      0,            [0]],
-        ["_budgetBatches",        0,            [0]],
-        ["_budgetVehicles",       0,            [0]],
-        ["_budgetGroups",         0,            [0]],
-        ["_budgetUnits",          0,            [0]],
-        ["_cycleMemoryCoef",      0,            [0]],
-        ["_cycleRandomCoef",      1,            [0]],
-        ["_cycleRandom",          [10, 10, 10], [[]]],
-        ["_cycleExponentialCoef", 1,            [0]],
-        ["_cycleExponential",     0,            [0]],
-        ["_cyclePowerCoef",       0,            [0]],
-        ["_cyclePower",           0,            [0]],
-        ["_cycleMin",             0,            [0]],
-        ["_cycleMax",             10,           [0]]
-    ];
-
-    [_emitter] call jib_emitter_disable;
-    _emitter setVariable [
-        "jib_emitter__handle",
-        [
-            _emitter,              _emissionRandom,
-            _concurrentBatches,    _concurrentVehicles,
-            _concurrentGroups,     _concurrentUnits,
-            _budgetBatches,        _budgetVehicles,
-            _budgetGroups,         _budgetUnits,
-            _cycleMemoryCoef,
-            _cycleRandomCoef,      _cycleRandom,
-            _cycleExponentialCoef, _cycleExponential,
-            _cyclePowerCoef,       _cyclePower,
-            _cycleMin,             _cycleMax
-        ] spawn {
-            params [
-                "_emitter",              "_emissionRandom",
-                "_concurrentBatches",    "_concurrentVehicles",
-                "_concurrentGroups",     "_concurrentUnits",
-                "_budgetBatches",        "_budgetVehicles",
-                "_budgetGroups",         "_budgetUnits",
-                "_cycleMemoryCoef",
-                "_cycleRandomCoef",      "_cycleRandom",
-                "_cycleExponentialCoef", "_cycleExponential",
-                "_cyclePowerCoef",       "_cyclePower",
-                "_cycleMin",             "_cycleMax"
-            ];
-            private _spentBatches = 0;
-            private _spentVehicles = 0;
-            private _spentGroups = 0;
-            private _spentUnits = 0;
-            private _cycleCount = 0;
-            private _cycleMemory = 0;
-
-            while {alive _emitter} do {
-                if (
-                    {
-                        _x params ["_spent", "_budget"];
-                        _budget > 0 && _spent >= _budget;
-                    } count [
-                        [_spentBatches, _budgetBatches],
-                        [_spentVehicles, _budgetVehicles],
-                        [_spentGroups, _budgetGroups],
-                        [_spentUnits, _budgetUnits]
-                    ] > 0
-                ) exitWith {
-                    if (jib_emitter_debug) then {
-                        systemChat format [
-                            "jib_emitter disable: %1", _emitter
-                        ];
-                    };
-                    [_emitter] call jib_emitter_disable;
-                };
-
-                private _cycleStart = time;
-                waitUntil {
-                    uiSleep jib_emitter_delay_condition;
-                    {
-                        _x params ["_current", "_concurrent"];
-                        _concurrent > 0
-                            && (
-                                count ([_emitter] call _current)
-                                    >= _concurrent
-                            );
-                    } count [
-                        [jib_emitter__get_batches, _concurrentBatches],
-                        [jib_emitter__get_vehicles, _concurrentVehicles],
-                        [jib_emitter__get_groups, _concurrentGroups],
-                        [jib_emitter__get_units, _concurrentUnits]
-                    ] == 0;
-                };
-                _cycleCount = _cycleCount + 1;
-                _cycleMemory = time - _cycleStart;
-
-                private _random = random _cycleRandom;
-                private _cooldown = [
-                    _cycleCount,
-                    _cycleMemoryCoef, _cycleMemory,
-                    _cycleRandomCoef, _random,
-                    _cycleExponentialCoef, _cycleExponential,
-                    _cyclePowerCoef, _cyclePower,
-                    _cycleMin, _cycleMax
-                ] call jib_emitter__cooldown;
-                if (jib_emitter_debug) then {
-                    private _data =
-                        [
-                            _emitter,
-                            [
-                                _spentBatches, _spentVehicles,
-                                _spentGroups, _spentUnits
-                            ],
-                            [_cycleCount, _cycleMemory, _random, _cooldown]
-                        ];
-                    systemChat format ["jib_emitter cooldown: %1", _data];
-                    _emitter setVariable ["jib_emitter_debug", _data];
-                };
-
-                sleep _cooldown;
-                if (jib_emitter_debug) then {
-                    systemChat format ["jib_emitter emit: %1", _emitter];
-                };
-
-                for "_i" from 0 to round random _emissionRandom - 1 do {
-                    [_emitter] call jib_emitter_single params [
-                        "_batches", "_vehicles", "_groups", "_units"
-                    ];
-                    _spentBatches = _spentBatches + count _batches;
-                    _spentVehicles = _spentVehicles + count _vehicles;
-                    _spentGroups = _spentGroups + count _groups;
-                    _spentUnits = _spentUnits + count _units;
-                };
-            };
-        }
-    ];
-};
-
-// Emitter preset for infantry
-jib_emitter_enable_infantry = {
-    params ["_emitter"];
-    [
-        _emitter, [1, 1, 2], // emitter, emission
-        0, 0, 0, 16,         // concurrent B, V, G, U
-        0, 0, 0, 80,          // budget B, V, G, U
-        1, 0, [0, 0, 0],     // coef mem, coef rand, rand
-        1, 1.1, 0, 0, 0, 120 // coef exp, exp, coef pow, pow, min, max
-    ] call jib_emitter_enable;
-};
-
-// Emitter preset for motorized
-jib_emitter_enable_motorized = {
-    params ["_emitter"];
-    [
-        _emitter, [1, 1, 1],
-        0, 1, 0, 6,
-        0, 6, 0, 0,
-        1, 0, [10, 10, 10],
-        1, 1.1, 0, 0, 0, 600
-    ] call jib_emitter_enable;
-};
-
-// Emitter preset for air
-jib_emitter_enable_air = {
-    params ["_emitter"];
-    [
-        _emitter, [1, 1, 1],
-        0, 1, 0, 6,
-        0, 0, 0, 0,
-        1, 0, [10, 10, 10],
-        1, 1.1, 0, 0, 0, 600
-    ] call jib_emitter_enable;
-};
-
-// Stop emitting continuously
-jib_emitter_disable = {
-    params ["_emitter"];
-    terminate (_emitter getVariable ["jib_emitter__handle", scriptNull]);
-};
-
-// Emit one batch
+// Emit one batch regardless of budget or enabled status
 jib_emitter_single = {
     if (!canSuspend) then {throw "Cannot suspend!"};
     params [
@@ -369,19 +168,80 @@ jib_emitter_single = {
     [[_batch], _vehicles, _groups, _units];
 };
 
-// Emit one batch when all synced triggers activated
-jib_emitter_trigger = {
+// Set budget params for continuous emission
+jib_emitter_budget = {
+    params [
+        "_emitter",
+        ["_budget_units", 12],   // Max concurrent units
+        ["_budget_vehicles", 2], // Max concurrent vehicles
+        ["_period", 20]          // Time between emissions
+    ];
+    if (!isServer) exitWith {};
+    _emitter setVariable ["jib_emitter__budget_units", _budget_units];
+    _emitter setVariable ["jib_emitter__budget_vehicles", _budget_vehicles];
+    _emitter setVariable ["jib_emitter__period", _period];
+};
+
+// Enable continuous emission with budget and period
+jib_emitter_enable = {
     params ["_emitter"];
     if (!isServer) exitWith {};
-    [_emitter] spawn {
-        params ["_emitter"];
-        waitUntil {
-            uiSleep 1;
-            {
-                _x isKindOf "EmptyDetector" && !triggerActivated _x
-            } count synchronizedObjects _emitter == 0;
-        };
-        [_emitter] call jib_emitter_single;
+    terminate (_emitter getVariable ["jib_emitter__script", scriptNull]);
+    _emitter setVariable [
+        "jib_emitter__script",
+        [_emitter] spawn {
+            params ["_emitter"];
+            while {true} do {
+                if (
+                    (
+                        count ([_emitter] call jib_emitter_get_units)
+                            < _emitter getVariable [
+                                "jib_emitter__budget_units", 12
+                            ]
+                    ) && (
+                        count ([_emitter] call jib_emitter_get_vehicles)
+                            < _emitter getVariable [
+                                "jib_emitter__budget_vehicles", 2
+                            ]
+                    )
+                ) then {
+                    [_emitter] call jib_emitter_single;
+                } else {
+                    if (jib_emitter_debug) then {
+                        systemChat "Emitter over budget";
+                    };
+                };
+                private _period =
+                    _emitter getVariable ["jib_emitter__period", 20];
+                uiSleep random [0, _period, 2 * _period];
+            };
+        }
+    ];
+};
+
+// Disable emitter eg. when overrun by enemies
+jib_emitter_disable = {
+    params ["_emitter"];
+    if (!isServer) exitWith {};
+    terminate (_emitter getVariable ["jib_emitter__script", scriptNull]);
+};
+
+// Delete emitted units
+jib_emitter_cleanup = {
+    params ["_emitter"];
+    private _delay = 1;
+    if (!canSuspend) then {throw "Cannot suspend!"};
+    [_emitter] call jib_emitter_get_units apply {
+        private _veh = vehicle _x;
+        deleteVehicleCrew _veh;
+        deleteVehicle _veh;
+        uiSleep _delay;
+    };
+    [_emitter] call jib_emitter_get_vehicles apply {
+        private _veh = _x;
+        deleteVehicleCrew _veh;
+        deleteVehicle _veh;
+        uiSleep _delay;
     };
 };
 
@@ -405,30 +265,6 @@ jib_emitter_crate = {
     _crate;
 };
 
-// max(min((a1a2^x + b1x^b2) * (c1y + c2z), max), min)
-jib_emitter__cooldown = {
-    params [
-        "_cycleCount",      // x:  Zero based cycle number
-        "_cycleMemoryCoef", // c1: Last cycle time weight
-        "_cycleMemory",     // y:  Last cycle time
-        "_cooldownCoef",    // c2: Base cooldown weight
-        "_cooldown",        // z:  Base cooldown
-        "_exponentialCoef", // a1: Exponential base weight
-        "_exponential",     // a2: Exponential base
-        "_powerCoef",       // b1: Power weight
-        "_power",           // b2: Power
-        "_min",             // min
-        "_max"              // max
-    ];
-
-    (
-        (_exponentialCoef * _exponential ^ _cycleCount)
-            + (_powerCoef * _cycleCount ^ _power)
-    ) * (
-        _cycleMemoryCoef * _cycleMemory + _cooldownCoef * _cooldown
-    ) min _max max _min;
-};
-
 jib_emitter__add_batch = {
     params ["_emitter", "_deserializedBatch"];
     _emitter setVariable [
@@ -442,6 +278,9 @@ jib_emitter__add_batch = {
 
 jib_emitter__add_vehicles = {
     params ["_emitter", "_deserializedVehicles"];
+    _deserializedVehicles apply {
+        _x setVariable ["jib_emitter__source", "emitter"]
+    };
     _emitter setVariable [
         "jib_emitter_deserialized_vehicles", (
             _emitter getVariable [
@@ -453,6 +292,9 @@ jib_emitter__add_vehicles = {
 
 jib_emitter__add_groups = {
     params ["_emitter", "_deserializedGroups"];
+    _deserializedGroups apply {
+        _x setVariable ["jib_emitter__source", "emitter"]
+    };
     _emitter setVariable [
         "jib_emitter_deserialized_groups", (
             _emitter getVariable [
@@ -464,6 +306,9 @@ jib_emitter__add_groups = {
 
 jib_emitter__add_units = {
     params ["_emitter", "_deserializedUnits"];
+    _deserializedUnits apply {
+        _x setVariable ["jib_emitter__source", "emitter"]
+    };
     _emitter setVariable [
         "jib_emitter_deserialized_units", (
             _emitter getVariable [
@@ -475,6 +320,9 @@ jib_emitter__add_units = {
 
 jib_emitter__add_crate = {
     params ["_emitter", "_deserializedCrate"];
+    _deserializedCrates apply {
+        _x setVariable ["jib_emitter__source", "emitter"]
+    };
     _emitter setVariable [
         "jib_emitter_deserialized_crates", (
             _emitter getVariable [
@@ -502,7 +350,8 @@ jib_emitter__delete_crate = {
     deleteVehicle _crate;
 };
 
-jib_emitter__get_batches = {
+// Get deserialized batches
+jib_emitter_get_batches = {
     params ["_emitter"];
     _emitter getVariable [
         "jib_emitter_deserialized_batches", []
@@ -513,28 +362,32 @@ jib_emitter__get_batches = {
     };
 };
 
-jib_emitter__get_vehicles = {
+// Get deserialized vehicles
+jib_emitter_get_vehicles = {
     params ["_emitter"];
     _emitter getVariable [
         "jib_emitter_deserialized_vehicles", []
     ] select {alive _x && {alive _x} count crew _x > 0};
 };
 
-jib_emitter__get_groups = {
+// Get deserialized groups
+jib_emitter_get_groups = {
     params ["_emitter"];
     _emitter getVariable [
         "jib_emitter_deserialized_groups", []
     ] select {{alive _x} count units _x > 0};
 };
 
-jib_emitter__get_units = {
+// Get deserialized units
+jib_emitter_get_units = {
     params ["_emitter"];
     _emitter getVariable [
         "jib_emitter_deserialized_units", []
     ] select {alive _x};
 };
 
-jib_emitter__get_crates = {
+// Get deserialized crates
+jib_emitter_get_crates = {
     params ["_emitter"];
     _emitter getVariable [
         "jib_emitter_deserialized_crates", []
@@ -600,7 +453,7 @@ jib_emitter__waypoint_neighbors = {
     private _synchronizedNodes = [];
     synchronizedObjects _node select {
         _x getVariable ["jib_emitter__type", ""] == _type
-            && _x getVariable ["jib_emitter__enabled", false]
+            && _x getVariable ["jib_emitter__wp_enabled", false]
             && !(_x in _blacklist)
     } apply {
         _synchronizedNodes pushBack _x;
