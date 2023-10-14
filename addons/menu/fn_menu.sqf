@@ -164,7 +164,7 @@ jib_menu_dynamic_action = {
             _arguments params ["_menu_data"];
             _menu_data call jib_menu_dynamic
         },
-        [_menu_data], 4, false, true, "", toString _condition_fn, 2
+        [_menu_data], 4, false, true, "", toString _condition_fn, -1
     ];
 };
 publicVariable "jib_menu_dynamic_action";
