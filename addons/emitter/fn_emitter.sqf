@@ -320,9 +320,7 @@ jib_emitter__add_units = {
 
 jib_emitter__add_crate = {
     params ["_emitter", "_deserializedCrate"];
-    _deserializedCrates apply {
-        _x setVariable ["jib_emitter__source", "emitter"]
-    };
+    _deserializedCrate setVariable ["jib_emitter__source", "emitter"];
     _emitter setVariable [
         "jib_emitter_deserialized_crates", (
             _emitter getVariable [
