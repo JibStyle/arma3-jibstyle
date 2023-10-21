@@ -2,7 +2,7 @@ jib_cereal_loadout;
 
 jib_cereal_delay_physics = 0.3;
 publicVariable "jib_cereal_delay_physics";
-jib_cereal_debug = true;
+jib_cereal_debug = false;
 publicVariable "jib_cereal_debug";
 
 jib_cereal_deserialize_batch = {

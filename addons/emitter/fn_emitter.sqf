@@ -6,7 +6,7 @@ jib_emitter_serialize_crate;
 jib_emitter_serialize_waypoint;
 
 jib_emitter_delay_condition = 1;
-jib_emitter_debug = true;
+jib_emitter_debug = false;
 
 // Save waypoint data
 jib_emitter_waypoint = {
@@ -124,9 +124,14 @@ jib_emitter_save = {
 jib_emitter_single = {
     if (!canSuspend) then {throw "Cannot suspend!"};
     params [
-        "_emitter",
+        "_logic",
         ["_index", -1, [0]]
     ];
+    private _emitter = selectRandom (
+        [_logic] + synchronizedObjects _logic select {
+            _x getVariable ["jib_emitter__type", ""] == "emitter"
+        }
+    );
 
     private _serializedBatch = [
         _emitter getVariable [
@@ -174,45 +179,54 @@ jib_emitter_budget = {
         "_emitter",
         ["_budget_units", 12],   // Max concurrent units
         ["_budget_vehicles", 2], // Max concurrent vehicles
-        ["_period", 20]          // Time between emissions
+        ["_period", 20],         // Time between emissions
+        ["_tickets", 1e6]        // Num emissions until disable
     ];
     if (!isServer) exitWith {};
     _emitter setVariable ["jib_emitter__budget_units", _budget_units];
     _emitter setVariable ["jib_emitter__budget_vehicles", _budget_vehicles];
     _emitter setVariable ["jib_emitter__period", _period];
+    _emitter setVariable ["jib_emitter__tickets", _tickets];
 };
 
 // Enable continuous emission with budget and period
 jib_emitter_enable = {
-    params ["_emitter"];
+    params ["_logic"];
     if (!isServer) exitWith {};
-    terminate (_emitter getVariable ["jib_emitter__script", scriptNull]);
-    _emitter setVariable [
+    terminate (_logic getVariable ["jib_emitter__script", scriptNull]);
+    _logic setVariable [
         "jib_emitter__script",
-        [_emitter] spawn {
-            params ["_emitter"];
+        [_logic] spawn {
+            params ["_logic"];
+            private _emitters = [_logic] + synchronizedObjects _logic select {
+                _x getVariable ["jib_emitter__type", ""] == "emitter"
+            };
             while {true} do {
                 if (
                     (
-                        count ([_emitter] call jib_emitter_get_units)
-                            < _emitter getVariable [
-                                "jib_emitter__budget_units", 12
-                            ]
-                    ) && (
-                        count ([_emitter] call jib_emitter_get_vehicles)
-                            < _emitter getVariable [
-                                "jib_emitter__budget_vehicles", 2
-                            ]
-                    )
+                        _logic getVariable ["jib_emitter__tickets", 1e6] > 0
+                    ) && count flatten (
+                        _emitters apply {[_x] call jib_emitter_get_units}
+                    ) < _logic getVariable [
+                        "jib_emitter__budget_units", 12
+                    ] && count flatten (
+                        _emitters apply {[_x] call jib_emitter_get_vehicles}
+                    ) < _logic getVariable [
+                        "jib_emitter__budget_vehicles", 2
+                    ]
                 ) then {
-                    [_emitter] call jib_emitter_single;
+                    [selectRandom _emitters] call jib_emitter_single;
+                    _logic setVariable [
+                        "jib_emitter__tickets",
+                        (_logic getVariable ["jib_emitter__tickets", 1e6]) - 1
+                    ];
                 } else {
                     if (jib_emitter_debug) then {
                         systemChat "Emitter over budget";
                     };
                 };
                 private _period =
-                    _emitter getVariable ["jib_emitter__period", 20];
+                    _logic getVariable ["jib_emitter__period", 20];
                 uiSleep random [0, _period, 2 * _period];
             };
         }
@@ -228,20 +242,24 @@ jib_emitter_disable = {
 
 // Delete emitted units
 jib_emitter_cleanup = {
-    params ["_emitter"];
+    params ["_logic"];
     private _delay = 1;
     if (!canSuspend) then {throw "Cannot suspend!"};
-    [_emitter] call jib_emitter_get_units apply {
-        private _veh = vehicle _x;
-        deleteVehicleCrew _veh;
-        deleteVehicle _veh;
-        uiSleep _delay;
-    };
-    [_emitter] call jib_emitter_get_vehicles apply {
-        private _veh = _x;
-        deleteVehicleCrew _veh;
-        deleteVehicle _veh;
-        uiSleep _delay;
+    [_logic] + synchronizedObjects _logic select {
+        _x getVariable ["jib_emitter__type", ""] == "emitter"
+    } apply {
+        [_x] call jib_emitter_get_units apply {
+            private _veh = vehicle _x;
+            deleteVehicleCrew _veh;
+            deleteVehicle _veh;
+            uiSleep _delay;
+        };
+        [_x] call jib_emitter_get_vehicles apply {
+            private _veh = _x;
+            deleteVehicleCrew _veh;
+            deleteVehicle _veh;
+            uiSleep _delay;
+        };
     };
 };
 
