@@ -388,12 +388,13 @@ jib_ai_cqb = {
         ["_group_weight_engage", 0, [0]], // Combat mode RED
         ["_group_weight_static", 1, [0]], // Static defense
         ["_unit_static_prob", 0.5, [0]],  // Disable AI "TARGET" and "PATH"
-        ["_unit_static_dist", -1, [0]]    // Distance to disable static
+        ["_unit_static_dist", -1, [0]],   // Distance to disable static
+        ["_group_weight_dismiss", 0, [0]] // Dismiss WP
     ];
     if (!local _group) exitWith {};
     private _group_mode = selectRandomWeighted [
         "static", _group_weight_static, "engage", _group_weight_engage,
-        "guard", _group_weight_guard
+        "guard", _group_weight_guard, "dismiss", _group_weight_dismiss
     ];
     [_group, _group_mode, _unit_static_prob, _unit_static_dist] spawn {
         params [
@@ -403,6 +404,7 @@ jib_ai_cqb = {
         switch _group_mode do
         {
             case "static": {
+                _group setVariable ["jib_ai__cqb_mode", "static"];
                 units _group apply {
                     doStop _x;
                     if (random 1 < _unit_static_prob) then {
@@ -415,10 +417,12 @@ jib_ai_cqb = {
                 ];
             };
             case "engage": {
+                _group setVariable ["jib_ai__cqb_mode", "engage"];
                 units _group apply {doStop _x};
                 _group setCombatMode "RED";
             };
             case "guard": {
+                _group setVariable ["jib_ai__cqb_mode", "guard"];
                 units _group apply {
                     _x disableAI "TARGET";
                     _x disableAI "PATH";
@@ -426,6 +430,12 @@ jib_ai_cqb = {
                 _group setVariable ["jib_ai__cqb_guard", true];
                 private _wp = _group addWaypoint [getPos leader _group, 0];
                 _wp setWaypointType "GUARD";
+                _wp setWaypointPosition [getPosASL leader _group, -1];
+            };
+            case "dismiss": {
+                _group setVariable ["jib_ai__cqb_mode", "dismiss"];
+                private _wp = _group addWaypoint [getPos leader _group, 0];
+                _wp setWaypointType "DISMISS";
                 _wp setWaypointPosition [getPosASL leader _group, -1];
             };
             default {};
