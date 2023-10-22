@@ -217,51 +217,75 @@ jib_objective_hostageAllComplete = {
         && jib_objective_hostageRemaining == 0;
 };
 
-jib_objective_capture_enable = true;
-jib_objective_capture_delay = 0.25;
-jib_objective_capture_distance = 7;
-publicVariable "jib_objective_capture_enable";
-publicVariable "jib_objective_capture_delay";
-publicVariable "jib_objective_capture_distance";
-
+// Register unit to capture
 jib_objective_capture_register = {
     params ["_unit"];
-    _unit setVariable ["jib_objective_capture_registered", true];
-    if (local _unit) then {
-        _unit setCaptive true;
-    };
+    if (!isServer) exitWith {};
+    _unit setVariable ["jib_objective__capture_target", true, true];
+    [_unit, true] remoteExec ["setCaptive", 0, true];
 };
-publicVariable "jib_objective_capture_register";
 
+// Check if a unit has been captured
+jib_objective_capture_check = {
+    params ["_unit"];
+    if (!isServer) exitWith {};
+    _unit getVariable ["jib_objective__capture_done", false];
+};
+
+// Capture distance
+jib_objective_capture_distance;
+
+// Start capture script
 jib_objective_capture_start = {
-    jib_objective_capture_enable = false;
-    uiSleep jib_objective_capture_delay * 2;
-    jib_objective_capture_enable = true;
-    while {jib_objective_capture_enable} do {
-        uiSleep jib_objective_capture_delay;
-        private _target = cursorObject;
-        if (
-            _target getVariable [
-                "jib_objective_capture_registered", false
-            ] && (
-                _target distance player
-                    < jib_objective_capture_distance
-            )
-        ) then {
-            [
-                "ace_captives_setSurrendered",
-                [_target, true],
-                _target
-            ] call CBA_fnc_targetEvent;
-        };
-    };
+    if (!isServer) exitWith {};
+    [[], {
+        terminate (
+            missionNamespace getVariable [
+                "jib_objective__capture_script", scriptNull
+            ]
+        );
+        missionNamespace setVariable [
+            "jib_objective__capture_script",
+            [] spawn {
+                while {true} do {
+                    uiSleep 0.3;
+                    private _target = cursorObject;
+                    if (
+                        _target getVariable [
+                            "jib_objective__capture_target", false
+                        ] && (
+                            _target distance player
+                                < missionNamespace getVariable [
+                                    "jib_objective_capture_distance", 7
+                                ]
+                        )
+                    ) then {
+                        [
+                            "ace_captives_setSurrendered",
+                            [_target, true],
+                            _target
+                        ] call CBA_fnc_targetEvent;
+                        _target setVariable [
+                            "jib_objective__capture_done", true, true
+                        ];
+                    };
+                }
+            }
+        ];
+    }] remoteExec ["spawn", 0, true];
 };
-publicVariable "jib_objective_capture_start";
 
+// Stop capture script
 jib_objective_capture_stop = {
-    jib_objective_capture_enable = false;
+    if (!isServer) exitWith {};
+    [[], {
+        terminate (
+            missionNamespace getVariable [
+                "jib_objective__capture_script", scriptNull
+            ]
+        );
+    }] remoteExec ["spawn", 0, true];
 };
-publicVariable "jib_objective_capture_stop";
 
 // PRIVATE
 
