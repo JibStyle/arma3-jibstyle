@@ -498,7 +498,10 @@ jib_group__load_client = {
         "_old_vehicles",
         "_old_soldiers"
     ];
-    if (!local _group) then {throw "Group not local!"};
+    if (!local _group) then {
+        diag_log format ["jib_group__load_client error, params: %1", this];
+        throw "Group not local!";
+    };
     if (!canSuspend) then {throw "Must be scheduled!"};
 
     private _fake_soldier = objNull;
