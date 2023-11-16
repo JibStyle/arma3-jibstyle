@@ -176,6 +176,9 @@ jib_ai_infiniteAmmoEnable = {
             "jib_ai__infiniteammo_reloadtime",
             _time
         ];
+        _unit setVariable [
+            "jib_ai__infiniteammo_loadout", getUnitLoadout _unit
+        ];
         _unit removeEventHandler [
             "Fired",
             _unit getVariable ["jib_ai__infiniteammo_fired", -1]
@@ -203,6 +206,13 @@ jib_ai_infiniteAmmoEnable = {
                                 ]
                             );
                             _unit setVehicleAmmo 1;
+                            _unit setUnitLoadout [
+                                _unit getVariable [
+                                    "jib_ai__infiniteammo_loadout",
+                                    getUnitLoadout typeOf _unit
+                                ],
+                                true
+                            ]
                         }
                     ];
                 }
@@ -226,6 +236,24 @@ jib_ai_infiniteAmmoDisable = {
             ]
         ];
     }] remoteExec ["spawn", _unit];
+};
+
+// Make some units in group have infinite health and/or ammo
+jib_ai_plotArmor = {
+    params [
+        "_group",
+        ["_probInvincible", 0.5, [0]],
+        ["_probAmmo", 0.5, [0]]
+    ];
+    if (not isServer) exitWith {};
+    units _group apply {
+        if (random 1 < _probInvincible) then {
+            [_x, false] remoteExec ["allowDamage"];
+        };
+        if (random 1 < _probAmmo) then {
+            [_x, 120] call jib_ai_infiniteAmmoEnable;
+        };
+    };
 };
 
 // Enable AI lasers when SL laser active
