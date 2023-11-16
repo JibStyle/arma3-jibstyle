@@ -219,25 +219,59 @@ jib_objective_hostageAllComplete = {
 
 // Register unit to capture
 jib_objective_capture_register = {
-    params ["_unit"];
+    params [
+        "_unit",
+        ["_aimDistance", 7, [0]],
+        ["_proxyDistance", 2, [0]]
+    ];
     if (!isServer) exitWith {};
-    _unit setVariable ["jib_objective__capture_target", true, true];
+    _unit setVariable [
+        "jib_objective__capture_aimDistance", _aimDistance, true
+    ];
+    _unit setVariable [
+        "jib_objective__capture_target", true, true
+    ];
+    _unit setVariable [
+        "jib_objective__capture_proxyDistance", _proxyDistance
+    ];
     [_unit, true] remoteExec ["setCaptive", 0, true];
-};
 
-// Check if a unit has been captured
-jib_objective_capture_check = {
-    params ["_unit"];
-    if (!isServer) exitWith {};
-    _unit getVariable ["jib_objective__capture_done", false];
-};
+    terminate (
+        _unit getVariable ["jib_objective__capture_proxyScript", scriptNull]
+    );
+    _unit setVariable [
+        "jib_objective__capture_proxyScript",
+        [_unit] spawn {
+            params ["_unit"];
+            while {
+                alive _unit && _unit getVariable [
+                    "jib_objective__capture_done", false
+                ] == false
+            } do {
+                uiSleep 0.5;
+                private _nearestDistance = 1e6;
+                allPlayers apply {
+                    private _distance = _x distance _unit;
+                    if (_distance < _nearestDistance) then {
+                        _nearestDistance = _distance;
+                    };
+                };
+                if (
+                    _nearestDistance < _unit getVariable [
+                        "jib_objective__capture_proxyDistance", 0
+                    ]
+                ) then {
+                    [
+                        "ace_captives_setSurrendered", [_unit, true], _unit
+                    ] call CBA_fnc_targetEvent;
+                    _unit setVariable [
+                        "jib_objective__capture_done", true, true
+                    ];
+                };
+            };
+        }
+    ];
 
-// Capture distance
-jib_objective_capture_distance;
-
-// Start capture script
-jib_objective_capture_start = {
-    if (!isServer) exitWith {};
     [[], {
         terminate (
             missionNamespace getVariable [
@@ -251,14 +285,16 @@ jib_objective_capture_start = {
                     uiSleep 0.3;
                     private _target = cursorObject;
                     if (
-                        _target getVariable [
-                            "jib_objective__capture_target", false
-                        ] && (
-                            _target distance player
-                                < missionNamespace getVariable [
-                                    "jib_objective_capture_distance", 7
-                                ]
-                        )
+                        alive _target
+                            && _target getVariable [
+                                "jib_objective__capture_target", false
+                            ] && (
+                                _target distance player
+                                    < _target getVariable [
+                                        "jib_objective__capture_aimDistance",
+                                        7
+                                    ]
+                            )
                     ) then {
                         [
                             "ace_captives_setSurrendered",
@@ -275,16 +311,11 @@ jib_objective_capture_start = {
     }] remoteExec ["spawn", 0, true];
 };
 
-// Stop capture script
-jib_objective_capture_stop = {
+// Check if a unit has been captured
+jib_objective_capture_check = {
+    params ["_unit"];
     if (!isServer) exitWith {};
-    [[], {
-        terminate (
-            missionNamespace getVariable [
-                "jib_objective__capture_script", scriptNull
-            ]
-        );
-    }] remoteExec ["spawn", 0, true];
+    _unit getVariable ["jib_objective__capture_done", false];
 };
 
 // PRIVATE
