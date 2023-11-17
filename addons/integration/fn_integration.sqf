@@ -134,6 +134,5 @@ jib_acre_log = jib_log;
 
 // Run the mission start handlers
 [] call jib_menu_setup;
-[] call jib_group_setup;
 [] call jib_handler_integrationDone;
 [] call jib_zeus_init;
