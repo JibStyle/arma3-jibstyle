@@ -62,7 +62,7 @@ jib_emitter_child = {
 
 // Save batches and crates to emitter
 jib_emitter_save = {
-    params ["_emitter"];
+    params ["_emitter", ["_weight", 1, [0]]];
     if (!isServer) exitWith {};
     private _batches = [];
     private _crates = [];
@@ -104,6 +104,7 @@ jib_emitter_save = {
         _crates apply {[_x] call jib_emitter_serialize_crate};
 
     _emitter setVariable ["jib_emitter__type", "emitter"];
+    _emitter setVariable ["jib_emitter__weight", _weight];
     _emitter setVariable [
         "jib_emitter__serialized_batches", _serializedBatches
     ];
@@ -189,6 +190,12 @@ jib_emitter_budget = {
     _emitter setVariable ["jib_emitter__tickets", _tickets];
 };
 
+// Get tickets remaining
+jib_emitter_tickets = {
+    params ["_emitter"];
+    _emitter getVariable ["jib_emitter__tickets", -1];
+};
+
 // Enable continuous emission with budget and period
 jib_emitter_enable = {
     params ["_logic"];
@@ -201,6 +208,8 @@ jib_emitter_enable = {
             private _emitters = [_logic] + synchronizedObjects _logic select {
                 _x getVariable ["jib_emitter__type", ""] == "emitter"
             };
+            private _weights =
+                _emitters apply {_x getVariable ["jib_emitter__weight", 1]};
             while {true} do {
                 if (
                     (
@@ -215,7 +224,9 @@ jib_emitter_enable = {
                         "jib_emitter__budget_vehicles", 2
                     ]
                 ) then {
-                    [selectRandom _emitters] call jib_emitter_single;
+                    [
+                        _emitters selectRandomWeighted _weights
+                    ] call jib_emitter_single;
                     _logic setVariable [
                         "jib_emitter__tickets",
                         (_logic getVariable ["jib_emitter__tickets", 1e6]) - 1
