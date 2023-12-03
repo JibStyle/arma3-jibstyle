@@ -227,6 +227,54 @@ jib_wp_follow = {
     };
 };
 
+// Make transport RTB here after troops dismount, use as script WP completion
+jib_wp_transport = {
+    params ["_leader"];
+    if (!isServer) exitWith {};
+    private _group = group _leader;
+    private _pos = waypointPosition [_group, currentWaypoint _group];
+    terminate (_group getVariable ["jib_wp__transport", scriptNull]);
+    _group setVariable ["jib_wp__transport", [_group, _pos] spawn {
+        params ["_group", "_pos"];
+        waitUntil {
+            uiSleep 0.5;
+            {vehicle _x == _x} count units _group > 0;
+        };
+        private _rtb = createGroup [side _group, true];
+        private _vehs = assignedVehicles _group;
+        _vehs apply {
+            fullCrew _x select {
+                _x params ["_unit", "_role", "_cargoIndex"];
+                _cargoIndex < 0;
+            } apply {
+                _x params ["_unit", "_role", "_cargoIndex"];
+                _unit;
+            } join _rtb;
+            _group leaveVehicle _x;
+        };
+        waitUntil {
+            uiSleep 0.5;
+            {_x > 0} count (
+                _vehs apply {
+                    {
+                        _x params ["_unit", "_role", "_cargoIndex"];
+                        alive _unit && _cargoIndex >= 0;
+                    } count fullCrew _x;
+                }
+            ) == 0;
+        };
+        private _wp = _rtb addWaypoint [_pos, 0];
+        _wp setWaypointBehaviour "CARELESS";
+        _wp setWaypointStatements ["true", toString {
+            thisList apply {
+                private _veh = vehicle _x;
+                deleteVehicleCrew _veh;
+                deleteVehicle _veh;
+            };
+        }];
+    }];
+};
+
 // PRIVATE BELOW HERE
 
 // Common code to add a waypoint
@@ -466,6 +514,24 @@ jib_wp_moduleRTB = {
     ] call jib_wp_moduleValidate;
 };
 
+jib_wp_moduleTransport = {
+    [
+        _this,
+        {
+            params ["_posATL", "_attached", "_args"];
+            [
+                group _attached,
+                50,
+                "SCRIPTED",
+                "UNCHANGED",
+                "true",
+                "[this] call jib_wp_transport",
+                "jib_wp_transport"
+            ] call jib_wp_add;
+        }
+    ] call jib_wp_moduleValidate;
+};
+
 publicVariable "jib_wp_moduleValidate";
 publicVariable "jib_wp_paraEffectIngress";
 publicVariable "jib_wp_paraEffectDropzone";
@@ -482,6 +548,7 @@ publicVariable "jib_wp_moduleStart";
 publicVariable "jib_wp_moduleParadrop";
 publicVariable "jib_wp_moduleParadropHALO";
 publicVariable "jib_wp_moduleRTB";
+publicVariable "jib_wp_moduleTransport";
 publicVariable "jib_wp_varStart";
 publicVariable "jib_wp_waitCondition";
 publicVariable "jib_wp_paradropIngressComplete";

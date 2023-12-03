@@ -15,6 +15,7 @@ class CfgPatches {
             "jib_wp_moduleParadrop",
             "jib_wp_moduleParadropHALO",
             "jib_wp_moduleRTB",
+            "jib_wp_moduleTransport",
         };
     };
 };
@@ -90,5 +91,10 @@ class CfgVehicles
         scopeCurator=2;
         displayName = "Waypoint RTB";
         function = "jib_wp_moduleRTB";
+    };
+    class jib_wp_moduleTransport: jib_wp_module {
+        scopeCurator=2;
+        displayName = "Waypoint Transport";
+        function = "jib_wp_moduleTransport";
     };
 };
