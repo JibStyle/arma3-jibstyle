@@ -5,6 +5,39 @@ if (!isServer) exitWith {};
 // Dependency injected from integration.
 jib_misc_moduleValidate = {};
 
+// Configure HUD elements difficulty
+jib_misc_hud = {
+    if (!isServer) exitWith {};
+    [[], {
+        terminate (
+            missionNamespace getVariable ["jib_misc_hud_script", scriptNull]
+        );
+        missionNamespace setVariable [
+            "jib_misc_hud_script",
+            [] spawn {
+                scriptName "Jib HUD";
+                while {true} do {
+                    uiSleep 1;
+                    showHUD [
+                        true, // scriptedHUD
+                        true, // info
+                        true, // radar
+                        true, // compass
+                        true, // direction
+                        true, // menu
+                        true, // group
+                        true, // cursors
+                        true, // panels
+                        false, // kills
+                        false  // showIcon3D
+                    ];
+                    showScoretable 0;
+                };
+            }
+        ];
+    }] remoteExecCall ["call", 0, true];
+};
+
 // Push group IDs from current machine to all
 jib_misc_pushGroupIDs = {
     allGroups apply {
