@@ -716,7 +716,8 @@ jib_objective_intel = {
                     // _objects apply {deleteVehicle _x};
                     _compositions apply {
                         _x params ["_markers", "_arrows"];
-                        private _alive_arrows = _arrows select {!isNull _x};
+                        private _alive_arrows =
+                            _arrows select {!isNil {_x}} select {!isNull _x};
                         if (count _alive_arrows > count _markers) then {
                             throw "More arrows than markers!";
                         };
