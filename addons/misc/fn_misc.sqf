@@ -5,6 +5,30 @@ if (!isServer) exitWith {};
 // Dependency injected from integration.
 jib_misc_moduleValidate = {};
 
+// Set tags for units
+jib_misc_tag = {
+    params ["_object", "_tag"];
+    if (!isServer) exitWith {};
+    _object setVariable ["jib_misc_tag", _tag];
+};
+
+// Restrict number of units with tags
+jib_misc_ao = {
+    params ["_tags", "_n"];
+    if (!isServer) exitWith {};
+    private _units = allUnits apply {vehicle _x} select {
+        _x getVariable ["jib_misc_tag", ""] in _tags
+    };
+    _units = _units arrayIntersect _units;
+    private _probability = _n / (count _units max 1);
+    _units select {random 1 > _probability} apply {
+        [_x] join grpNull;
+        private _veh = vehicle _x;
+        deleteVehicleCrew _veh;
+        deleteVehicle _veh;
+    };
+};
+
 // Configure HUD elements difficulty
 jib_misc_hud = {
     if (!isServer) exitWith {};
