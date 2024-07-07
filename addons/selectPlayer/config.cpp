@@ -28,22 +28,22 @@ class CfgFactionClasses {
 
 class CfgVehicles {
     class Module_F;
-    class jib_modules_selectPlayer: Module_F {
+    class jib_selectPlayer_module: Module_F {
         isGlobal=1;
         curatorCanAttach=1;
         category = "jib_selectPlayer";
     };
-    class jib_modules_selectPlayerFrom: jib_modules_selectPlayer {
+    class jib_selectPlayer_moduleFrom: jib_selectPlayer_module {
         scopeCurator=2;
         displayName = "Select Player From";
         function = "jib_selectPlayer_moduleFrom";
     };
-    class jib_modules_selectPlayerTo: jib_modules_selectPlayer {
+    class jib_selectPlayer_moduleTo: jib_selectPlayer_module {
         scopeCurator=2;
         displayName = "Select Player To";
         function = "jib_selectPlayer_moduleTo";
     };
-    class jib_modules_selectPlayerSelf: jib_modules_selectPlayer {
+    class jib_selectPlayer_moduleSelf: jib_selectPlayer_module {
         scopeCurator=2;
         displayName = "Select Player Self";
         function = "jib_selectPlayer_moduleSelf";
