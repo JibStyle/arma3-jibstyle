@@ -132,6 +132,7 @@ jib_service_group_rally_vehicle = jib_group_rally_vehicle;
 
 jib_acre_log = jib_log;
 jib_garrison_acre_setUnitLoadout = jib_acre_setUnitLoadout;
+jib_garrison_ai_cqb = jib_ai_cqb;
 
 // Run the mission start handlers
 [] call jib_menu_setup;

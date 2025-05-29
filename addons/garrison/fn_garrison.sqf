@@ -1,4 +1,5 @@
 jib_garrison_acre_setUnitLoadout;
+jib_garrison_ai_cqb;
 jib_garrison_sleep_delay = 0.1;
 jib_garrison_debug = false;
 
@@ -29,7 +30,7 @@ jib_garrison_default_group_init = {
     params ["_group"];
     [
         _group, 1, 2, 3, random[0, 0.7, 1], random [0, 10, 200], 2
-    ] call jib_ai_cqb;
+    ] call jib_garrison_ai_cqb;
 };
 
 // Populate buildings in trigger area based on unit data.
