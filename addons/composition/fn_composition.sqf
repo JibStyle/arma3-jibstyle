@@ -1,7 +1,8 @@
 jib_composition_sleep_delay = .1;
+jib_composition_sleep_delay_physics = 5;
 jib_composition_debug = true;
 jib_composition_default_radius = 100;
-jib_composition_altitude_tolerance = .1;
+jib_composition_altitude_tolerance = 5;
 
 jib_composition_radius_read = {
     params [
@@ -79,10 +80,13 @@ jib_composition_write = {
         _object;
     };
     _objects apply {
-        _x allowDamage (_x getVariable "jib_composition__is_damage_allowed");
         [
             _x, (_x getVariable "jib_composition__simulation_enabled")
         ] remoteExec ["enableSimulationGlobal", 2];
+    };
+    uiSleep jib_composition_sleep_delay_physics;
+    _objects apply {
+        _x allowDamage (_x getVariable "jib_composition__is_damage_allowed");
     };
     ["Write composition done."] call jib_composition__log;
 };
@@ -107,6 +111,3 @@ jib_composition__log = {
         systemChat format ["jib_composition: %1", _message];
     };
 };
-
-data = [getPos player] call jib_composition_radius_read;
-// [getPos player, 180, data] spawn jib_composition_write;
