@@ -1,11 +1,12 @@
 jib_garrison_acre_setUnitLoadout;
 jib_garrison_ai_cqb;
+jib_garrison_debug = true;
 jib_garrison_sleep_delay = 0.1;
-jib_garrison_debug = false;
 
 // Default param values.
 jib_garrison_default_radius = 100;
 jib_garrison_default_n_units = [100, 100, 100, 20]; // BLU, IND, OPF, CIV
+jib_garrison_default_n_clusters = 15;
 jib_garrison_default_p_interside = 0;
 jib_garrison_default_p_building = {
     params ["_n_buildings"];
@@ -38,6 +39,7 @@ jib_garrison_trigger_write = {
         "_trigger",
         "_data",
         ["_n_units", jib_garrison_default_n_units, [[], 0]],
+        ["_n_clusters", jib_garrison_default_n_clusters, [0]],
         ["_p_building", jib_garrison_default_p_building, [{}, 0]],
         ["_p_position", jib_garrison_default_p_position, [{}, 0]],
         ["_p_interside", jib_garrison_default_p_interside, [0]],
@@ -58,6 +60,7 @@ jib_garrison_trigger_write = {
         },
         _data,
         _n_units,
+        _n_clusters,
         _p_building,
         _p_position,
         _p_interside,
@@ -84,6 +87,7 @@ jib_garrison_radius_write = {
         "_data",
         ["_radius", jib_garrison_default_radius, [0]],
         ["_n_units", jib_garrison_default_n_units, [[], 0]],
+        ["_n_clusters", jib_garrison_default_n_clusters, [0]],
         ["_p_building", jib_garrison_default_p_building, [{}, 0]],
         ["_p_position", jib_garrison_default_p_position, [{}, 0]],
         ["_p_interside", jib_garrison_default_p_interside, [0]],
@@ -104,6 +108,7 @@ jib_garrison_radius_write = {
         },
         _data,
         _n_units,
+        _n_clusters,
         _p_building,
         _p_position,
         _p_interside,
@@ -129,6 +134,7 @@ jib_garrison_trigger = {
     params [
         "_trigger",
         ["_n_units", jib_garrison_default_n_units, [[], 0]],
+        ["_n_clusters", jib_garrison_default_n_clusters, [0]],
         ["_p_building", jib_garrison_default_p_building, [{}, 0]],
         ["_p_position", jib_garrison_default_p_position, [{}, 0]],
         ["_p_interside", jib_garrison_default_p_interside, [0]],
@@ -141,6 +147,7 @@ jib_garrison_trigger = {
         _trigger,
         [_trigger, _filter_unit] call jib_garrison_trigger_read,
         _n_units,
+        _n_clusters,
         _p_building,
         _p_position,
         _p_interside,
@@ -156,6 +163,7 @@ jib_garrison_radius = {
         "_pos",
         ["_radius", jib_garrison_default_radius, [0]],
         ["_n_units", jib_garrison_default_n_units, [[], 0]],
+        ["_n_clusters", jib_garrison_default_n_clusters, [0]],
         ["_p_building", jib_garrison_default_p_building, [{}, 0]],
         ["_p_position", jib_garrison_default_p_position, [{}, 0]],
         ["_p_interside", jib_garrison_default_p_interside, [0]],
@@ -169,6 +177,7 @@ jib_garrison_radius = {
         [_pos, _radius, _filter_unit] call jib_garrison_radius_read,
         _radius,
         _n_units,
+        _n_clusters,
         _p_building,
         _p_position,
         _p_interside,
@@ -184,6 +193,7 @@ jib_garrison_buildings_data = {
         "_buildings",
         "_data",
         ["_n_units", jib_garrison_default_n_units, [[], 0]],
+        ["_n_clusters", jib_garrison_default_n_clusters, [0]],
         ["_p_building", jib_garrison_default_p_building, [{}, 0]],
         ["_p_position", jib_garrison_default_p_position, [{}, 0]],
         ["_p_interside", jib_garrison_default_p_interside, [0]],
@@ -207,18 +217,27 @@ jib_garrison_buildings_data = {
     } else {
         _p_building_result = _p_building;
     };
-    _buildings apply {
-        if (random 1 > _p_building_result) then {continue};
-        private _groups = [];
-        private _interside = random 1 <= _p_interside;
+    private _positions = [];
+    _buildings select {
+        random 1 < _p_building_result
+    } apply {
         private _p_position_result = 0;
         if (typeName _p_position == "CODE") then {
             _p_position_result = [count (_x buildingPos -1)] call _p_position;
         } else {
             _p_position_result = _p_position;
         };
-        _x buildingPos -1 apply {
-            if (random 1 >= _p_position_result) then {continue};
+        _x buildingPos -1 select {
+            random 1 < _p_position_result
+        } apply {
+            _positions pushBack _x
+        };
+    };
+    private _clusters = [_positions, _n_clusters] call jib_garrison__cluster;
+    _clusters apply {
+        private _groups = [];
+        private _interside = random 1 < _p_interside;
+        _x apply {
             if (count _data == 0) exitWith {throw "No data"};
             private _filtered_data = _data select {
                 _interside
@@ -392,6 +411,85 @@ jib_garrison_serialize_units = {
         deleteVehicle _veh;
     };
     _data;
+};
+
+jib_garrison__cluster = {
+    params [
+        "_positions",
+        "_n_clusters",
+        ["_max_iterations", 100, [0]],
+        ["_min_delta", 0.1, [0]]
+    ];
+    if (_n_clusters <= 0) exitWith {
+        throw "Invalid min clusters."
+    };
+    if (_max_iterations <= 0) exitWith {
+        throw "Invalid max iterations."
+    };
+
+    private _centroids = [];
+    for "_i" from 0 to _n_clusters - 1 do {
+        _centroids pushBack selectRandom _positions;
+    };
+
+    private _iteration = 0;
+    private _clusters = [];
+    while {true} do {
+
+        _iteration = _iteration + 1;
+        if (_iteration >= _max_iterations) then {
+            ["Max iterations reached."] call jib_garrison__log;
+            break;
+        };
+
+        _clusters = [];
+        for "_i" from 0 to count _centroids - 1 do {
+            _clusters pushBack [];
+        };
+        _positions apply {
+            private _best = 0;
+            private _position = _x;
+            for "_i" from 0 to count _centroids - 1 do {
+                private _centroid = _centroids # _i;
+                if (
+                    _position distance _centroid
+                        < _position distance _centroids # _best
+                ) then {
+                    _best = _i;
+                };
+            };
+            _clusters # _best pushBack _position;
+        };
+
+        private _n_stable = 0;
+        for "_i" from 0 to count _centroids - 1 do {
+            private _sum = [0, 0, 0];
+            private _n = 0;
+            _clusters # _i apply {
+                _sum = _sum vectorAdd _x;
+                _n = _n + 1;
+            };
+            private _new_centroid = selectRandom _positions;
+            if (_n > 0) then {
+                _new_centroid = _sum vectorMultiply (1 / _n);
+            };
+            private _old_centroid = _centroids # _i;
+            if (_new_centroid distance _old_centroid <= _min_delta) then {
+                _n_stable = _n_stable + 1;
+            };
+            _centroids set [_i, _new_centroid];
+        };
+
+        if (_n_stable >= count _clusters) then {
+            [
+                format ["Centroids stabile, %1 iterations.", _iteration]
+            ] call jib_garrison__log;
+            break;
+        };
+
+    };
+
+    _clusters select {count _x > 0};
 };
 
 jib_garrison__spawn_unit = {
