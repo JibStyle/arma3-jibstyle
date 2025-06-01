@@ -20,8 +20,7 @@ jib_garrison_default_filter_building = {
     count(_building buildingPos -1) >= 4;
 };
 jib_garrison_default_filter_unit = {
-    params ["_unit"];
-    _unit in allUnits;
+    _x in allUnits;
 };
 jib_garrison_default_unit_init = {
     params ["_unit"];
@@ -340,9 +339,7 @@ jib_garrison_buildings_data = {
             _n_units
         ] call _filter_units;
     };
-    if (jib_garrison_debug) then {
-        systemChat "Garrison done.";
-    };
+    ["Garrison done."] call jib_garrison__log;
 };
 
 // Delete units and return their data.
@@ -476,18 +473,16 @@ jib_garrison__get_trigger_objects = {
     ) inAreaArray [_posATL] + triggerArea _trigger;
 };
 
-jib_garrison__get_filter_location = {
+jib_garrison__get_filter_trigger = {
     params [
-        "_location",
+        "_trigger",
         ["_filter", {true}, [{}]]
     ];
-    private _pos = getPos _location;
-    size _location params ["_a", "_b"];
-    private _angle = direction _location;
-    private _isRect = rectangular _location;
+    private _posATL = getPosATL _trigger;
+    triggerArea _trigger params ["_a", "_b", "_angle", "_isRect", "_c"];
     (
-        _pos nearObjects (_a max _b) * 1.42
-    ) inAreaArray _location select {
+        _posATL nearObjects (_a max _b) * 1.42
+    ) inAreaArray [_posATL] + triggerArea _trigger select {
         [_x] call _filter
     };
 };
@@ -533,4 +528,7 @@ jib_garrison__curator_register = {
 jib_garrison__log = {
     params ["_message"];
     diag_log format ["jib_garrison: %1", _message];
+    if (jib_garrison_debug) then {
+        systemChat format ["jib_garrison: %1", _message];
+    };
 };
