@@ -12,7 +12,7 @@ jib_composition_radius_read = {
     (
         (8 allObjects 0) + ((8 allObjects 1) arrayIntersect vehicles)
     ) select {_x distance _pos < _radius} apply {
-        [
+        private _data = [
             typeOf _x,
             getPosATL _x vectorDiff _pos,
             direction _x,
@@ -22,7 +22,12 @@ jib_composition_radius_read = {
             simulationEnabled _x,
             isObjectHidden _x,
             damage _x
-        ]
+        ];
+        [_x] join grpNull;
+        private _veh = vehicle _x;
+        deleteVehicleCrew _veh;
+        deleteVehicle _veh;
+        _data;
     };
 };
 
@@ -30,7 +35,8 @@ jib_composition_write = {
     params [
         "_pos",
         "_dir",
-        "_data"
+        "_data",
+        ["_completion", {params ["_position"]}, [{}]]
     ];
     if (not canSuspend) exitWith {throw "Cannot suspend."};
     if (count _data == 0) exitWith {
@@ -89,6 +95,9 @@ jib_composition_write = {
         _x allowDamage (_x getVariable "jib_composition__is_damage_allowed");
     };
     ["Write composition done."] call jib_composition__log;
+
+    [_pos] call _completion;
+    ["Composition completion done."] call jib_composition__log;
 };
 
 jib_composition__curator_register = {
