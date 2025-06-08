@@ -18,7 +18,7 @@ jib_garrison_default_p_position = {
 };
 jib_garrison_default_filter_building = {
     params ["_building"];
-    count(_building buildingPos -1) >= 4;
+    count(_building buildingPos -1) >= 1;
 };
 jib_garrison_default_filter_unit = {
     _x in allUnits;
