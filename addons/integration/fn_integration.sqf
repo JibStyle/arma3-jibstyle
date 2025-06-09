@@ -134,6 +134,9 @@ jib_acre_log = jib_log;
 jib_garrison_acre_setUnitLoadout = jib_acre_setUnitLoadout;
 jib_garrison_ai_cqb = jib_ai_cqb;
 
+jib_traffic_serialize_batch = jib_cereal_serialize_batch;
+jib_traffic_deserialize_batch = jib_cereal_deserialize_batch;
+
 // Run the mission start handlers
 [] call jib_menu_setup;
 [] call jib_handler_integrationDone;

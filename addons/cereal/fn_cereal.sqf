@@ -6,17 +6,20 @@ jib_cereal_debug = false;
 publicVariable "jib_cereal_debug";
 
 jib_cereal_deserialize_batch = {
-    params ["_serializedBatch"];
+    params [
+        "_serializedBatch",
+        ["_pos", nil, [[]]]
+    ];
     _serializedBatch params [
         "_serializedVehicles",
         "_serializedGroups",
         "_serializedSeats"
     ];
     private _vehicles = _serializedVehicles apply {
-        [_x] call jib_cereal__deserialize_vehicle;
+        [_x, _pos] call jib_cereal__deserialize_vehicle;
     };
     private _groups = _serializedGroups apply {
-        [_x] call jib_cereal__deserialize_group;
+        [_x, _pos] call jib_cereal__deserialize_group;
     };
     [
         _vehicles, _groups apply {units _x}, _serializedSeats
@@ -209,7 +212,7 @@ jib_cereal_serialize_waypoint_manual = {
 };
 
 jib_cereal__deserialize_group = {
-    params ["_serializedGroup"];
+    params ["_serializedGroup", ["_pos", nil, [[]]]];
     _serializedGroup params [
         "_name",
         "_deleteWhenEmpty",
@@ -227,7 +230,7 @@ jib_cereal__deserialize_group = {
     _group setCombatMode _combatMode;
     _group setSpeedMode _speedMode;
     _serializedUnits apply {
-        [_group, _x] call jib_cereal__deserialize_soldier;
+        [_group, _x, _pos] call jib_cereal__deserialize_soldier;
     };
     units _group apply {
         if (_x getVariable ["jib_cereal__leader", false]) then {
