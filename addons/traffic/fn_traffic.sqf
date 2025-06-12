@@ -10,18 +10,16 @@ jib_traffic_outside_roads_margin = 200;
 
 // Default param values
 jib_traffic_default_radius = 100;
-jib_traffic_default_area = [1000, 1000, 0, false, -1];
 jib_traffic_default_n = 10;
 jib_traffic_default_interval = 10;
 
 jib_traffic_read = {
     params [
-        "_pos",
-        ["_area", jib_traffic_default_area, [[]]]
+        "_area"
     ];
-    _area params ["_a", "_b", "_angle", "_isRect", "_c"];
+    _area params ["_pos", "_a", "_b", "_angle", "_isRect", "_c"];
     private _vehicles = _pos nearObjects (_a max _b) * 1.42 select {
-        _x inArea [_pos] + _area;
+        _x inArea _area;
     } select {
         driver _x != _x && driver _x in allUnits;
     };
@@ -46,23 +44,32 @@ jib_traffic_read = {
 
 jib_traffic_write = {
     params [
-        "_pos",
         "_data",
-        ["_area", jib_traffic_default_area, [[]]],
+        "_beg_whitelist",
+        "_beg_blacklist",
+        "_mid_whitelist",
+        "_mid_blacklist",
+        "_end_whitelist",
+        "_end_blacklist",
         ["_timeout", [0, 0, 0], [[]]]
     ];
-    _area params ["_a", "_b", "_angle", "_isRect", "_c"];
     if (!canSuspend) then {throw "Cannot suspend!"};
-    [_pos, _area, false] call jib_traffic__pos_area params ["_start", "_dir"];
     [
-        selectRandom _data, _start
+        _beg_whitelist, _beg_blacklist
+    ] call jib_traffic__pos_area params ["_beg", "_dir"];
+    [
+        selectRandom _data, _beg
     ] call jib_cereal_deserialize_batch params ["_vehicles", "_groups"];
     _vehicles apply {_x setDir _dir};
     _groups apply {
-        [_pos, _area, true] call jib_traffic__pos_area params ["_mid"];
+        [
+            _mid_whitelist, _mid_blacklist
+        ] call jib_traffic__pos_area params ["_mid"];
         private _wp_mid = _x addWaypoint [_mid, 0];
         _wp_mid setWaypointTimeout _timeout;
-        [_pos, _area, false] call jib_traffic__pos_area params ["_end"];
+        [
+            _end_whitelist, _end_blacklist
+        ] call jib_traffic__pos_area params ["_end"];
         private _wp_end = _x addWaypoint [_end, 0];
         _wp_end setWaypointStatements [
             "true", toString {
@@ -85,24 +92,35 @@ jib_traffic_write = {
 
 jib_traffic_start = {
     params [
-        "_pos",
         "_data",
-        ["_area", jib_traffic_default_area, [[]]],
+        "_beg_whitelist",
+        "_beg_blacklist",
+        "_mid_whitelist",
+        "_mid_blacklist",
+        "_end_whitelist",
+        "_end_blacklist",
         ["_timeout", [0, 0, 0], [[]]],
         ["_n", jib_traffic_default_n, [0]],
         ["_interval", jib_traffic_default_interval, [0]]
     ];
-    _area params ["_a", "_b", "_angle", "_isRect", "_c"];
     private _counter = -1;
     isNil {
         _counter = jib_traffic__token_count;
         jib_traffic__token_count = jib_traffic__token_count + 1;
     };
     private _script = [
-        _counter, _pos, _data, _area, _timeout, _n, _interval
+        _counter, _data,
+        _beg_whitelist, _beg_blacklist,
+        _mid_whitelist, _mid_blacklist,
+        _end_whitelist, _end_blacklist,
+        _timeout, _n, _interval
     ] spawn {
         params [
-            "_counter", "_pos", "_data", "_area", "_timeout", "_n", "_interval"
+            "_counter", "_data",
+            "_beg_whitelist", "_beg_blacklist",
+            "_mid_whitelist", "_mid_blacklist",
+            "_end_whitelist", "_end_blacklist",
+            "_timeout", "_n", "_interval"
         ];
         private _variable = format ["jib_traffic__vehicles_%1", _counter];
         missionNamespace setVariable [_variable, []];
@@ -116,7 +134,13 @@ jib_traffic_start = {
                 ) < _n;
             };
             private _vehicles =
-                [_pos, _data, _area, _timeout] call jib_traffic_write;
+                [
+                    _data,
+                    _beg_whitelist, _beg_blacklist,
+                    _mid_whitelist, _mid_blacklist,
+                    _end_whitelist, _end_blacklist,
+                    _timeout
+                ] call jib_traffic_write;
             isNil {
                 private _old = missionNamespace getVariable _variable;
                 if (not isNil {_old}) then {
@@ -135,22 +159,74 @@ jib_traffic_stop = {
     missionNamespace setVariable [_variable, nil];
 };
 
+jib_traffic_logic = {
+    params [
+        "_logic",
+        ["_timeout", [0, 0, 0], [[]]],
+        ["_n", jib_traffic_default_n, [0]],
+        ["_interval", jib_traffic_default_interval, [0]]
+    ];
+    if (!isServer) exitWith {};
+    private _data = [];
+    [_logic, "jib_traffic_vehicles"] call jib_traffic__logic_areas apply {
+        _data = _data + ([_x] call jib_traffic_read);
+    };
+    private _beg_whitelist =
+        [_logic, "jib_traffic_beg_whitelist"] call jib_traffic__logic_areas;
+    private _beg_blacklist =
+        [_logic, "jib_traffic_beg_blacklist"] call jib_traffic__logic_areas;
+    private _mid_whitelist =
+        [_logic, "jib_traffic_mid_whitelist"] call jib_traffic__logic_areas;
+    private _mid_blacklist =
+        [_logic, "jib_traffic_mid_blacklist"] call jib_traffic__logic_areas;
+    private _end_whitelist =
+        [_logic, "jib_traffic_end_whitelist"] call jib_traffic__logic_areas;
+    private _end_blacklist =
+        [_logic, "jib_traffic_end_blacklist"] call jib_traffic__logic_areas;
+    private _token = [
+        _data,
+        _beg_whitelist, _beg_blacklist,
+        _mid_whitelist, _mid_blacklist,
+        _end_whitelist, _end_blacklist,
+        _timeout, _n, _interval
+    ] spawn jib_traffic_start;
+    _logic setVariable ["jib_traffic__token", _token];
+};
+
+jib_traffic__logic_areas = {
+    params [
+        "_logic",
+        "_variable"
+    ];
+    private _areas = [];
+    synchronizedObjects _logic select {_x isKindOf "Logic";} select {
+        _x getVariable [_variable, false];
+    } apply {
+        synchronizedObjects _x select {_x isKindOf "EmptyDetector";} apply {
+            _areas pushBack [getPos _x] + triggerArea _x;
+        };
+    };
+    _areas;
+};
+
 jib_traffic__pos_area = {
     params [
-        "_pos",
-        "_area",
-        "_inside"
+        "_whitelist",
+        "_blacklist"
     ];
-    _area params ["_a", "_b", "_angle", "_isRect", "_c"];
     private _roads = [];
-    if (_inside) then {
-        _roads = _pos nearRoads (_a max _b) * 1.42 inAreaArray [_pos] + _area;
-    } else {
-        private _margin = jib_traffic_outside_roads_margin;
-        _roads = _pos nearRoads 1e9 select {
-            _x inArea [_pos, _a + _margin, _b + _margin, _angle, _isRect, _c];
-        } select {
-            not (_x inArea [_pos] + _area);
+    _whitelist apply {
+        _x params ["_pos", "_a", "_b", "_angle", "_isRect", "_c"];
+        _pos nearRoads (_a max _b) * 1.42 inAreaArray _x apply {
+            private _road = _x;
+            _blacklist apply {
+                if (_road inArea _x) then {
+                    _road = objNull;
+                };
+            };
+            if (not isNull _road) then {
+                _roads pushBackUnique _road;
+            };
         };
     };
     _roads = _roads select {
@@ -168,22 +244,6 @@ jib_traffic__pos_area = {
         "_aiPathOffset"
     ];
     [getPos _road, _begPos getDir _endPos];
-};
-
-jib_traffic__pos_outside_radius = {
-    params [
-        "_pos",
-        "_radius"
-    ];
-    [_pos, [_radius, _radius, 0, false, -1], false] call jib_traffic__pos_area;
-};
-
-jib_traffic__pos_inside_radius = {
-    params [
-        "_pos",
-        "_radius"
-    ];
-    [_pos, [_radius, _radius, 0, false, -1], true] call jib_traffic__pos_area;
 };
 
 jib_traffic__log = {
