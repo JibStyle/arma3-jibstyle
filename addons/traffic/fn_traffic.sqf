@@ -42,6 +42,31 @@ jib_traffic_read = {
     _data;
 };
 
+jib_traffic_simple = {
+    params [
+        "_data",
+        "_area",
+        ["_timeout", [0, 0, 0], [[]]],
+        ["_n", jib_traffic_default_n, [0]],
+        ["_interval", jib_traffic_default_interval, [0]]
+    ];
+    _area params ["_pos", "_a", "_b", "_angle", "_isRect", "_c"];
+    private _factor = 1.5;
+    private _outer = [_pos, _factor * _a, _factor * _b, _angle, _isRect, _c];
+    [
+        _data,
+        [_outer],
+        [_area],
+        [_area],
+        [],
+        [_outer],
+        [_area],
+        _timeout,
+        _n,
+        _interval
+    ] call jib_traffic_start;
+};
+
 jib_traffic_write = {
     params [
         "_data",
@@ -148,6 +173,7 @@ jib_traffic_start = {
                 };
             };
         };
+        ["Traffic Stopped."] call jib_traffic__log;
     };
     [_script, _counter];
 };
