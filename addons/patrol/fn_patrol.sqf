@@ -6,7 +6,7 @@ jib_patrol_salesman_iterations = 1000;
 jib_patrol_start = {
     params [
         "_group",
-        "_expression",
+        "_expression", // "roads" special case
         "_n",
         "_p_cycle",
         "_whitelist",
@@ -14,15 +14,22 @@ jib_patrol_start = {
         ["_timeout", [0, 0, 0], [[]]]
     ];
     { deleteWaypoint _x } forEachReversed waypoints _group;
-    private _positions = [
-        getPos leader _group,
-        [
+    private _positions = [];
+    if (_expression == "roads") then {
+        _positions = [
+            _n,
+            _whitelist,
+            _blacklist
+        ] call jib_patrol__roads;
+    } else {
+        _positions = [
             _expression,
             _n,
             _whitelist,
             _blacklist
-        ] call jib_patrol__best_places
-    ] call jib_patrol__salesman;
+        ] call jib_patrol__best_places;
+    };
+    _positions = [getPos leader _group, _positions] call jib_patrol__salesman;
     _positions apply {
         private _wp = _group addWaypoint [_x, 0];
         _wp setWaypointTimeout _timeout;
@@ -112,6 +119,42 @@ jib_patrol__best_places = {
     _results select [0, _n] apply {
         _x params ["_value", "_pos"];
         _pos;
+    };
+};
+
+jib_patrol__roads = {
+    params [
+        "_n",
+        "_whitelist",
+        "_blacklist"
+    ];
+    private _results = [];
+    _whitelist apply {
+        private _area = _x;
+        _x params ["_pos", "_a", "_b", "_angle", "_isRect", "_c"];
+        _pos nearRoads (_a max _b) * 1.42 apply {
+            private _road = _x;
+            if (
+                _road inArea _area && {
+                    {_road inArea _x} count _blacklist == 0
+                } && {
+                    getRoadInfo _x params [
+                        "_mapType", "_width", "_isPedestrian", "_texture",
+                        "_textureEnd", "_material", "_begPos", "_endPos",
+                        "_isBridge", "_aiPathOffset"
+                    ];
+                    not _isPedestrian;
+                }
+            ) then {
+                _results pushBackUnique _road;
+            };
+        }
+    };
+    _results = _results apply {[random 1, _x]};
+    _results sort false;
+    _results select [0, _n] apply {
+        _x params ["_value", "_road"];
+        getPos _road;
     };
 };
 
