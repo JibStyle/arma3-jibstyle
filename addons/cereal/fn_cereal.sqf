@@ -8,7 +8,7 @@ publicVariable "jib_cereal_debug";
 jib_cereal_deserialize_batch = {
     params [
         "_serializedBatch",
-        ["_pos", nil, [[]]]
+        ["_pos", [], [[]]]
     ];
     _serializedBatch params [
         "_serializedVehicles",
