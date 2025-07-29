@@ -376,7 +376,7 @@ jib_ao__cluster_generate = {
     while {true} do {
         // Iteration setup
         _iteration = _iteration + 1;
-        if (_iteration >= _max_iterations) then {
+        if (_iteration > _max_iterations) then {
             ["Max iterations reached."] call jib_ao__log;
             break;
         };
