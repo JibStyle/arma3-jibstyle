@@ -350,27 +350,129 @@ jib_ao__group_write = {
     [_group, _units, _vehicles];
 };
 
-// Cluster and return points into given cluster max sizes.
+// Iteratively merge clusters smaller than threshold into closest cluster.
+jib_ao__cluster_merge = {
+    // Setup
+    params [
+        "_clusters",
+        "_threshold",
+        ["_max_iterations", 100, [0]]
+    ];
+    private _good = [];
+    private _bad = _clusters apply {[_x, false]}; // dirty flag
+    private _iterations = 0;
+    // Iterate
+    while {_iterations < _max_iterations && count _bad > 0} do {
+        _bad apply {
+            // Check if dirty
+            _x params ["_cluster", "_dirty"];
+            if (_dirty) then {continue};
+            _x set [1, true]; // mark dirty
+            // Merge if needed
+            if (count _cluster < _threshold) then {
+                // Find cluster to merge into
+                private _best = [];
+                (
+                    (_bad select {_x # 1 == false})
+                        + (_good select {_x # 1 == false})
+                ) apply {
+                    private _other = _x;
+                    private _mean_a = [_cluster] call jib_ao__cluster_mean;
+                    private _mean_b = [_other # 0] call jib_ao__cluster_mean;
+                    private _mean_c = [_best # 0] call jib_ao__cluster_mean;
+                    if (
+                        count _best == 0 || {
+                            (_mean_a distance _mean_b)
+                                < (_mean_a distance _mean_c)
+                        }
+                    ) then {
+                        _best = _other;
+                    };
+                };
+                _best set [1, true]; // mark dirty
+                _cluster = _cluster + _best # 0;
+            };
+            // Append to output
+            _good pushBack [_cluster, false];
+        };
+        // Prepare iteration
+        _bad = _good select {
+            _x params ["_cluster", "_dirty"];
+            !_dirty && count _cluster < _threshold;
+        };
+        _good = _good select {
+            _x params ["_cluster", "_dirty"];
+            !_dirty && count _cluster >= _threshold;
+        };
+        if (count _bad == 1 && count _good == 0) then {
+            // No more merging possible
+            _good = _bad;
+            _bad = [];
+        };
+        _iterations = _iterations + 1;
+    };
+    [format ["Cluster merge iterations: %1", _iterations]] call jib_ao__log;
+    (_good + _bad) apply {_x # 0};
+};
+
+// Partition clusters larger than threshold to be approximately that size.
+jib_ao__cluster_partition = {
+    // Setup
+    params [
+        "_clusters",
+        "_threshold"
+    ];
+    private _result = [];
+    _clusters apply {
+        if (count _x <= _threshold) then {
+            _result pushBack _x;
+        } else {
+            private _partitions =
+                [_x, ceil (count _x / _threshold)] call jib_ao__cluster_kmeans;
+            _result = _result + _partitions;
+        };
+    };
+    _result;
+};
+
+// Calculate mean of a cluster.
+jib_ao__cluster_mean = {
+    params ["_cluster"];
+    private _mean = [0, 0, 0];
+    _cluster apply {
+        _mean = _mean vectorAdd _x;
+    };
+    if (count _cluster > 0) then {
+        _mean = _mean vectorMultiply (1 / count _cluster);
+    } else {
+        _mean = [];
+    };
+    _mean;
+};
+
+// Cluster and return points into given number of clusters.
 //
-// If more positions than cluster slots, excess positions will be discarded. If
-// fewer positions than cluster slots, excess clusters will be discarded.
-jib_ao__cluster_generate = {
+// Balance option ensures each cluster has same number of points, but tends to
+// be unstable.
+jib_ao__cluster_kmeans = {
     // Setup
     params [
         "_positions",
-        "_sizes",
+        "_k",
         ["_max_iterations", 100, [0]],
-        ["_min_delta", 0.1, [0]]
+        ["_min_delta", 0.1, [0]],
+        ["_balance", false, [true]]
     ];
     private _slots = count _positions;
     _sizes = _sizes select {
         _slots = _slots - _x;
         _slots >= 0;
     };
+    private _size = ceil (count _positions / _k);
     _positions = _positions apply {[random 1, _x]};
     _positions sort false;
     _positions = _positions apply {_x # 1};
-    private _centroids = _positions select [0, count _sizes];
+    private _centroids = _positions select [0, _k];
     private _iteration = 0;
     private _clusters = [];
     while {true} do {
@@ -393,7 +495,7 @@ jib_ao__cluster_generate = {
                 private _centroid = _centroids # _i;
                 if (
                     _position distance _centroid < _best_distance
-                        && count (_clusters # _i) < _sizes # _i
+                        && (!_balance || count (_clusters # _i) < _size)
                 ) then {
                     _best_cluster = _i;
                     _best_distance = _position distance _centroid;
