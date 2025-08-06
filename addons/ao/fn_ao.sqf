@@ -536,12 +536,15 @@ jib_ao__cluster_kmeans = {
 
 // Draw clusters for debug purposes
 jib_ao__cluster_draw = {
-    params ["_clusters"];
+    params [
+        "_clusters",
+        ["_draw_distance", 1000, [1]]
+    ];
     if (!isNil "jib_ao__cluster_draw_handle") then {
         removeMissionEventHandler ["Draw3D", jib_ao__cluster_draw_handle];
     };
     jib_ao__cluster_draw_handle = addMissionEventHandler ["Draw3D", {
-        private _clusters = _thisArgs;
+        _thisArgs params ["_Clusters", "_draw_distance"];
         for "_i" from 0 to count _clusters - 1 do {
             // Calculate centroid
             private _positions = _clusters # _i;
@@ -555,6 +558,12 @@ jib_ao__cluster_draw = {
                 _centroid = _centroid vectorMultiply (1 / _n);
             } else {
                 [format ["Empty cluster %1", _i]] call jib_ao__log;
+            };
+            if (
+                isNull curatorCamera ||
+                    {curatorCamera distance _centroid > _draw_distance}
+            ) then {
+                continue;
             };
             // Draw title
             private _icon = "\A3\ui_f\data\map\markers\military\dot_CA.paa";
@@ -601,7 +610,7 @@ jib_ao__cluster_draw = {
                 ];
             };
         };
-    }, _clusters];
+    }, [_clusters, _draw_distance]];
 };
 
 // Add object to curator
