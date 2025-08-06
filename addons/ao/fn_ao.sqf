@@ -613,6 +613,80 @@ jib_ao__cluster_draw = {
     }, [_clusters, _draw_distance]];
 };
 
+// Insert position into 3D tree
+jib_ao__kdtree_insert = {
+    params [
+        "_node",
+        "_pos",
+        "_data",
+        ["_depth", 0]
+    ];
+    if (count _node == 0) exitWith {[_pos, _data, [], []];};
+    _node params ["_node_pos", "_node_data", "_node_left", "_node_right"];
+    private _axis = _depth % 3;
+    if (_pos # _axis < _node_pos # _axis) then {
+        _node set [
+            2,
+            [_node # 2, _pos, _data, _depth + 1] call jib_ao__kdtree_insert
+        ]; // left
+    } else {
+        _node set [
+            3,
+            [_node # 3, _pos, _data, _depth + 1] call jib_ao__kdtree_insert
+        ]; // right
+    };
+    _node;
+};
+
+// Retrieve nearest position in 3D tree
+jib_ao__kdtree_nearest = {
+    params [
+        "_node",
+        "_pos",
+        ["_best_node", [[]]],
+        ["_best_dist", [1e9]],
+        ["_depth", 0]
+    ];
+    if (count _node == 0) exitWith {[];};
+    _node params ["_node_pos", "_node_data", "_node_left", "_node_right"];
+    private _distance = _node_pos distance _pos;
+    if (_distance < _best_dist # 0) then {
+        _best_dist set [0, _distance];
+        _best_node set [0, _node];
+    };
+    private _axis = _depth % 3;
+    private _left = _pos # _axis < _node_pos # _axis;
+    private _next = if (_left) then {_node_left} else {_node_right};
+    private _other = if (_left) then {_node_right} else {_node_left};
+    [
+        _next, _pos, _best_node, _best_dist, _depth + 1
+    ] call jib_ao__kdtree_nearest;
+    if (abs(_pos # _axis - _node_pos # _axis) < _best_dist # 0) then {
+        [
+            _other, _pos, _best_node, _best_dist, _depth + 1
+        ] call jib_ao__kdtree_nearest;
+    };
+    _best_node # 0;
+};
+
+// Unit test kdtree functions
+jib_ao__kdtree_test = {
+    private _points = [
+        [[0, 0, 0], "origin"],
+        [[1, 0, 0], "right"],
+        [[-1, 0, 0], "left"],
+        [[0, .5, 0], "forward near"]
+    ];
+    private _tree = [];
+    _points apply {
+        _x params ["_pos", "_label"];
+        _tree = [_tree, _pos, _label] call jib_ao__kdtree_insert;
+    };
+    private _expected = "forward near";
+    private _actual = ([_tree, [0, .4, 0]] call jib_ao__kdtree_nearest) # 1;
+    if (_expected != _actual) then {throw "kdtree: not equal"};
+};
+
 // Add object to curator
 jib_ao__curator_register = {
     params ["_object"];
@@ -634,4 +708,9 @@ jib_ao__log = {
     if (jib_ao_debug) then {
         systemChat format ["jib_ao: %1", _message];
     };
+};
+
+// Run unit tests
+if (jib_ao_debug) then {
+    call jib_ao__kdtree_test;
 };
