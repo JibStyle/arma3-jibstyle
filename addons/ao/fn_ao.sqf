@@ -355,32 +355,66 @@ jib_ao__cluster_merge = {
     // Setup
     params [
         "_clusters",
-        "_threshold"
+        "_threshold",
+        ["_progress_delay", 3, [1]]
     ];
+    private _start_time = uiTime;
+    private _progress_time = uiTime;
     private _queue = _clusters apply {[_x, false]}; // mark clean
     private _kdtree = [];
-    _queue apply {
-        _x params ["_cluster", "_dirty"];
+    [format ["jib_ao__cluster_merge building data tree..."]] call jib_ao__log;
+    for "_i" from 0 to count _queue - 1 do {
+        private _entry = _queue # _i;
+        _entry params ["_cluster", "_dirty"];
+        if (uiTime > _progress_time + _progress_delay) then {
+            _progress_time = uiTime;
+            [
+                format [
+                    "jib_ao__cluster_merge building data tree... (%1 / %2)",
+                    _i, count _queue
+                ]
+            ] call jib_ao__log;
+        };
         _kdtree = [
-            _kdtree, [_cluster] call jib_ao__cluster_mean, _x
+            _kdtree, [_cluster] call jib_ao__cluster_mean, _entry
         ] call jib_ao__kdtree_insert;
     };
     private _index = 0;
     // Process queue
     while {_index < count _queue} do {
         private _entry = _queue # _index;
+        if (uiTime > _progress_time + _progress_delay) then {
+            _progress_time = uiTime;
+            [
+                format [
+                    "jib_ao__cluster_merge merging clusters... (%1 / %2)",
+                    _index, count _queue
+                ]
+            ] call jib_ao__log;
+        };
         // Check if dirty
         _entry params ["_cluster", "_dirty"];
-        if (_dirty) then {continue};
-        if (count _cluster >= _threshold) then {continue};
+        if (_dirty) then {
+            // ["Cluster dirty, continue"] call jib_ao__log;
+            _index = _index + 1;
+            continue;
+        };
+        if (count _cluster >= _threshold) then {
+            // ["Cluster good, continue"] call jib_ao__log;
+            _index = _index + 1;
+            continue;
+        };
         _entry set [1, true]; // mark dirty
         // Get other to merge with
         private _other = [_kdtree, [_cluster] call jib_ao__cluster_mean, {
-            params ["_cluster", "_dirty"];
+            params ["_node_data"];
+            _node_data params ["_cluster", "_dirty"];
             !_dirty; // ensure other is not this or dirty
         }] call jib_ao__kdtree_nearest;
         if (count _other == 0) then {
             _entry set [1, false]; // merge failed
+            // ["Cluster merge failed, continue"] call jib_ao__log;
+            _index = _index + 1;
             continue;
         };
         _other params [
@@ -390,22 +424,27 @@ jib_ao__cluster_merge = {
         _other_data set [1, true]; // mark other dirty
         // Create new cluster
         private _new_cluster = _cluster + _other_cluster;
-        _queue pushBack _new_cluster;
+        _queue pushBack [_new_cluster, false];
         [
             _kdtree,
             [_new_cluster] call jib_ao__cluster_mean,
             [_new_cluster, false] // mark clean
         ] call jib_ao__kdtree_insert;
+        // ["Cluster merge done, continue"] call jib_ao__log;
         _index = _index + 1;
     };
-    [format ["Cluster merge queue size: %1", count _queue]] call jib_ao__log;
-    _queue select {
+    private _result = _queue select {
         _x params ["_cluster", "_dirty"];
         !_dirty;
     } apply {
         _x params ["_cluster", "_dirty"];
         _cluster;
     };
+    [format [
+        "jib_ao__cluster_merge done (%1 processed, %2 returned, %3 seconds)",
+        count _queue, count _result, uiTime - _start_time
+    ]] call jib_ao__log;
+    _result;
 };
 
 // Partition clusters larger than threshold to be approximately that size.
@@ -422,7 +461,9 @@ jib_ao__cluster_partition = {
         } else {
             private _partitions =
                 [_x, ceil (count _x / _threshold)] call jib_ao__cluster_kmeans;
-            _result = _result + _partitions;
+            _partitions apply {
+                _result pushBack _x;
+            };
         };
     };
     _result;
@@ -614,7 +655,10 @@ jib_ao__kdtree_insert = {
         "_data",
         ["_depth", 0]
     ];
-    if (count _node == 0) exitWith {[_pos, _data, [], []];};
+    if (count _node == 0) exitWith {
+        // [format ["jib_ao__kdtree_insert depth: %1", _depth]] call jib_ao__log;
+        [_pos, _data, [], []];
+    };
     _node params ["_node_pos", "_node_data", "_node_left", "_node_right"];
     private _axis = _depth % 3;
     if (_pos # _axis < _node_pos # _axis) then {
@@ -710,27 +754,60 @@ jib_ao__test_kdtree = {
             "jib_ao__kdtree_nearest: %1 not equal to %2", _expected, _actual
         ];
     };
+
+    // Test insert and retrieve with predicate
+    private _points = [
+        [[0, 0, 0], "origin"],
+        [[1, 0, 0], "right"],
+        [[-1, 0, 0], "left"],
+        [[0, .5, 0], "forward near"]
+    ];
+    private _tree = [];
+    _points apply {
+        _x params ["_pos", "_label"];
+        _tree = [_tree, _pos, _label] call jib_ao__kdtree_insert;
+    };
+    private _expected = "right";
+    private _actual = ([
+        _tree, [0, .4, 0], {
+            params ["_data"];
+            _data == "right";
+        }
+    ] call jib_ao__kdtree_nearest) # 1;
+    if (_expected != _actual) then {
+        throw format [
+            "jib_ao__kdtree_nearest: %1 not equal to %2", _expected, _actual
+        ];
+    };
 };
 
 // Unit test cluster functions
 jib_ao__test_cluster = {
-    // Test merge
+    // Test merge threshold 1
+    ["jib_ao__cluster_merge test threshold 1"] call jib_ao__log;
+    private _clusters = [
+        [[0, 0, 0]],
+        [[1, 1, 1]]
+    ];
+    private _merged = [_clusters, 1] call jib_ao__cluster_merge;
+    if (count _merged != 2) then {
+        throw format ["jib_ao__cluster_merge: bad count %1", count _merged];
+    };
+
+    // Test merge threshold 2
+    ["jib_ao__cluster_merge test threshold 2"] call jib_ao__log;
     private _clusters = [
         [[0, 0, 0]],
         [[1, 1, 1]]
     ];
     private _merged = [_clusters, 2] call jib_ao__cluster_merge;
-    if (count _merged != 2) then {
+    if (count _merged != 1) then {
         throw format ["jib_ao__cluster_merge: bad count %1", count _merged];
-    };
-    _clusters apply {
-        if (not (_x in _merged)) then {
-            throw format ["jib_ao__cluster_merge: Missing %1", _x];
-        };
     };
 };
 
 // Run unit tests
 if (jib_ao_debug) then {
     call jib_ao__test_kdtree;
+    call jib_ao__test_cluster;
 };
