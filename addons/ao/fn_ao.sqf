@@ -355,64 +355,57 @@ jib_ao__cluster_merge = {
     // Setup
     params [
         "_clusters",
-        "_threshold",
-        ["_max_iterations", 100, [0]]
+        "_threshold"
     ];
-    private _good = [];
-    private _bad = _clusters apply {[_x, false]}; // dirty flag
-    private _iterations = 0;
-    // Iterate
-    while {_iterations < _max_iterations && count _bad > 0} do {
-        _bad apply {
-            // Check if dirty
-            _x params ["_cluster", "_dirty"];
-            if (_dirty) then {continue};
-            _x set [1, true]; // mark dirty
-            // Merge if needed
-            if (count _cluster < _threshold) then {
-                // Find cluster to merge into
-                private _best = [];
-                (
-                    (_bad select {_x # 1 == false})
-                        + (_good select {_x # 1 == false})
-                ) apply {
-                    private _other = _x;
-                    private _mean_a = [_cluster] call jib_ao__cluster_mean;
-                    private _mean_b = [_other # 0] call jib_ao__cluster_mean;
-                    private _mean_c = [_best # 0] call jib_ao__cluster_mean;
-                    if (
-                        count _best == 0 || {
-                            (_mean_a distance _mean_b)
-                                < (_mean_a distance _mean_c)
-                        }
-                    ) then {
-                        _best = _other;
-                    };
-                };
-                _best set [1, true]; // mark dirty
-                _cluster = _cluster + _best # 0;
-            };
-            // Append to output
-            _good pushBack [_cluster, false];
-        };
-        // Prepare iteration
-        _bad = _good select {
-            _x params ["_cluster", "_dirty"];
-            !_dirty && count _cluster < _threshold;
-        };
-        _good = _good select {
-            _x params ["_cluster", "_dirty"];
-            !_dirty && count _cluster >= _threshold;
-        };
-        if (count _bad == 1 && count _good == 0) then {
-            // No more merging possible
-            _good = _bad;
-            _bad = [];
-        };
-        _iterations = _iterations + 1;
+    private _queue = _clusters apply {[_x, false]}; // mark clean
+    private _kdtree = [];
+    _queue apply {
+        _x params ["_cluster", "_dirty"];
+        _kdtree = [
+            _kdtree, [_cluster] call jib_ao__cluster_mean, _x
+        ] call jib_ao__kdtree_insert;
     };
-    [format ["Cluster merge iterations: %1", _iterations]] call jib_ao__log;
-    (_good + _bad) apply {_x # 0};
+    private _index = 0;
+    // Process queue
+    while {_index < count _queue} do {
+        private _entry = _queue # _index;
+        // Check if dirty
+        _entry params ["_cluster", "_dirty"];
+        if (_dirty) then {continue};
+        if (count _cluster >= _threshold) then {continue};
+        _entry set [1, true]; // mark dirty
+        // Get other to merge with
+        private _other = [_kdtree, [_cluster] call jib_ao__cluster_mean, {
+            params ["_cluster", "_dirty"];
+            !_dirty; // ensure other is not this or dirty
+        }] call jib_ao__kdtree_nearest;
+        if (count _other == 0) then {
+            _entry set [1, false]; // merge failed
+            continue;
+        };
+        _other params [
+            "_other_pos", "_other_data", "_other_left", "_other_right"
+        ];
+        _other_data params ["_other_cluster", "_other_dirty"];
+        _other_data set [1, true]; // mark other dirty
+        // Create new cluster
+        private _new_cluster = _cluster + _other_cluster;
+        _queue pushBack _new_cluster;
+        [
+            _kdtree,
+            [_new_cluster] call jib_ao__cluster_mean,
+            [_new_cluster, false] // mark clean
+        ] call jib_ao__kdtree_insert;
+        _index = _index + 1;
+    };
+    [format ["Cluster merge queue size: %1", count _queue]] call jib_ao__log;
+    _queue select {
+        _x params ["_cluster", "_dirty"];
+        !_dirty;
+    } apply {
+        _x params ["_cluster", "_dirty"];
+        _cluster;
+    };
 };
 
 // Partition clusters larger than threshold to be approximately that size.
@@ -621,46 +614,40 @@ jib_ao__kdtree_insert = {
         "_data",
         ["_depth", 0]
     ];
-    if (count _node == 0) exitWith {[_pos, false, _data, [], []];};
-    _node params [
-        "_node_pos", "_node_dirty", "_node_data", "_node_left", "_node_right"
-    ];
+    if (count _node == 0) exitWith {[_pos, _data, [], []];};
+    _node params ["_node_pos", "_node_data", "_node_left", "_node_right"];
     private _axis = _depth % 3;
     if (_pos # _axis < _node_pos # _axis) then {
         _node set [
-            3,
-            [_node # 3, _pos, _data, _depth + 1] call jib_ao__kdtree_insert
+            2,
+            [_node # 2, _pos, _data, _depth + 1] call jib_ao__kdtree_insert
         ]; // left
     } else {
         _node set [
-            4,
-            [_node # 4, _pos, _data, _depth + 1] call jib_ao__kdtree_insert
+           3,
+            [_node # 3, _pos, _data, _depth + 1] call jib_ao__kdtree_insert
         ]; // right
     };
     _node;
 };
 
-// Remove node from 3D tree by marking it as dirty.
-jib_ao__kdtree_remove = {
-    params ["_node"];
-    _node set [1, true];
-};
-
-// Retrieve nearest position in 3D tree.
+// Retrieve nearest node in 3D tree.
 jib_ao__kdtree_nearest = {
     params [
         "_node",
         "_pos",
+        ["_predicate", {true}, [{}]],
         ["_best_node", [[]]],
         ["_best_dist", [1e9]],
         ["_depth", 0]
     ];
     if (count _node == 0) exitWith {[];};
-    _node params [
-        "_node_pos", "_node_dirty", "_node_data", "_node_left", "_node_right"
-    ];
+    _node params ["_node_pos", "_node_data", "_node_left", "_node_right"];
     private _distance = _node_pos distance _pos;
-    if (!_node_dirty && _distance < _best_dist # 0) then {
+    if (
+        [_node_data] call _predicate
+            && _distance < _best_dist # 0
+    ) then {
         _best_dist set [0, _distance];
         _best_node set [0, _node];
     };
@@ -669,58 +656,14 @@ jib_ao__kdtree_nearest = {
     private _next = if (_left) then {_node_left} else {_node_right};
     private _other = if (_left) then {_node_right} else {_node_left};
     [
-        _next, _pos, _best_node, _best_dist, _depth + 1
+        _next, _pos, _predicate, _best_node, _best_dist, _depth + 1
     ] call jib_ao__kdtree_nearest;
     if (abs(_pos # _axis - _node_pos # _axis) < _best_dist # 0) then {
         [
-            _other, _pos, _best_node, _best_dist, _depth + 1
+            _other, _pos, _predicate, _best_node, _best_dist, _depth + 1
         ] call jib_ao__kdtree_nearest;
     };
     _best_node # 0;
-};
-
-// Unit test kdtree functions
-jib_ao__kdtree_test = {
-    // Test insert and retrieve
-    private _points = [
-        [[0, 0, 0], "origin"],
-        [[1, 0, 0], "right"],
-        [[-1, 0, 0], "left"],
-        [[0, .5, 0], "forward near"]
-    ];
-    private _tree = [];
-    _points apply {
-        _x params ["_pos", "_label"];
-        _tree = [_tree, _pos, _label] call jib_ao__kdtree_insert;
-    };
-    private _expected = "forward near";
-    private _actual = ([_tree, [0, .4, 0]] call jib_ao__kdtree_nearest) # 2;
-    if (_expected != _actual) then {
-        throw format ["kdtree: %1 not equal to %2", _expected, _actual];
-    };
-
-    // Test remove and retrieve
-    private _points = [
-        [[0, 0, 0], "origin"],
-        [[1, 0, 0], "right"],
-        [[-1, 0, 0], "left"],
-        [[0, .5, 0], "forward near"]
-    ];
-    private _tree = [];
-    _points apply {
-        _x params ["_pos", "_label"];
-        _tree = [_tree, _pos, _label] call jib_ao__kdtree_insert;
-    };
-    [
-        [_tree, [0, .4, 0]] call jib_ao__kdtree_nearest
-    ] call jib_ao__kdtree_remove;
-    private _expected = "forward near";
-    private _actual = ([_tree, [0, .4, 0]] call jib_ao__kdtree_nearest) # 2;
-    if (_expected == _actual) then {
-        throw format [
-            "kdtree remove failed: %1 equal to %2", _expected, _actual
-        ];
-    };
 };
 
 // Add object to curator
@@ -746,7 +689,48 @@ jib_ao__log = {
     };
 };
 
+// Unit test kdtree functions
+jib_ao__test_kdtree = {
+    // Test insert and retrieve
+    private _points = [
+        [[0, 0, 0], "origin"],
+        [[1, 0, 0], "right"],
+        [[-1, 0, 0], "left"],
+        [[0, .5, 0], "forward near"]
+    ];
+    private _tree = [];
+    _points apply {
+        _x params ["_pos", "_label"];
+        _tree = [_tree, _pos, _label] call jib_ao__kdtree_insert;
+    };
+    private _expected = "forward near";
+    private _actual = ([_tree, [0, .4, 0]] call jib_ao__kdtree_nearest) # 1;
+    if (_expected != _actual) then {
+        throw format [
+            "jib_ao__kdtree_nearest: %1 not equal to %2", _expected, _actual
+        ];
+    };
+};
+
+// Unit test cluster functions
+jib_ao__test_cluster = {
+    // Test merge
+    private _clusters = [
+        [[0, 0, 0]],
+        [[1, 1, 1]]
+    ];
+    private _merged = [_clusters, 2] call jib_ao__cluster_merge;
+    if (count _merged != 2) then {
+        throw format ["jib_ao__cluster_merge: bad count %1", count _merged];
+    };
+    _clusters apply {
+        if (not (_x in _merged)) then {
+            throw format ["jib_ao__cluster_merge: Missing %1", _x];
+        };
+    };
+};
+
 // Run unit tests
 if (jib_ao_debug) then {
-    call jib_ao__kdtree_test;
+    call jib_ao__test_kdtree;
 };
