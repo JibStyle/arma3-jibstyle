@@ -360,12 +360,14 @@ jib_ao__cluster_merge = {
     ];
     private _start_time = uiTime;
     private _progress_time = uiTime;
-    private _queue = _clusters apply {[_x, false]}; // mark clean
+    private _queue = _clusters apply {
+        [_x, [_x] call jib_ao__cluster_mean, false]
+    }; // mark clean
     private _kdtree = [];
     [format ["jib_ao__cluster_merge building data tree..."]] call jib_ao__log;
     for "_i" from 0 to count _queue - 1 do {
         private _entry = _queue # _i;
-        _entry params ["_cluster", "_dirty"];
+        _entry params ["_cluster", "_centroid", "_dirty"];
         if (uiTime > _progress_time + _progress_delay) then {
             _progress_time = uiTime;
             [
@@ -375,9 +377,7 @@ jib_ao__cluster_merge = {
                 ]
             ] call jib_ao__log;
         };
-        _kdtree = [
-            _kdtree, [_cluster] call jib_ao__cluster_mean, _entry
-        ] call jib_ao__kdtree_insert;
+        _kdtree = [_kdtree, _centroid, _entry] call jib_ao__kdtree_insert;
     };
     private _index = 0;
     // Process queue
@@ -393,7 +393,7 @@ jib_ao__cluster_merge = {
             ] call jib_ao__log;
         };
         // Check if dirty
-        _entry params ["_cluster", "_dirty"];
+        _entry params ["_cluster", "_centroid", "_dirty"];
         if (_dirty) then {
             // ["Cluster dirty, continue"] call jib_ao__log;
             _index = _index + 1;
@@ -404,15 +404,15 @@ jib_ao__cluster_merge = {
             _index = _index + 1;
             continue;
         };
-        _entry set [1, true]; // mark dirty
+        _entry set [2, true]; // mark dirty
         // Get other to merge with
-        private _other = [_kdtree, [_cluster] call jib_ao__cluster_mean, {
+        private _other = [_kdtree, _centroid, {
             params ["_node_data"];
-            _node_data params ["_cluster", "_dirty"];
+            _node_data params ["_cluster", "_centroid", "_dirty"];
             !_dirty; // ensure other is not this or dirty
         }] call jib_ao__kdtree_nearest;
         if (count _other == 0) then {
-            _entry set [1, false]; // merge failed
+            _entry set [2, false]; // merge failed
             // ["Cluster merge failed, continue"] call jib_ao__log;
             _index = _index + 1;
             continue;
@@ -420,24 +420,25 @@ jib_ao__cluster_merge = {
         _other params [
             "_other_pos", "_other_data", "_other_left", "_other_right"
         ];
-        _other_data params ["_other_cluster", "_other_dirty"];
-        _other_data set [1, true]; // mark other dirty
+        _other_data params [
+            "_other_cluster", "_other_centroid", "_other_dirty"
+        ];
+        _other_data set [2, true]; // mark other dirty
         // Create new cluster
         private _new_cluster = _cluster + _other_cluster;
-        _queue pushBack [_new_cluster, false];
-        [
-            _kdtree,
-            [_new_cluster] call jib_ao__cluster_mean,
-            [_new_cluster, false] // mark clean
-        ] call jib_ao__kdtree_insert;
+        private _new_centroid = [_new_cluster] call jib_ao__cluster_mean;
+        private _new_entry =
+            [_new_cluster, _new_centroid, false]; // mark clean
+        _queue pushBack _new_entry;
+        [_kdtree, _new_centroid, _new_entry] call jib_ao__kdtree_insert;
         // ["Cluster merge done, continue"] call jib_ao__log;
         _index = _index + 1;
     };
     private _result = _queue select {
-        _x params ["_cluster", "_dirty"];
+        _x params ["_cluster", "_centroid", "_dirty"];
         !_dirty;
     } apply {
-        _x params ["_cluster", "_dirty"];
+        _x params ["_cluster", "_centroid", "_dirty"];
         _cluster;
     };
     [format [
