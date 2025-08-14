@@ -475,7 +475,8 @@ jib_ao__cluster_mean = {
     params ["_cluster"];
     private _mean = [0, 0, 0];
     _cluster apply {
-        _mean = _mean vectorAdd _x;
+        _x params ["_position", "_data"];
+        _mean = _mean vectorAdd _position;
     };
     if (count _cluster > 0) then {
         _mean = _mean vectorMultiply (1 / count _cluster);
@@ -492,7 +493,7 @@ jib_ao__cluster_mean = {
 jib_ao__cluster_kmeans = {
     // Setup
     params [
-        "_positions",
+        "_points",
         "_k",
         ["_timeout", 60, [0]],
         ["_max_iterations", 100, [0]],
@@ -500,11 +501,14 @@ jib_ao__cluster_kmeans = {
         ["_balance", false, [true]]
     ];
     private _start_time = uiTime;
-    private _size = ceil (count _positions / _k);
-    _positions = _positions apply {[random 1, _x]};
-    _positions sort false;
-    _positions = _positions apply {_x # 1};
-    private _centroids = _positions select [0, _k];
+    private _size = ceil (count _points / _k);
+    _points = _points apply {[random 1, _x]};
+    _points sort false;
+    _points = _points apply {_x # 1};
+    private _centroids = _points select [0, _k] apply {
+        _x params ["_position", "_data"];
+        _position;
+    };
     private _iteration = 0;
     private _clusters = [];
     while {true} do {
@@ -520,10 +524,10 @@ jib_ao__cluster_kmeans = {
             _clusters pushBack [];
         };
         // Assign points to clusters
-        _positions apply {
+        _points apply {
+            _x params ["_position", "_data"];
             private _best_cluster = -1;
             private _best_distance = 1e9;
-            private _position = _x;
             for "_i" from 0 to count _centroids - 1 do {
                 private _centroid = _centroids # _i;
                 if (
@@ -535,7 +539,7 @@ jib_ao__cluster_kmeans = {
                 };
             };
             if (_best_cluster >= 0) then {
-                _clusters # _best_cluster pushBack _position;
+                _clusters # _best_cluster pushBack _x;
             };
         };
         // Check for convergence
@@ -544,10 +548,11 @@ jib_ao__cluster_kmeans = {
             private _sum = [0, 0, 0];
             private _n = 0;
             _clusters # _i apply {
-                _sum = _sum vectorAdd _x;
+                _x params ["_position", "_data"];
+                _sum = _sum vectorAdd _position;
                 _n = _n + 1;
             };
-            private _new_centroid = selectRandom _positions;
+            private _new_centroid = selectRandom _points # 0;
             if (_n > 0) then {
                 _new_centroid = _sum vectorMultiply (1 / _n);
             };
@@ -609,11 +614,11 @@ jib_ao__cluster_draw = {
         _thisArgs params ["_Clusters", "_draw_distance"];
         for "_i" from 0 to count _clusters - 1 do {
             // Calculate centroid
-            private _positions = _clusters # _i;
+            private _points = _clusters # _i;
             private _centroid = [0, 0, 0];
             private _n = 0;
-            _positions apply {
-                _centroid = _centroid vectorAdd _x;
+            _points apply {
+                _centroid = _centroid vectorAdd (_x # 0);
                 _n = _n + 1;
             };
             if (_n > 0) then {
@@ -643,15 +648,16 @@ jib_ao__cluster_draw = {
                 _iconSize,
                 _iconSize,
                 0,
-                format ["Cluster %1 (size %2)", _i, count _positions],
+                format ["Cluster %1 (size %2)", _i, count _points],
                 _shadow
                 // _textSize,
                 // _textFont,
                 // _textAlign
             ];
             // Draw positions
-            for "_j" from 0 to count _positions - 1 do {
-                private _position = _positions # _j;
+            for "_j" from 0 to count _points - 1 do {
+                private _point = _points # _j;
+                _point params ["_position", "_data"];
                 drawIcon3D [
                     _icon,
                     _color,
@@ -814,8 +820,8 @@ jib_ao__test_cluster = {
     // Test merge threshold 1
     ["jib_ao__cluster_merge test threshold 1"] call jib_ao__log;
     private _clusters = [
-        [[0, 0, 0]],
-        [[1, 1, 1]]
+        [[[0, 0, 0], "foo"]],
+        [[[1, 1, 1], "bar"]]
     ];
     private _merged = [_clusters, 1] call jib_ao__cluster_merge;
     if (count _merged != 2) then {
@@ -825,8 +831,8 @@ jib_ao__test_cluster = {
     // Test merge threshold 2
     ["jib_ao__cluster_merge test threshold 2"] call jib_ao__log;
     private _clusters = [
-        [[0, 0, 0]],
-        [[1, 1, 1]]
+        [[[0, 0, 0], "foo"]],
+        [[[1, 1, 1], "bar"]]
     ];
     private _merged = [_clusters, 2] call jib_ao__cluster_merge;
     if (count _merged != 1) then {
