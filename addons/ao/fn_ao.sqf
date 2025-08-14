@@ -5,6 +5,7 @@ jib_ao_ai_cqb = jib_ai_cqb;
 // Config
 jib_ao_debug = true;
 jib_ao_sleep_delay = 0.1;
+jib_ao_progress_delay = 3;
 
 // Default param values.
 
@@ -355,8 +356,7 @@ jib_ao__cluster_merge = {
     // Setup
     params [
         "_clusters",
-        "_threshold",
-        ["_progress_delay", 3, [1]]
+        "_threshold"
     ];
     private _start_time = uiTime;
     private _progress_time = uiTime;
@@ -368,7 +368,7 @@ jib_ao__cluster_merge = {
     for "_i" from 0 to count _queue - 1 do {
         private _entry = _queue # _i;
         _entry params ["_cluster", "_centroid", "_dirty"];
-        if (uiTime > _progress_time + _progress_delay) then {
+        if (uiTime > _progress_time + jib_ao_progress_delay) then {
             _progress_time = uiTime;
             [
                 format [
@@ -383,7 +383,7 @@ jib_ao__cluster_merge = {
     // Process queue
     while {_index < count _queue} do {
         private _entry = _queue # _index;
-        if (uiTime > _progress_time + _progress_delay) then {
+        if (uiTime > _progress_time + jib_ao_progress_delay) then {
             _progress_time = uiTime;
             [
                 format [
@@ -494,15 +494,12 @@ jib_ao__cluster_kmeans = {
     params [
         "_positions",
         "_k",
+        ["_timeout", 60, [0]],
         ["_max_iterations", 100, [0]],
         ["_min_delta", 0.1, [0]],
         ["_balance", false, [true]]
     ];
-    private _slots = count _positions;
-    _sizes = _sizes select {
-        _slots = _slots - _x;
-        _slots >= 0;
-    };
+    private _start_time = uiTime;
     private _size = ceil (count _positions / _k);
     _positions = _positions apply {[random 1, _x]};
     _positions sort false;
@@ -512,11 +509,12 @@ jib_ao__cluster_kmeans = {
     private _clusters = [];
     while {true} do {
         // Iteration setup
-        _iteration = _iteration + 1;
-        if (_iteration > _max_iterations) then {
-            ["Max iterations reached."] call jib_ao__log;
-            break;
-        };
+        [
+            format [
+                "jib_ao__cluster_kmeans: Iteration %1 (%2 sec)...",
+                _iteration + 1, uiTime - _start_time
+            ]
+        ] call jib_ao__log;
         _clusters = [];
         for "_i" from 0 to count _centroids - 1 do {
             _clusters pushBack [];
@@ -559,12 +557,41 @@ jib_ao__cluster_kmeans = {
             };
             _centroids set [_i, _new_centroid];
         };
+        // Loop handling
         if (_n_stable >= count _clusters) then {
             [
-                format ["Centroids stabile, %1 iterations.", _iteration]
+                format [
+                    "jib_ao__cluster_kmeans: Done (%1 iterations, %2 sec).",
+                    _iteration + 1, uiTime - _start_time
+                ]
             ] call jib_ao__log;
             break;
         };
+        if (_iteration >= _max_iterations) then {
+            [
+                format [
+                    "jib_ao__cluster_kmeans: Limit (%1 iterations, %2 sec).",
+                    _iteration + 1, uiTime - _start_time
+                ]
+            ] call jib_ao__log;
+            break;
+        };
+        if (uiTime - _start_time >= _timeout) then {
+            [
+                format [
+                    "jib_ao__cluster_kmeans: Timeout (%1 iterations, %2 sec).",
+                    _iteration + 1, uiTime - _start_time
+                ]
+            ] call jib_ao__log;
+            break;
+        };
+        _iteration = _iteration + 1;
+        [
+            format [
+                "jib_ao__cluster_kmeans: %1 / %2 clusters stable.",
+                _n_stable, _k
+            ]
+        ] call jib_ao__log;
     };
     _clusters;
 };
