@@ -6,10 +6,19 @@ jib_ao_ai_cqb = jib_ai_cqb;
 jib_ao_debug = true;
 jib_ao_sleep_delay = 0.1;
 jib_ao_progress_delay = 3;
-jib_ao_cluster_supercluster_threshold = 1000;
+jib_ao_cluster_supercluster_threshold = 100;
 jib_ao_cluster_draw_offset = 10;
 
 // Default param values.
+jib_ao_default_unit_init = {
+    params ["_unit"];
+};
+jib_ao_default_group_init = {
+    params ["_group"];
+    [
+        _group, 1, 2, 3, random [0, 0.7, 1], random [0, 10, 200], 2
+    ] call jib_ao_ai_cqb;
+};
 
 // Public
 
@@ -163,9 +172,8 @@ jib_ao__serial_write_unit = {
 };
 
 // Init clusters
-jib_ao__cluster_init = {
+jib_ao__cluster_supercluster = {
     params [
-        "_data_serial",
         "_buildings",
         ["_threshold_merge", 4, [0]],
         ["_threshold_partition", 8, [0]]
@@ -174,22 +182,30 @@ jib_ao__cluster_init = {
     private _clusters = [];
     private _debug_superclusters = []; // pos offset for drawing
     private _superclusters = [
-        _buildings apply {[getPos _x, _x]},
-        ceil (count _buildings / jib_ao_cluster_supercluster_threshold)
-    ] call jib_ao__cluster_kmeans;
+        _buildings apply {
+            private _building = _x;
+            private _cluster = _building buildingPos -1 apply {
+                private _pos = _x;
+                private _data_point = [objNull, []];
+                [_pos, _data_point];
+            };
+            [getPos _building, _cluster];
+        }
+    ];
+    _superclusters = [
+        _superclusters, jib_ao_cluster_supercluster_threshold
+    ] call jib_ao__cluster_partition;
     for "_i" from 0 to count _superclusters - 1 do {
         [
             format [
-                "jib_ao__cluster_init: Supercluster %1 / %2 (%3 sec)...",
+                "jib_ao__cluster_supercluster: %1 / %2 (%3 sec)...",
                 _i + 1, count _superclusters, uiTime - _start_time
             ]
         ] call jib_ao__log;
         private _supercluster = _superclusters # _i;
         private _supercluster_clusters = _supercluster apply {
-            _x params ["_position", "_building"];
-            _building buildingPos -1 apply {
-                [_x, [objNull, []]];
-            };
+            _x params ["_position", "_cluster"];
+            _cluster;
         };
         _supercluster_clusters = [
             _supercluster_clusters, _threshold_merge
@@ -199,22 +215,65 @@ jib_ao__cluster_init = {
         ] call jib_ao__cluster_partition;
         _supercluster_clusters apply {_clusters pushBack _x};
         private _debug_supercluster = _supercluster_clusters apply {
-            [
-                [_x] call jib_ao__cluster_mean vectorAdd [
-                    0, 0, jib_ao_cluster_draw_offset
-                ],
-                [objNull, []]
-            ]
+            private _pos = [_x] call jib_ao__cluster_mean vectorAdd [
+                0, 0, jib_ao_cluster_draw_offset
+            ];
+            private _data_point = [objNull, []];
+            [_pos, _data_point];
         };
         _debug_superclusters pushBack _debug_supercluster;
     };
     [
         format [
-            "jib_ao__cluster_init: All done (%1 sec).",
+            "jib_ao__cluster_supercluster: Done (%1 sec).",
             uiTime - _start_time
         ]
     ] call jib_ao__log;
     [_clusters, _debug_superclusters];
+};
+
+// Populate clusters with unit data.
+jib_ao__cluster_populate = {
+    params [
+        "_clusters",
+        "_data_serial",
+        ["_p_cluster", 1, [0]],
+        ["_p_point", 1, [0]],
+        ["_p_interside", 0, [0]],
+        ["_unit_init", jib_ao_default_unit_init, [{}]],
+        ["_group_init", jib_ao_default_group_init, [{}]]
+    ];
+};
+
+// Get near clusters.
+jib_ao__cluster_near = {
+    params [
+        "_clusters",
+        ["_n_clusters", -1, [0]],
+        ["_n_points", 100, [0]],
+        ["_distance", -1, [0]]
+    ];
+    private _clusters_near = [];
+    private _n_points_actual = 0;
+    private _clusters_sorted = _clusters apply {
+        [[_x] call jib_ao__cluster_score, _x];
+    };
+    _clusters_sorted sort true;
+    _clusters_sorted apply {
+        _x params ["_score", "_cluster"];
+        if (_n_points >= 0 && _n_points_actual >= _n_points) then {
+            break;
+        };
+        if (_n_clusters >= 0 && count _clusters_near >= _n_clusters) then {
+            break;
+        };
+        if (_distance >= 0 && _score > _distance) then {
+            break;
+        };
+        _clusters_near pushBack _cluster;
+        _n_points_actual = _n_points_actual + count _cluster;
+    };
+    _clusters_near;
 };
 
 // Get priority of a cluster
