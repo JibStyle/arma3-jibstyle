@@ -611,7 +611,7 @@ jib_ao__cluster_draw = {
         removeMissionEventHandler ["Draw3D", jib_ao__cluster_draw_handle];
     };
     jib_ao__cluster_draw_handle = addMissionEventHandler ["Draw3D", {
-        _thisArgs params ["_Clusters", "_draw_distance"];
+        _thisArgs params ["_clusters", "_draw_distance"];
         for "_i" from 0 to count _clusters - 1 do {
             // Calculate centroid
             private _points = _clusters # _i;
