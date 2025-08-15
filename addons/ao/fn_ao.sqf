@@ -6,6 +6,8 @@ jib_ao_ai_cqb = jib_ai_cqb;
 jib_ao_debug = true;
 jib_ao_sleep_delay = 0.1;
 jib_ao_progress_delay = 3;
+jib_ao_cluster_supercluster_threshold = 1000;
+jib_ao_cluster_draw_offset = 10;
 
 // Default param values.
 
@@ -13,117 +15,59 @@ jib_ao_progress_delay = 3;
 
 // Private
 
-// Get unit, vehicle, seat data for group
-jib_ao__group_read = {
-    params ["_group"];
-    private _data = [
+// Get unit data
+jib_ao__serial_read_group_unit = {
+    params ["_unit"];
+    private _data_group_unit = [
         [
-            groupId _group,
+            groupId group _unit,
             true, // isGroupDeletedWhenEmpty
-            side _group,
-            formation _group,
-            combatMode _group,
-            speedMode _group,
-            _group getVariable ["lambs_danger_disableGroupAI", false]
+            side group _unit,
+            formation group _unit,
+            combatMode group _unit,
+            speedMode group _unit,
+            group _unit getVariable ["lambs_danger_disableGroupAI", false]
         ],
-        units _group apply {
+        [
+            typeOf _unit,
+            getPos _unit,
+            direction _unit,
+            rank _unit,
+            skill _unit,
+            combatBehaviour _unit,
+            combatMode _unit,
+            getUnitLoadout _unit,
+            canTriggerDynamicSimulation _unit,
+            isDamageAllowed _unit,
+            leader _unit == _unit,
+            _unit getVariable ["jib_ao_allowFleeing", 0], // HACK
+            _unit getVariable ["lambs_danger_disableAI", false],
             [
-                typeOf _x,
-                getPos _x,
-                direction _x,
-                rank _x,
-                skill _x,
-                combatBehaviour _x,
-                combatMode _x,
-                getUnitLoadout _x,
-                canTriggerDynamicSimulation _x,
-                isDamageAllowed _x,
-                leader _x == _x,
-                _x getVariable ["jib_ao_allowFleeing", 0], // HACK
-                _x getVariable ["lambs_danger_disableAI", false],
-                [
-                    _x skill "aimingAccuracy",
-                    _x skill "aimingShake",
-                    _x skill "aimingSpeed",
-                    _x skill "endurance",
-                    _x skill "spotDistance",
-                    _x skill "spotTime",
-                    _x skill "courage",
-                    _x skill "reloadSpeed",
-                    _x skill "commanding",
-                    _x skill "general"
-                ]
+                _unit skill "aimingAccuracy",
+                _unit skill "aimingShake",
+                _unit skill "aimingSpeed",
+                _unit skill "endurance",
+                _unit skill "spotDistance",
+                _unit skill "spotTime",
+                _unit skill "courage",
+                _unit skill "reloadSpeed",
+                _unit skill "commanding",
+                _unit skill "general"
             ]
-        },
-        assignedVehicles _group apply {
-            private _vehicle = _x;
-            [
-                typeOf _x,
-                getPos _x,
-                direction _x,
-                isDamageAllowed _x,
-                if (isTouchingGround _x) then {"NONE"} else {"FLY"},
-                [
-                    itemCargo _x,
-                    weaponsItemsCargo _x,
-                    magazinesAmmoCargo _x,
-                    everyBackpack _x apply {
-                        getBackpackCargo _x params ["_types", "_quantities"];
-                        private _cargo = [];
-                        for "_i" from 0 to count _types - 1 do {
-                            _cargo pushBack [_types # _i, _quantities # _i];
-                        };
-                        [typeOf _x, _cargo];
-                    }
-                ]
-            ]
-        },
-        [units _group, assignedVehicles _group] call {
-            params ["_units", "_vehicles"];
-            private _seats = [];
-            for "_vehicleIndex" from 0 to count _vehicles - 1 do {
-                fullCrew [_vehicles # _vehicleIndex, ""] apply {
-                    _x params [
-                        "_unit", "_role", "_cargoIndex",
-                        "_turretPath", "_personTurret"
-                    ];
-                    for "_unitIndex" from 0 to count _units - 1 do {
-                        if (_units # _unitIndex == _unit) then {
-                            _seats pushBack [
-                                _vehicleIndex, _unitIndex, _role, _cargoIndex,
-                                _turretPath, _personTurret
-                            ];
-                        }
-                    };
-                }
-            };
-            _seats;
-        }
-    ];
-    assignedVehicles _group apply {
-        deleteVehicleCrew _x;
-        deleteVehicle _x;
-    };
-    units _group apply {
-        deleteVehicle _x;
-    };
-    deleteGroup _group;
-    _data;
+        ]]
+    ;
+    private _group = group _unit;
+    private _vehicle = vehicle _unit;
+    deleteVehicle _unit;
+    if (count units _group == 0) then {deleteGroup _group;};
+    if (count crew _vehicle == 0) then {deleteVehicle _vehicle;};
+    _data_group_unit;
 };
 
-// Spawn group, units, vehicles at given positions
-jib_ao__group_write = {
-    // Unpack data
-    params ["_data", "_data_pos_dir"];
-    _data params [
-        "_data_group", "_data_units", "_data_vehicles", "_data_seats"
-    ];
-    _data_pos_dir params [
-        "_positions_unit", "_positions_vehicle",
-        "_directions_unit", "_directions_vehicle"
-    ];
-
-    // Create group
+// Spawn group
+jib_ao__serial_write_group = {
+    params ["_data_group_unit"];
+    _data_group_unit params ["_data_group", "_data_unit"];
     _data_group params [
         "_name",
         "_deleteWhenEmpty",
@@ -144,211 +88,154 @@ jib_ao__group_write = {
     if (jib_ao_sleep_delay >= 0) then {
         uiSleep jib_ao_sleep_delay;
     };
+    _group;
+};
 
-    // Spawn vehicles
-    private _vehicles = [];
-    for "_i" from 0 to count _data_vehicles - 1 do {
-        // Setup
-        private _data_vehicle = _data_vehicles # _i;
-        private _pos = (
-            if (count _positions_vehicle > _i) then {
-                _positions_vehicle # _i
-            } else {
-                _positions_vehicle # 0
-            }
-        );
-        private _dir = (
-            if (count _directions_vehicle > _i) then {
-                _directions_vehicle # _i
-            } else {
-                _directions_vehicle # 0
-            }
-        );
-        // Vehicle
-        _data_vehicle params [
-            "_type", "_posSerial", "_dirSerial",
-            "_isDamageAllowed", "_special", "_inventory"
-        ];
-        private _vehicle = createVehicle [_type, _pos, [], 0, _special];
-        _vehicle allowDamage false;
-        [_vehicle, false] remoteExec ["enableSimulationGlobal", 2];
-        _vehicle setVariable ["jib_ao__damage", _isDamageAllowed];
-        [_vehicle] call jib_ao__curator_register;
-        _vehicle setDir _dir;
-        // Inventory
-        _inventory params [
-            "_items", "_weapons", "_magazines", "_backpacks"
-        ];
-        clearItemCargoGlobal _vehicle;
-        clearWeaponCargoGlobal _vehicle;
-        clearMagazineCargoGlobal _vehicle;
-        clearBackpackCargoGlobal _vehicle;
-        _items apply {_vehicle addItemCargoGlobal [_x, 1]};
-        _weapons apply {
-            _vehicle addWeaponWithAttachmentsCargoGlobal [_x, 1]
-        };
-        _magazines apply {
-            _x params ["_type", "_ammo"];
-            _vehicle addMagazineAmmoCargo [_type, 1, _ammo];
-        };
-        _backpacks apply {
-            _x params ["_type", "_cargo"];
-            _vehicle addBackpackCargoGlobal [_type, 1];
-            // No way to add cargo
-        };
-        // Hack to fix planes
-        if (_vehicle isKindOf "Plane") then {
-            [_vehicle] spawn {
-                params ["_vehicle"];
-                waitUntil {
-                    if (jib_ao_sleep_delay >= 0) then {
-                        uiSleep jib_ao_sleep_delay;
-                    };
-                    !alive _vehicle || alive driver _vehicle;
-                };
-                [_vehicle, 10, 0] call BIS_fnc_setPitchBank;
-                _vehicle setVelocityModelSpace [0, 200, 0];
-            }
-        };
-        // Cleanup
-        _vehicles pushBack _vehicle;
-        if (jib_ao_sleep_delay >= 0) then {
-            uiSleep jib_ao_sleep_delay;
-        };
+// Spawn unit with group and position
+jib_ao__serial_write_unit = {
+    params ["_data_group_unit", "_group", "_pos", "_dir"];
+    _data_group_unit params ["_data_group", "_data_unit"];
+    _data_unit params [
+        "_type",
+        "_posSerial",
+        "_dirSerial",
+        "_rank",
+        "_skill",
+        "_combatBehaviour",
+        "_combatMode",
+        "_loadout",
+        "_canTriggerDynamicSimulation",
+        "_isDamageAllowed",
+        "_leader",
+        "_fleeing",
+        "_lambs_danger_disableAI",
+        "_skillDetail"
+    ];
+    private _unit = _group createUnit [_type, _pos, [], 0, "CAN_COLLIDE"];
+    [_unit] joinSilent _group;
+    _unit allowDamage false;
+    [_unit, false] remoteExec ["enableSimulationGlobal", 2];
+    _unit setVariable ["jib_ao__damage", _isDamageAllowed];
+    _unit setVariable ["jib_ao__leader", _leader];
+    [_unit] call jib_ao__curator_register;
+    _unit setDir _dir;
+    _unit setRank _rank;
+    _unit setSkill _skill;
+    _unit setCombatBehaviour _combatBehaviour;
+    _unit setUnitCombatMode _combatMode;
+    [_unit, _loadout] call jib_ao_acre_setUnitLoadout;
+    _unit triggerDynamicSimulation _canTriggerDynamicSimulation;
+    if (_fleeing != -1) then {
+        _unit allowFleeing _fleeing;
+        _unit setVariable ["jib_ao__fleeing", _fleeing]; // debug
     };
-
-    // Spawn units
-    private _units = [];
-    for "_i" from 0 to count _data_units - 1 do {
-        // Setup
-        private _data_unit = _data_units # _i;
-        private _pos = (
-            if (count _positions_unit > _i) then {
-                _positions_unit # _i
-            } else {
-                _positions_unit # 0
-            }
-        );
-        private _dir = (
-            if (count _directions_unit > _i) then {
-                _directions_unit # _i
-            } else {
-                _directions_unit # 0
-            }
-        );
-        // Unit
-        _data_unit params [
-            "_type",
-            "_posSerial",
-            "_dirSerial",
-            "_rank",
-            "_skill",
-            "_combatBehaviour",
-            "_combatMode",
-            "_loadout",
-            "_canTriggerDynamicSimulation",
-            "_isDamageAllowed",
-            "_leader",
-            "_fleeing",
-            "_lambs_danger_disableAI",
-            "_skillDetail"
-        ];
-        private _unit = _group createUnit [
-            _type, [_pos # 0, _pos # 1, 0], [], 0, "NONE"
-        ];
-        [_unit] joinSilent _group;
-        _unit allowDamage false;
-        [_unit, false] remoteExec ["enableSimulationGlobal", 2];
-        _unit setVariable ["jib_ao__damage", _isDamageAllowed];
-        _unit setVariable ["jib_ao__leader", _leader];
-        [_unit] call jib_ao__curator_register;
-        _unit setDir _dir;
-        _unit setRank _rank;
-        _unit setSkill _skill;
-        _unit setCombatBehaviour _combatBehaviour;
-        _unit setUnitCombatMode _combatMode;
-        [_unit, _loadout] call jib_ao_acre_setUnitLoadout;
-        _unit triggerDynamicSimulation _canTriggerDynamicSimulation;
-        if (_fleeing != -1) then {
-            _unit allowFleeing _fleeing;
-            _unit setVariable ["jib_ao__fleeing", _fleeing]; // debug
-        };
-        _unit setVariable ["lambs_danger_disableAI", _lambs_danger_disableAI];
-        // Skill
-        _skillDetail params [
-            "_skill_aimingAccuracy",
-            "_skill_aimingShake",
-            "_skill_aimingSpeed",
-            "_skill_endurance",
-            "_skill_spotDistance",
-            "_skill_spotTime",
-            "_skill_courage",
-            "_skill_reloadSpeed",
-            "_skill_commanding",
-            "_skill_general"
-        ];
-        _unit setSkill ["aimingAccuracy", _skill_aimingAccuracy];
-        _unit setSkill ["aimingShake", _skill_aimingShake];
-        _unit setSkill ["aimingSpeed", _skill_aimingSpeed];
-        _unit setSkill ["endurance", _skill_endurance];
-        _unit setSkill ["spotDistance", _skill_spotDistance];
-        _unit setSkill ["spotTime", _skill_spotTime];
-        _unit setSkill ["courage", _skill_courage];
-        _unit setSkill ["reloadSpeed", _skill_reloadSpeed];
-        _unit setSkill ["commanding", _skill_commanding];
-        _unit setSkill ["general", _skill_general];
-        // Cleanup
-        _units pushBack _unit;
-        if (jib_ao_sleep_delay >= 0) then {
-            uiSleep jib_ao_sleep_delay;
-        };
-    };
-    _units apply {
-        if (_x getVariable ["jib_ao__leader", false]) then {
-            _group selectLeader _x;
-        };
-    };
-
-    // Move units into vehicle seats
-    _data_seats apply {
-        _x params [
-            "_vehicleIndex", "_unitIndex",
-            "_role", "_cargoIndex", "_turretPath", "_personTurret"
-        ];
-        // TODO: Try addVehicle, see if fixes some guys dismounting
-        private _vehicle = _vehicles # _vehicleIndex;
-        private _unit = _units # _unitIndex;
-        switch (_role) do
-        {
-            case "driver": {_unit moveInDriver _vehicle};
-            case "gunner": {_unit moveInGunner _vehicle};
-            case "commander": {_unit moveInCommander _vehicle};
-            case "turret": {
-                _unit moveInTurret [_vehicle, _turretPath];
-            };
-            case "cargo": {
-                _unit moveInCargo [_vehicle, _cargoIndex, true];
-            };
-            default {};
-        };
-    };
+    _unit setVariable ["lambs_danger_disableAI", _lambs_danger_disableAI];
+    // Skill
+    _skillDetail params [
+        "_skill_aimingAccuracy",
+        "_skill_aimingShake",
+        "_skill_aimingSpeed",
+        "_skill_endurance",
+        "_skill_spotDistance",
+        "_skill_spotTime",
+        "_skill_courage",
+        "_skill_reloadSpeed",
+        "_skill_commanding",
+        "_skill_general"
+    ];
+    _unit setSkill ["aimingAccuracy", _skill_aimingAccuracy];
+    _unit setSkill ["aimingShake", _skill_aimingShake];
+    _unit setSkill ["aimingSpeed", _skill_aimingSpeed];
+    _unit setSkill ["endurance", _skill_endurance];
+    _unit setSkill ["spotDistance", _skill_spotDistance];
+    _unit setSkill ["spotTime", _skill_spotTime];
+    _unit setSkill ["courage", _skill_courage];
+    _unit setSkill ["reloadSpeed", _skill_reloadSpeed];
+    _unit setSkill ["commanding", _skill_commanding];
+    _unit setSkill ["general", _skill_general];
+    // Cleanup
     if (jib_ao_sleep_delay >= 0) then {
         uiSleep jib_ao_sleep_delay;
     };
+    _unit allowDamage (_unit getVariable ["jib_ao__damage", true]);
+    [_unit, true] remoteExec ["enableSimulationGlobal", 2];
+    _unit;
+};
 
-    // Cleanup
-    _units apply {
-        _x allowDamage (_x getVariable ["jib_ao__damage", true]);
+// Init clusters
+jib_ao__cluster_init = {
+    params [
+        "_data_serial",
+        "_buildings",
+        ["_threshold_merge", 4, [0]],
+        ["_threshold_partition", 8, [0]]
+    ];
+    private _start_time = uiTime;
+    private _clusters = [];
+    private _debug_superclusters = []; // pos offset for drawing
+    private _superclusters = [
+        _buildings apply {[getPos _x, _x]},
+        ceil (count _buildings / jib_ao_cluster_supercluster_threshold)
+    ] call jib_ao__cluster_kmeans;
+    for "_i" from 0 to count _superclusters - 1 do {
+        [
+            format [
+                "jib_ao__cluster_init: Supercluster %1 / %2 (%3 sec)...",
+                _i + 1, count _superclusters, uiTime - _start_time
+            ]
+        ] call jib_ao__log;
+        private _supercluster = _superclusters # _i;
+        private _supercluster_clusters = _supercluster apply {
+            _x params ["_position", "_building"];
+            _building buildingPos -1 apply {
+                [_x, [objNull, []]];
+            };
+        };
+        _supercluster_clusters = [
+            _supercluster_clusters, _threshold_merge
+        ] call jib_ao__cluster_merge;
+        _supercluster_clusters = [
+            _supercluster_clusters, _threshold_partition
+        ] call jib_ao__cluster_partition;
+        _supercluster_clusters apply {_clusters pushBack _x};
+        private _debug_supercluster = _supercluster_clusters apply {
+            [
+                [_x] call jib_ao__cluster_mean vectorAdd [
+                    0, 0, jib_ao_cluster_draw_offset
+                ],
+                [objNull, []]
+            ]
+        };
+        _debug_superclusters pushBack _debug_supercluster;
     };
-    _vehicles apply {
-        _x allowDamage (_x getVariable ["jib_ao__damage", true]);
+    [
+        format [
+            "jib_ao__cluster_init: All done (%1 sec).",
+            uiTime - _start_time
+        ]
+    ] call jib_ao__log;
+    [_clusters, _debug_superclusters];
+};
+
+// Get priority of a cluster
+jib_ao__cluster_score = {
+    params ["_cluster"];
+    private _best = 1e9;
+    _cluster apply {
+        _x params ["_position", "_data_point"];
+        _data_point params ["_unit", "_data_group_unit"];
+        allPlayers + allCurators apply {
+            private _distance = _x distance _position;
+            if (_distance < _best) then {
+                _best = _distance;
+            };
+            _distance = _x distance _unit;
+            if (_distance < _best) then {
+                _best = _distance;
+            };
+        };
     };
-    [[_units, _vehicles], {
-        params ["_units", "_vehicles"];
-        _units apply {_x enableSimulationGlobal true;};
-        _vehicles apply {_x enableSimulationGlobal true;};
-    }] remoteExec ["spawn", 2];
-    [_group, _units, _vehicles];
+    _best;
 };
 
 // Iteratively merge clusters smaller than threshold into closest cluster.
@@ -563,6 +450,12 @@ jib_ao__cluster_kmeans = {
             _centroids set [_i, _new_centroid];
         };
         // Loop handling
+        [
+            format [
+                "jib_ao__cluster_kmeans: %1 / %2 clusters stable.",
+                _n_stable, _k
+            ]
+        ] call jib_ao__log;
         if (_n_stable >= count _clusters) then {
             [
                 format [
@@ -591,12 +484,6 @@ jib_ao__cluster_kmeans = {
             break;
         };
         _iteration = _iteration + 1;
-        [
-            format [
-                "jib_ao__cluster_kmeans: %1 / %2 clusters stable.",
-                _n_stable, _k
-            ]
-        ] call jib_ao__log;
     };
     _clusters;
 };
@@ -636,7 +523,7 @@ jib_ao__cluster_draw = {
             // Draw title
             private _icon = "\A3\ui_f\data\map\markers\military\dot_CA.paa";
             private _color = [0,1,0,.5];
-            private _offset = 10;
+            private _offset = jib_ao_cluster_draw_offset;
             private _shadow = false;
             private _iconSize = 1;
             private _textSize = 1;
@@ -846,3 +733,14 @@ if (jib_ao_debug) then {
     call jib_ao__test_kdtree;
     call jib_ao__test_cluster;
 };
+
+// Daemon to run on all clients
+[[], {
+    terminate jib_ao__daemon_handle;
+    jib_ao__daemon_handle = [] spawn {
+        while {true} do {
+            getAssignedCuratorLogic player setPos getPos curatorCamera;
+            uiSleep 1;
+        };
+    };
+}] remoteExec ["spawn", 0];
