@@ -240,25 +240,31 @@ jib_ao__population_generate = {
         ["_p_point", 1, [0]]
     ];
     _clusters apply {
-        if (random 1 >= _p_cluster) then {
-            ["jib_ao__cluster_populate: Skip cluster."] call jib_ao__log;
-            continue;
-        };
         private _cluster = _x;
         _cluster params [
             "_cluster_points", "_cluster_centroid",
             "_cluster_group_data", "_cluster_group"
         ];
+        if (random 1 >= _p_cluster) then {
+            // ["jib_ao__cluster_populate: Skip cluster."] call jib_ao__log;
+            [_cluster, []] call jib_ao__cluster_set_group_data;
+            _cluster_points apply {
+                private _cluster_point = _x;
+                [_cluster_point, []] call jib_ao__cluster_point_set_unit_data;
+            };
+            continue;
+        };
         private _group_units_data = selectRandom _groups_units_data;
         _group_units_data params ["_group_data", "_units_data"];
         [_cluster, _group_data] call jib_ao__cluster_set_group_data;
         _cluster_points apply {
-            if (random 1 >= _p_point) then {
-                ["jib_ao__cluster_populate: Skip point."] call jib_ao__log;
-                continue;
-            };
             private _cluster_point = _x;
             _cluster_point params ["_pos", "_unit_data", "_unit"];
+            if (random 1 >= _p_point) then {
+                // ["jib_ao__cluster_populate: Skip point."] call jib_ao__log;
+                [_cluster_point, []] call jib_ao__cluster_point_set_unit_data;
+                continue;
+            };
             private _unit_data = selectRandom _units_data;
             [
                 _cluster_point, _unit_data
@@ -331,9 +337,17 @@ jib_ao__population_remove = {
 jib_ao__population_resolve = {
     params [
         "_clusters",
+        ["_n_points", 100, [0]],
+        ["_distance", -1, [0]],
+        ["_n_clusters", -1, [0]],
         ["_epsilon", 0.1, [0]]
     ];
-    private _clusters_expected = [_clusters] call jib_ao__cluster_near;
+    private _clusters_expected = [
+        _clusters,
+        _n_points,
+        _distance,
+        _n_clusters
+    ] call jib_ao__cluster_near;
     private _clusters_actual = _clusters select {
         private _cluster = _x;
         _cluster params [
@@ -395,6 +409,32 @@ jib_ao__population_resolve = {
         };
     };
     [_clusters_add, _clusters_remove];
+};
+
+// Process population update.
+jib_ao__population_tick = {
+    params [
+        "_clusters",
+        ["_n_points", 100, [0]],
+        ["_distance", -1, [0]],
+        ["_n_clusters", -1, [0]]
+    ];
+    [
+        _clusters,
+        _n_points,
+        _distance,
+        _n_clusters
+    ] call jib_ao__population_resolve params [
+        "_clusters_add", "_clusters_remove"
+    ];
+    _clusters_remove apply {
+        private _cluster = _x;
+        [_cluster] call jib_ao__population_remove;
+    };
+    _clusters_add apply {
+        private _cluster = _x;
+        [_cluster] call jib_ao__population_add;
+    };
 };
 
 // Process buildings to generate clusters.
@@ -541,22 +581,27 @@ jib_ao__cluster_point_set_unit = {
 jib_ao__cluster_near = {
     params [
         "_clusters",
-        ["_n_clusters", -1, [0]],
         ["_n_points", 100, [0]],
-        ["_distance", -1, [0]]
+        ["_distance", -1, [0]],
+        ["_n_clusters", -1, [0]],
+        ["_require_data", true, [false]]
     ];
     private _clusters_near = [];
     private _n_points_actual = 0;
-    private _clusters_sorted = _clusters apply {
+    private _clusters_sorted = _clusters select {
+        private _cluster = _x;
+        _cluster params [
+            "_cluster_points", "_cluster_centroid",
+            "_cluster_group_data", "_cluster_group"
+        ];
+        !_require_data || count _cluster_group_data > 0
+    } apply {
         private _cluster = _x;
         _cluster params [
             "_cluster_points", "_cluster_centroid",
             "_cluster_group_data", "_cluster_group"
         ];
         private _best = 1e9;
-        if (count _cluster_group_data == 0) then {
-            continueWith [_best, _cluster];
-        };
         allPlayers + allCurators apply {
             private _target = _x;
             private _distance = _target distance _cluster_centroid;
