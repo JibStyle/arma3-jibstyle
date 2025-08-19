@@ -209,7 +209,7 @@ jib_ao__cluster_supercluster = {
         ] call jib_ao__cluster_make
     ];
     _superclusters = [
-        _superclusters, jib_ao_cluster_supercluster_threshold
+        _superclusters, jib_ao_cluster_supercluster_threshold, true
     ] call jib_ao__cluster_partition;
     for "_i" from 0 to count _superclusters - 1 do {
         [
@@ -233,7 +233,7 @@ jib_ao__cluster_supercluster = {
             _supercluster_clusters, _threshold_merge
         ] call jib_ao__cluster_merge;
         _supercluster_clusters = [
-            _supercluster_clusters, _threshold_partition
+            _supercluster_clusters, _threshold_partition, false
         ] call jib_ao__cluster_partition;
         _supercluster_clusters apply {_clusters pushBack _x};
         private _debug_supercluster_points = _supercluster_clusters apply {
@@ -269,32 +269,44 @@ jib_ao__cluster_supercluster = {
 };
 
 // Populate clusters with unit data.
-// jib_ao__cluster_populate = {
-//     params [
-//         "_clusters",
-//         "_groups_units_data",
-//         ["_p_cluster", 1, [0]],
-//         ["_p_point", 1, [0]],
-//         ["_unit_init", jib_ao_default_unit_init, [{}]],
-//         ["_group_init", jib_ao_default_group_init, [{}]]
-//     ];
-//     _clusters apply {
-//         if (random 1 >= _p_cluster) then {
-//             continue;
-//         };
-//         private _group_units_data = selectRandom _group_units_data;
-//         _group_units_data params ["_group_data", "_units_data"];
-//         _cluster params [
-//             "_cluster_points", "_cluster_centroid",
-//             "_cluster_group_data", "_cluster_group"
-//         ];
-//         [_cluster, _group_data] call jib_ao__cluster_set_group_data;
-//         _cluster_points apply {
-//             private _cluster_point = _x;
-//             _cluster_point params
-//         };
-//     };
-// };
+jib_ao__cluster_populate = {
+    params [
+        "_clusters",
+        "_groups_units_data",
+        ["_p_cluster", 1, [0]],
+        ["_p_point", 1, [0]],
+        ["_unit_init", jib_ao_default_unit_init, [{}]],
+        ["_group_init", jib_ao_default_group_init, [{}]]
+    ];
+    _clusters apply {
+        if (random 1 >= _p_cluster) then {
+            ["jib_ao__cluster_populate: Skip cluster."] call jib_ao__log;
+            continue;
+        };
+        private _cluster = _x;
+        _cluster params [
+            "_cluster_points", "_cluster_centroid",
+            "_cluster_group_data", "_cluster_group"
+        ];
+        private _group_units_data = selectRandom _groups_units_data;
+        _group_units_data params ["_group_data", "_units_data"];
+        temp = _group_units_data;
+        [_cluster, _group_data] call jib_ao__cluster_set_group_data;
+        _cluster_points apply {
+            if (random 1 >= _p_point) then {
+                ["jib_ao__cluster_populate: Skip point."] call jib_ao__log;
+                continue;
+            };
+            private _cluster_point = _x;
+            _cluster_point params ["_pos", "_unit_data", "_unit"];
+            private _unit_data = selectRandom _units_data;
+            [
+                _cluster_point, _unit_data
+            ] call jib_ao__cluster_point_set_unit_data;
+        };
+    };
+    _clusters;
+};
 
 // Make a cluster object.
 jib_ao__cluster_make = {
@@ -530,7 +542,7 @@ jib_ao__cluster_merge = {
 // Partition clusters larger than threshold to be approximately that size.
 jib_ao__cluster_partition = {
     // Setup
-    params ["_clusters", "_threshold"];
+    params ["_clusters", "_threshold", ["_logging", false]];
     private _result = [];
     _clusters apply {
         private _cluster = _x;
@@ -542,7 +554,9 @@ jib_ao__cluster_partition = {
             _result pushBack _cluster;
         } else {
             private _partitions = [
-                _cluster_points, ceil (count _cluster_points / _threshold)
+                _cluster_points,
+                ceil (count _cluster_points / _threshold),
+                _logging
             ] call jib_ao__cluster_kmeans;
             _partitions apply {
                 private _cluster_points = _x;
@@ -585,6 +599,7 @@ jib_ao__cluster_kmeans = {
     params [
         "_points",
         "_k",
+        ["_logging", false, [true]],
         ["_timeout", 60, [0]],
         ["_max_iterations", 100, [0]],
         ["_min_delta", 0.1, [0]],
@@ -604,12 +619,14 @@ jib_ao__cluster_kmeans = {
     private _partitions = [];
     while {true} do {
         // Iteration setup
-        [
-            format [
-                "jib_ao__cluster_kmeans: Iteration %1 (%2 sec)...",
-                _iteration + 1, uiTime - _start_time
-            ]
-        ] call jib_ao__log;
+        if (_logging) then {
+            [
+                format [
+                    "jib_ao__cluster_kmeans: Iteration %1 (%2 sec)...",
+                    _iteration + 1, uiTime - _start_time
+                ]
+            ] call jib_ao__log;
+        };
         _partitions = [];
         for "_i" from 0 to count _centroids - 1 do {
             _partitions pushBack [];
@@ -656,37 +673,48 @@ jib_ao__cluster_kmeans = {
             _centroids set [_i, _new_centroid];
         };
         // Loop handling
-        [
-            format [
-                "jib_ao__cluster_kmeans: %1 / %2 partitions stable.",
-                _n_stable, _k
-            ]
-        ] call jib_ao__log;
-        if (_n_stable >= count _partitions) then {
+        if (_logging) then {
             [
                 format [
-                    "jib_ao__cluster_kmeans: Done (%1 iterations, %2 sec).",
-                    _iteration + 1, uiTime - _start_time
+                    "jib_ao__cluster_kmeans: %1 / %2 partitions stable.",
+                    _n_stable, _k
                 ]
             ] call jib_ao__log;
+        };
+        if (_n_stable >= count _partitions) then {
+            if (_logging) then {
+                [
+                    format [
+                        "jib_ao__cluster_kmeans: "
+                            + "Done (%1 iterations, %2 sec).",
+                        _iteration + 1, uiTime - _start_time
+                    ]
+                ] call jib_ao__log;
+            };
             break;
         };
         if (_iteration >= _max_iterations) then {
-            [
-                format [
-                    "jib_ao__cluster_kmeans: Limit (%1 iterations, %2 sec).",
-                    _iteration + 1, uiTime - _start_time
-                ]
-            ] call jib_ao__log;
+            if (_logging) then {
+                [
+                    format [
+                        "jib_ao__cluster_kmeans: "
+                            + "Limit (%1 iterations, %2 sec).",
+                        _iteration + 1, uiTime - _start_time
+                    ]
+                ] call jib_ao__log;
+            };
             break;
         };
         if (uiTime - _start_time >= _timeout) then {
-            [
-                format [
-                    "jib_ao__cluster_kmeans: Timeout (%1 iterations, %2 sec).",
-                    _iteration + 1, uiTime - _start_time
-                ]
-            ] call jib_ao__log;
+            if (_logging) then {
+                [
+                    format [
+                        "jib_ao__cluster_kmeans: "
+                            + "Timeout (%1 iterations, %2 sec).",
+                        _iteration + 1, uiTime - _start_time
+                    ]
+                ] call jib_ao__log;
+            };
             break;
         };
         _iteration = _iteration + 1;
