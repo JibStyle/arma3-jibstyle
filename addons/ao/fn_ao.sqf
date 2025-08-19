@@ -873,7 +873,9 @@ if (jib_ao_debug) then {
 
 // Daemon to run on all clients
 [[], {
-    terminate jib_ao__daemon_handle;
+    if (!isNil "jib_ao__daemon_handle") then {
+        terminate jib_ao__daemon_handle;
+    };
     jib_ao__daemon_handle = [] spawn {
         scriptName "jib_ao__daemon";
         while {true} do {
