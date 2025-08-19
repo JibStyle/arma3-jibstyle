@@ -27,6 +27,10 @@ jib_ao_default_group_init = {
 // Get unit data
 jib_ao__serial_read_group = {
     params ["_group"];
+    if (isNull _group) exitWith {
+        ["jib_ao__serial_read_group: Null group."] call jib_ao__log;
+        [];
+    };
     private _group_data = [
         groupId _group,
         true, // isGroupDeletedWhenEmpty
@@ -43,6 +47,10 @@ jib_ao__serial_read_group = {
 // Get unit data
 jib_ao__serial_read_unit = {
     params ["_unit"];
+    if (not alive _unit) exitWith {
+        // ["jib_ao__serial_read_unit: Null or dead unit."] call jib_ao__log;
+        [];
+    };
     private _unit_data = [
         typeOf _unit,
         getPos _unit,
@@ -172,7 +180,172 @@ jib_ao__serial_write_unit = {
     _unit;
 };
 
-// Init clusters
+// Populate clusters with unit data.
+jib_ao__population_generate = {
+    params [
+        "_clusters",
+        "_groups_units_data",
+        ["_p_cluster", 1, [0]],
+        ["_p_point", 1, [0]]
+    ];
+    _clusters apply {
+        if (random 1 >= _p_cluster) then {
+            ["jib_ao__cluster_populate: Skip cluster."] call jib_ao__log;
+            continue;
+        };
+        private _cluster = _x;
+        _cluster params [
+            "_cluster_points", "_cluster_centroid",
+            "_cluster_group_data", "_cluster_group"
+        ];
+        private _group_units_data = selectRandom _groups_units_data;
+        _group_units_data params ["_group_data", "_units_data"];
+        [_cluster, _group_data] call jib_ao__cluster_set_group_data;
+        _cluster_points apply {
+            if (random 1 >= _p_point) then {
+                ["jib_ao__cluster_populate: Skip point."] call jib_ao__log;
+                continue;
+            };
+            private _cluster_point = _x;
+            _cluster_point params ["_pos", "_unit_data", "_unit"];
+            private _unit_data = selectRandom _units_data;
+            [
+                _cluster_point, _unit_data
+            ] call jib_ao__cluster_point_set_unit_data;
+        };
+    };
+    _clusters;
+};
+
+// Spawn in a cluster.
+jib_ao__population_add = {
+    params [
+        "_cluster",
+        ["_unit_init", jib_ao_default_unit_init, [{}]],
+        ["_group_init", jib_ao_default_group_init, [{}]]
+    ];
+    _cluster params [
+        "_cluster_points", "_cluster_centroid",
+        "_cluster_group_data", "_cluster_group"
+    ];
+    if (count _cluster_group_data == 0) exitWith {
+        ["jib_ao__population_add: Null group detected."] call jib_ao__log;
+    };
+    private _group = [_cluster_group_data] call jib_ao__serial_write_group;
+    [_cluster, _group] call jib_ao__cluster_set_group;
+    _cluster_points apply {
+        private _cluster_point = _x;
+        _cluster_point params ["_pos", "_unit_data", "_unit"];
+        if (count _unit_data == 0) then {
+            continue;
+        };
+        private _unit = [
+            _unit_data, _group, _pos, random 360
+        ] call jib_ao__serial_write_unit;
+        [_cluster_point, _unit] call jib_ao__cluster_point_set_unit;
+        [_unit] call _unit_init;
+    };
+    [_group] call _group_init;
+    _group;
+};
+
+// Despawn a cluster.
+jib_ao__population_remove = {
+    params ["_cluster"];
+    _cluster params [
+        "_cluster_points", "_cluster_centroid",
+        "_cluster_group_data", "_cluster_group"
+    ];
+    if (isNull _cluster_group) exitWith {
+        // Maybe group is all dead.
+        ["jib_ao__population_remove: Null group detected."] call jib_ao__log;
+        [_cluster, []] call jib_ao__cluster_set_group_data;
+        _cluster_points apply {
+            private _cluster_point = _x;
+            [_cluster_point, []] call jib_ao__cluster_point_set_unit_data;
+        };
+    };
+    // private _group_data = [_cluster_group] call jib_ao__serial_read_group;
+    // [_cluster, _group_data] call jib_ao__cluster_set_group_data;
+    _cluster_points apply {
+        private _cluster_point = _x;
+        _cluster_point params ["_pos", "_unit_data", "_unit"];
+        private _unit_data = [_unit] call jib_ao__serial_read_unit;
+        [_cluster_point, _unit_data] call jib_ao__cluster_point_set_unit_data;
+    };
+};
+
+// Get lists of clusters to add and remove
+jib_ao__population_resolve = {
+    params [
+        "_clusters",
+        ["_epsilon", 0.1, [0]]
+    ];
+    private _clusters_expected = [_clusters] call jib_ao__cluster_near;
+    private _clusters_actual = _clusters select {
+        private _cluster = _x;
+        _cluster params [
+            "_cluster_points", "_cluster_centroid",
+            "_cluster_group_data", "_cluster_group"
+        ];
+        not isNull _cluster_group;
+    };
+    private _clusters_add = [];
+    private _clusters_remove = [];
+    _clusters_expected apply {
+        private _cluster_expected = _x;
+        _cluster_expected params [
+            "_cluster_expected_points", "_cluster_expected_centroid",
+            "_cluster_expected_group_data", "_cluster_expected_group"
+        ];
+        private _found = false;
+        _clusters_actual apply {
+            private _cluster_actual = _x;
+            _cluster_actual params [
+                "_cluster_actual_points", "_cluster_actual_centroid",
+                "_cluster_actual_group_data", "_cluster_actual_group"
+            ];
+            if (
+                _cluster_expected_centroid distance _cluster_actual_centroid
+                    < _epsilon
+            ) exitWith {
+                // Poor man's equality check
+                _found = true;
+            };
+        };
+        if (!_found) then {
+            _clusters_add pushBack _cluster_expected;
+        };
+    };
+    _clusters_actual apply {
+        private _cluster_actual = _x;
+        _cluster_actual params [
+            "_cluster_actual_points", "_cluster_actual_centroid",
+            "_cluster_actual_group_data", "_cluster_actual_group"
+        ];
+        private _found = false;
+        _clusters_expected apply {
+            private _cluster_expected = _x;
+            _cluster_expected params [
+                "_cluster_expected_points", "_cluster_expected_centroid",
+                "_cluster_expected_group_data", "_cluster_expected_group"
+            ];
+            if (
+                _cluster_actual_centroid distance _cluster_expected_centroid
+                    < _epsilon
+            ) exitWith {
+                // Poor man's equality check
+                _found = true;
+            };
+        };
+        if (!_found) then {
+            _clusters_remove pushBack _cluster_actual;
+        };
+    };
+    [_clusters_add, _clusters_remove];
+};
+
+// Process buildings to generate clusters.
 jib_ao__cluster_supercluster = {
     params [
         "_buildings",
@@ -268,46 +441,6 @@ jib_ao__cluster_supercluster = {
     [_clusters, _debug_superclusters];
 };
 
-// Populate clusters with unit data.
-jib_ao__cluster_populate = {
-    params [
-        "_clusters",
-        "_groups_units_data",
-        ["_p_cluster", 1, [0]],
-        ["_p_point", 1, [0]],
-        ["_unit_init", jib_ao_default_unit_init, [{}]],
-        ["_group_init", jib_ao_default_group_init, [{}]]
-    ];
-    _clusters apply {
-        if (random 1 >= _p_cluster) then {
-            ["jib_ao__cluster_populate: Skip cluster."] call jib_ao__log;
-            continue;
-        };
-        private _cluster = _x;
-        _cluster params [
-            "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
-        ];
-        private _group_units_data = selectRandom _groups_units_data;
-        _group_units_data params ["_group_data", "_units_data"];
-        temp = _group_units_data;
-        [_cluster, _group_data] call jib_ao__cluster_set_group_data;
-        _cluster_points apply {
-            if (random 1 >= _p_point) then {
-                ["jib_ao__cluster_populate: Skip point."] call jib_ao__log;
-                continue;
-            };
-            private _cluster_point = _x;
-            _cluster_point params ["_pos", "_unit_data", "_unit"];
-            private _unit_data = selectRandom _units_data;
-            [
-                _cluster_point, _unit_data
-            ] call jib_ao__cluster_point_set_unit_data;
-        };
-    };
-    _clusters;
-};
-
 // Make a cluster object.
 jib_ao__cluster_make = {
     params [
@@ -369,9 +502,9 @@ jib_ao__cluster_near = {
             "_cluster_group_data", "_cluster_group"
         ];
         private _best = 1e9;
-        // if (count _cluster_group_data == 0) then {
-        //     continueWith [_best, _cluster];
-        // };
+        if (count _cluster_group_data == 0) then {
+            continueWith [_best, _cluster];
+        };
         allPlayers + allCurators apply {
             private _target = _x;
             private _distance = _target distance _cluster_centroid;
@@ -602,7 +735,7 @@ jib_ao__cluster_kmeans = {
         ["_logging", false, [true]],
         ["_timeout", 60, [0]],
         ["_max_iterations", 100, [0]],
-        ["_min_delta", 0.1, [0]],
+        ["_epsilon", 0.1, [0]],
         ["_balance", false, [true]]
     ];
     private _start_time = uiTime;
@@ -667,7 +800,7 @@ jib_ao__cluster_kmeans = {
                 _new_centroid = _sum vectorMultiply (1 / _n);
             };
             private _old_centroid = _centroids # _i;
-            if (_new_centroid distance _old_centroid <= _min_delta) then {
+            if (_new_centroid distance _old_centroid <= _epsilon) then {
                 _n_stable = _n_stable + 1;
             };
             _centroids set [_i, _new_centroid];
