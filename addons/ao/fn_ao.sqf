@@ -180,6 +180,57 @@ jib_ao__serial_write_unit = {
     _unit;
 };
 
+// Choose leader for group based on flag and rank.
+jib_ao__serial_select_leader = {
+    params ["_group"];
+    private _leader = objNull;
+    units _group apply {
+        if (isNull _leader) then {
+            _leader = _x;
+            continue;
+        };
+        if (
+            [
+                [
+                    rank _x,
+                    _x getVariable ["jib_ao__leader", false]],
+                [
+                    rank _leader,
+                    _leader getVariable ["jib_ao__leader", false]
+                ]
+            ] call jib_ao__serial_compare
+        ) then {
+            _leader = _x;
+        };
+    };
+    _group selectLeader _leader;
+};
+
+jib_ao__serial_compare = {
+    params ["_a", "_b"];
+    _a params ["_a_rank", "_a_leader"];
+    _b params ["_b_rank", "_b_leader"];
+    if (_a_rank == _b_rank) then {
+        _a_leader and not _b_leader;
+    } else {
+        [_a_rank, _b_rank] call jib_ao__serial_compare_rank;
+    };
+};
+
+jib_ao__serial_compare_rank = {
+    params ["_a", "_b"];
+    private _ranks = [
+        "PRIVATE",
+        "CORPORAL",
+        "SERGEANT",
+        "LIEUTENANT",
+        "CAPTAIN",
+        "MAJOR",
+        "COLONEL"
+    ];
+    (_ranks findIf {_x == _a}) > (_ranks findIf {_x == _b});
+};
+
 // Populate clusters with unit data.
 jib_ao__population_generate = {
     params [
@@ -245,6 +296,7 @@ jib_ao__population_add = {
         [_cluster_point, _unit] call jib_ao__cluster_point_set_unit;
         [_unit] call _unit_init;
     };
+    [_group] call jib_ao__serial_select_leader;
     [_group] call _group_init;
     _group;
 };
