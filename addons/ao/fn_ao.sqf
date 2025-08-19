@@ -4,10 +4,12 @@ jib_ao_ai_cqb = jib_ai_cqb;
 
 // Config
 jib_ao_debug = true;
-jib_ao_sleep_delay = 0.1;
-jib_ao_progress_delay = 3;
+jib_ao_serial_delay = 0; // 0.1;
+jib_ao_log_delay = 3;
 jib_ao_cluster_supercluster_threshold = 100;
-jib_ao_cluster_draw_offset = 10;
+jib_ao_population_delay = 1;
+jib_ao_draw_offset = 10;
+jib_ao_draw_delay = 1;
 
 // Default param values.
 jib_ao_default_unit_init = {
@@ -104,8 +106,8 @@ jib_ao__serial_write_group = {
     _group setVariable [
         "lambs_danger_disableGroupAI", _lambs_danger_disableGroupAI
     ];
-    if (jib_ao_sleep_delay >= 0) then {
-        uiSleep jib_ao_sleep_delay;
+    if (jib_ao_serial_delay >= 0) then {
+        uiSleep jib_ao_serial_delay;
     };
     _group;
 };
@@ -172,8 +174,8 @@ jib_ao__serial_write_unit = {
     _unit setSkill ["commanding", _skill_commanding];
     _unit setSkill ["general", _skill_general];
     // Cleanup
-    if (jib_ao_sleep_delay >= 0) then {
-        uiSleep jib_ao_sleep_delay;
+    if (jib_ao_serial_delay >= 0) then {
+        uiSleep jib_ao_serial_delay;
     };
     _unit allowDamage (_unit getVariable ["jib_ao__damage", true]);
     [_unit, true] remoteExec ["enableSimulationGlobal", 2];
@@ -243,7 +245,7 @@ jib_ao__population_generate = {
         private _cluster = _x;
         _cluster params [
             "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
+            "_cluster_group_data", "_cluster_group", "_cluster_active"
         ];
         if (random 1 >= _p_cluster) then {
             // ["jib_ao__cluster_populate: Skip cluster."] call jib_ao__log;
@@ -283,13 +285,14 @@ jib_ao__population_add = {
     ];
     _cluster params [
         "_cluster_points", "_cluster_centroid",
-        "_cluster_group_data", "_cluster_group"
+        "_cluster_group_data", "_cluster_group", "_cluster_active"
     ];
     if (count _cluster_group_data == 0) exitWith {
         ["jib_ao__population_add: Null group detected."] call jib_ao__log;
     };
     private _group = [_cluster_group_data] call jib_ao__serial_write_group;
     [_cluster, _group] call jib_ao__cluster_set_group;
+    [_cluster, true] call jib_ao__cluster_set_active;
     _cluster_points apply {
         private _cluster_point = _x;
         _cluster_point params ["_pos", "_unit_data", "_unit"];
@@ -312,8 +315,9 @@ jib_ao__population_remove = {
     params ["_cluster"];
     _cluster params [
         "_cluster_points", "_cluster_centroid",
-        "_cluster_group_data", "_cluster_group"
+        "_cluster_group_data", "_cluster_group", "_cluster_active"
     ];
+    [_cluster, false] call jib_ao__cluster_set_active;
     if (isNull _cluster_group) exitWith {
         // Maybe group is all dead.
         ["jib_ao__population_remove: Null group detected."] call jib_ao__log;
@@ -337,77 +341,46 @@ jib_ao__population_remove = {
 jib_ao__population_resolve = {
     params [
         "_clusters",
-        ["_n_points", 100, [0]],
-        ["_distance", -1, [0]],
-        ["_n_clusters", -1, [0]],
-        ["_epsilon", 0.1, [0]]
+        ["_n", 100, [0]],
+        ["_distance", -1, [0]]
     ];
-    private _clusters_expected = [
-        _clusters,
-        _n_points,
-        _distance,
-        _n_clusters
-    ] call jib_ao__cluster_near;
+    private _cluster_scores = [_clusters] call jib_ao__cluster_scores;
+    private _n_units_actual = 0;
+    private _clusters_expected = [];
+    _cluster_scores apply {
+        private _cluster_score = _x;
+        _cluster_score params ["_score", "_index"];
+        private _cluster = _clusters # _index;
+        _cluster params [
+            "_cluster_points", "_cluster_centroid",
+            "_cluster_group_data", "_cluster_group", "_cluster_active"
+        ];
+        private _cluster_n_units = {
+            private _cluster_point = _x;
+            _cluster_point params ["_pos", "_unit_data", "_unit"];
+            not _cluster_active || alive _unit;
+        } count _cluster_points;
+        if (_n >= 0 && _n_units_actual >= _n) then {
+            break;
+        };
+        if (_distance >= 0 && _score > _distance) then {
+            break;
+        };
+        _clusters_expected pushBack _cluster;
+        _n_units_actual = _n_units_actual + _cluster_n_units;
+    };
     private _clusters_actual = _clusters select {
         private _cluster = _x;
         _cluster params [
             "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
+            "_cluster_group_data", "_cluster_group", "_cluster_active"
         ];
-        not isNull _cluster_group;
+        _cluster_active;
     };
-    private _clusters_add = [];
-    private _clusters_remove = [];
-    _clusters_expected apply {
-        private _cluster_expected = _x;
-        _cluster_expected params [
-            "_cluster_expected_points", "_cluster_expected_centroid",
-            "_cluster_expected_group_data", "_cluster_expected_group"
-        ];
-        private _found = false;
-        _clusters_actual apply {
-            private _cluster_actual = _x;
-            _cluster_actual params [
-                "_cluster_actual_points", "_cluster_actual_centroid",
-                "_cluster_actual_group_data", "_cluster_actual_group"
-            ];
-            if (
-                _cluster_expected_centroid distance _cluster_actual_centroid
-                    < _epsilon
-            ) exitWith {
-                // Poor man's equality check
-                _found = true;
-            };
-        };
-        if (!_found) then {
-            _clusters_add pushBack _cluster_expected;
-        };
-    };
-    _clusters_actual apply {
-        private _cluster_actual = _x;
-        _cluster_actual params [
-            "_cluster_actual_points", "_cluster_actual_centroid",
-            "_cluster_actual_group_data", "_cluster_actual_group"
-        ];
-        private _found = false;
-        _clusters_expected apply {
-            private _cluster_expected = _x;
-            _cluster_expected params [
-                "_cluster_expected_points", "_cluster_expected_centroid",
-                "_cluster_expected_group_data", "_cluster_expected_group"
-            ];
-            if (
-                _cluster_actual_centroid distance _cluster_expected_centroid
-                    < _epsilon
-            ) exitWith {
-                // Poor man's equality check
-                _found = true;
-            };
-        };
-        if (!_found) then {
-            _clusters_remove pushBack _cluster_actual;
-        };
-    };
+    private _clusters_add =
+        [_clusters_expected, _clusters_actual] call jib_ao__cluster_diff;
+    private _clusters_remove =
+        [_clusters_actual, _clusters_expected] call jib_ao__cluster_diff;
     [_clusters_add, _clusters_remove];
 };
 
@@ -415,16 +388,10 @@ jib_ao__population_resolve = {
 jib_ao__population_tick = {
     params [
         "_clusters",
-        ["_n_points", 100, [0]],
-        ["_distance", -1, [0]],
-        ["_n_clusters", -1, [0]]
+        ["_n", 100, [0]],
+        ["_distance", -1, [0]]
     ];
-    [
-        _clusters,
-        _n_points,
-        _distance,
-        _n_clusters
-    ] call jib_ao__population_resolve params [
+    [_clusters, _n, _distance] call jib_ao__population_resolve params [
         "_clusters_add", "_clusters_remove"
     ];
     _clusters_remove apply {
@@ -434,6 +401,33 @@ jib_ao__population_tick = {
     _clusters_add apply {
         private _cluster = _x;
         [_cluster] call jib_ao__population_add;
+    };
+};
+
+// Start population daemon.
+jib_ao__population_start = {
+    params [
+        "_clusters",
+        ["_n", 100, [0]],
+        ["_distance", -1, [0]]
+    ];
+    [] call jib_ao__population_stop;
+    jib_ao__population_handle = [_clusters, _n, _distance] spawn {
+        scriptName "jib_ao__population_handle";
+        params ["_clusters", "_n", "_distance"];
+        while {true} do {
+            [_clusters, _n, _distance] call jib_ao__population_tick;
+            uiSleep jib_ao_population_delay;
+        };
+    };
+    jib_ao__population_handle;
+};
+
+// Stop population daemon.
+jib_ao__population_stop = {
+    params [];
+    if (not isNil "jib_ao__population_handle") then {
+        terminate jib_ao__population_handle;
     };
 };
 
@@ -458,7 +452,7 @@ jib_ao__cluster_supercluster = {
         private _cluster_centroid =
             [_cluster_points] call jib_ao__cluster_mean;
         private _cluster = [
-            _cluster_points, _cluster_centroid, [], grpNull
+            _cluster_points, _cluster_centroid, [], grpNull, false
         ] call jib_ao__cluster_make;
         private _supercluster_point = [getPos _building, _cluster];
         _supercluster_point;
@@ -470,7 +464,8 @@ jib_ao__cluster_supercluster = {
             _initial_supercluster_points,
             _initial_supercluster_centroid,
             [],
-            grpNull
+            grpNull,
+            false
         ] call jib_ao__cluster_make
     ];
     _superclusters = [
@@ -486,7 +481,7 @@ jib_ao__cluster_supercluster = {
         private _cluster = _superclusters # _i;
         _cluster params [
             "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
+            "_cluster_group_data", "_cluster_group", "_cluster_active"
         ];
         private _supercluster_clusters = _cluster_points apply {
             private _cluster_point = _x;
@@ -505,11 +500,11 @@ jib_ao__cluster_supercluster = {
             private _cluster = _x;
             _cluster params [
                 "_cluster_points", "_cluster_centroid",
-                "_cluster_group_data", "_cluster_group"
+                "_cluster_group_data", "_cluster_group", "_cluster_active"
             ];
             private _pos = (
                 [_cluster_points] call jib_ao__cluster_mean
-            ) vectorAdd [0, 0, jib_ao_cluster_draw_offset];
+            ) vectorAdd [0, 0, jib_ao_draw_offset];
             private _cluster_point =
                 [_pos, [], objNull] call jib_ao__cluster_point_make;
             _cluster_point;
@@ -520,7 +515,8 @@ jib_ao__cluster_supercluster = {
             _debug_supercluster_points,
             _debug_supercluster_centroid,
             ["hack"], // hack
-            grpNull
+            grpNull,
+            false
         ] call jib_ao__cluster_make;
         _debug_superclusters pushBack _debug_supercluster;
     };
@@ -537,11 +533,11 @@ jib_ao__cluster_supercluster = {
 jib_ao__cluster_make = {
     params [
         "_cluster_points", "_cluster_centroid",
-        "_cluster_group_data", "_cluster_group"
+        "_cluster_group_data", "_cluster_group", "_cluster_active"
     ];
     private _cluster = [
         _cluster_points, _cluster_centroid,
-        _cluster_group_data, _cluster_group
+        _cluster_group_data, _cluster_group, _cluster_active
     ];
     _cluster;
 };
@@ -556,6 +552,12 @@ jib_ao__cluster_set_group_data = {
 jib_ao__cluster_set_group = {
     params ["_cluster", "_group"];
     _cluster set [3, _group];
+};
+
+// Update cluster active flag.
+jib_ao__cluster_set_active = {
+    params ["_cluster", "_active"];
+    _cluster set [4, _active];
 };
 
 // Make a cluster point.
@@ -577,32 +579,52 @@ jib_ao__cluster_point_set_unit = {
     _cluster_point set [2, _unit];
 };
 
+// Diff sets of clusters.
+jib_ao__cluster_diff = {
+    params ["_clusters_a", "_clusters_b", ["_epsilon", 0.1, [1]]];
+    private _clusters_diff = [];
+    _clusters_a apply {
+        private _cluster_a = _x;
+        _cluster_a params [
+            "_cluster_a_points", "_cluster_a_centroid",
+            "_cluster_a_group_data", "_cluster_a_group"
+        ];
+        private _found = false;
+        _clusters_b apply {
+            private _cluster_b = _x;
+            _cluster_b params [
+                "_cluster_b_points", "_cluster_b_centroid",
+                "_cluster_b_group_data", "_cluster_b_group"
+            ];
+            if (
+                _cluster_a_centroid distance _cluster_b_centroid < _epsilon
+            ) exitWith {
+                // Poor man's equality check
+                _found = true;
+            };
+        };
+        if (!_found) then {
+            _clusters_diff pushBack _cluster_a;
+        };
+    };
+    _clusters_diff;
+};
+
 // Get near clusters.
-jib_ao__cluster_near = {
+jib_ao__cluster_scores = {
     params [
         "_clusters",
-        ["_n_points", 100, [0]],
-        ["_distance", -1, [0]],
-        ["_n_clusters", -1, [0]],
-        ["_require_data", true, [false]]
+        ["_targets", allPlayers + allCurators, [objNull]]
     ];
-    private _clusters_near = [];
-    private _n_points_actual = 0;
-    private _clusters_sorted = _clusters select {
-        private _cluster = _x;
+    private _cluster_scores = [];
+    for "_i" from 0 to count _clusters - 1 do {
+        private _cluster = _clusters # _i;
         _cluster params [
             "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
-        ];
-        !_require_data || count _cluster_group_data > 0
-    } apply {
-        private _cluster = _x;
-        _cluster params [
-            "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
+            "_cluster_group_data", "_cluster_group", "_cluster_active"
         ];
         private _best = 1e9;
-        allPlayers + allCurators apply {
+        _targets apply {
             private _target = _x;
             private _distance = _target distance _cluster_centroid;
             if (_distance < _best) then {
@@ -621,28 +643,10 @@ jib_ao__cluster_near = {
                 };
             };
         };
-        [_best, _cluster];
+        _cluster_scores pushBack [_best, _i];
     };
-    _clusters_sorted sort true;
-    _clusters_sorted apply {
-        _x params ["_score", "_cluster"];
-        _cluster params [
-            "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
-        ];
-        if (_n_points >= 0 && _n_points_actual >= _n_points) then {
-            break;
-        };
-        if (_n_clusters >= 0 && count _clusters_near >= _n_clusters) then {
-            break;
-        };
-        if (_distance >= 0 && _score > _distance) then {
-            break;
-        };
-        _clusters_near pushBack _cluster;
-        _n_points_actual = _n_points_actual + count _cluster_points;
-    };
-    _clusters_near;
+    _cluster_scores sort true;
+    _cluster_scores;
 };
 
 // Iteratively merge clusters smaller than threshold into closest cluster.
@@ -658,7 +662,7 @@ jib_ao__cluster_merge = {
         private _cluster = _x;
         _cluster params [
             "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
+            "_cluster_group_data", "_cluster_group", "_cluster_active"
         ];
         [_cluster, false];
     }; // mark clean
@@ -669,9 +673,9 @@ jib_ao__cluster_merge = {
         _entry params ["_cluster", "_dirty"];
         _cluster params [
             "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
+            "_cluster_group_data", "_cluster_group", "_cluster_active"
         ];
-        if (uiTime > _progress_time + jib_ao_progress_delay) then {
+        if (uiTime > _progress_time + jib_ao_log_delay) then {
             _progress_time = uiTime;
             [
                 format [
@@ -687,7 +691,7 @@ jib_ao__cluster_merge = {
     // Process queue
     while {_index < count _queue} do {
         private _entry = _queue # _index;
-        if (uiTime > _progress_time + jib_ao_progress_delay) then {
+        if (uiTime > _progress_time + jib_ao_log_delay) then {
             _progress_time = uiTime;
             [
                 format [
@@ -700,7 +704,7 @@ jib_ao__cluster_merge = {
         _entry params ["_cluster", "_dirty"];
         _cluster params [
             "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
+            "_cluster_group_data", "_cluster_group", "_cluster_active"
         ];
         if (_dirty) then {
             // ["Cluster dirty, continue"] call jib_ao__log;
@@ -719,7 +723,7 @@ jib_ao__cluster_merge = {
             _node_data params ["_cluster", "_dirty"];
             _cluster params [
                 "_cluster_points", "_cluster_centroid",
-                "_cluster_group_data", "_cluster_group"
+                "_cluster_group_data", "_cluster_group", "_cluster_active"
             ];
             !_dirty; // ensure other is not this or dirty
         }] call jib_ao__kdtree_nearest;
@@ -737,7 +741,8 @@ jib_ao__cluster_merge = {
         ];
         _other_cluster params [
             "_other_cluster_points", "_other_cluster_centroid",
-            "_other_cluster_enabled", "_other_cluster_active"
+            "_other_cluster_group_data", "_other_cluster_group",
+            "_other_cluster_active"
         ];
         _other_data set [1, true]; // mark other dirty
         // Create new cluster
@@ -745,7 +750,7 @@ jib_ao__cluster_merge = {
         private _new_cluster_centroid =
             [_new_cluster_points] call jib_ao__cluster_mean;
         private _new_cluster = [
-            _new_cluster_points, _new_cluster_centroid, [], grpNull
+            _new_cluster_points, _new_cluster_centroid, [], grpNull, false
         ] call jib_ao__cluster_make;
         private _new_entry = [_new_cluster, false]; // mark clean
         _queue pushBack _new_entry;
@@ -778,7 +783,7 @@ jib_ao__cluster_partition = {
         private _cluster = _x;
         _cluster params [
             "_cluster_points", "_cluster_centroid",
-            "_cluster_group_data", "_cluster_group"
+            "_cluster_group_data", "_cluster_group", "_cluster_active"
         ];
         if (count _cluster_points <= _threshold) then {
             _result pushBack _cluster;
@@ -794,7 +799,7 @@ jib_ao__cluster_partition = {
                     [_cluster_points] call jib_ao__cluster_mean;
                 _result pushBack (
                     [
-                        _cluster_points, _cluster_centroid, [], grpNull
+                        _cluster_points, _cluster_centroid, [], grpNull, false
                     ] call jib_ao__cluster_make
                 );
             };
@@ -952,42 +957,116 @@ jib_ao__cluster_kmeans = {
     _partitions;
 };
 
-// Draw clusters for debug purposes
-jib_ao__cluster_draw = {
+// Start drawing daemon.
+jib_ao__draw_start = {
     params [
         "_clusters",
-        ["_draw_distance", 1000, [1]]
+        ["_n", 200, [0]],
+        ["_distance", -1, [0]]
+    ];
+    [] call jib_ao__draw_stop;
+    jib_ao__draw_handle = [_clusters, _n, _distance] spawn {
+        scriptName "jib_ao__draw_handle";
+        params ["_clusters", "_n", "_distance"];
+        while {true} do {
+            [_clusters, _n, _distance] call jib_ao__draw_tick;
+            uiSleep jib_ao_draw_delay;
+        };
+    };
+    jib_ao__draw_handle;
+};
+
+// Stop drawing daemon.
+jib_ao__draw_stop = {
+    params [];
+    if (not isNil "jib_ao__draw_handle") then {
+        terminate jib_ao__draw_handle;
+    };
+    [[], []] call jib_ao__draw_commit;
+};
+
+// Draw near clusters once.
+jib_ao__draw_tick = {
+    params [
+        "_clusters",
+        ["_n", 200, [0]],
+        ["_distance", -1, [0]]
+    ];
+    private _cluster_indices =
+        [_clusters, _n, _distance] call jib_ao__draw_prepare;
+    [_clusters, _cluster_indices] call jib_ao__draw_commit;
+};
+
+// Get cluster indices for drawing.
+jib_ao__draw_prepare = {
+    params [
+        "_clusters",
+        ["_n", 200, [0]],
+        ["_distance", -1, [0]]
+    ];
+    private _cluster_scores = [_clusters] call jib_ao__cluster_scores;
+    private _n_points_actual = 0;
+    private _cluster_indices = [];
+    _cluster_scores apply {
+        private _cluster_score = _x;
+        _cluster_score params ["_score", "_index"];
+        private _cluster = _clusters # _index;
+        _cluster params [
+            "_cluster_points", "_cluster_centroid",
+            "_cluster_group_data", "_cluster_group", "_cluster_active"
+        ];
+        private _cluster_n_points = count _cluster_points;
+        if (_n >= 0 && _n_points_actual >= _n) then {
+            break;
+        };
+        if (_distance >= 0 && _score > _distance) then {
+            break;
+        };
+        _cluster_indices pushBack _index;
+        _n_points_actual = _n_points_actual + _cluster_n_points;
+    };
+    _cluster_indices;
+};
+
+// Draw clusters.
+jib_ao__draw_commit = {
+    params [
+        "_clusters",
+        "_cluster_indices"
     ];
     if (!isNil "jib_ao__cluster_draw_handle") then {
         removeMissionEventHandler ["Draw3D", jib_ao__cluster_draw_handle];
     };
     jib_ao__cluster_draw_handle = addMissionEventHandler ["Draw3D", {
-        _thisArgs params ["_clusters", "_draw_distance"];
+        _thisArgs params ["_clusters", "_cluster_indices"];
         if (not isNull findDisplay 49) exitWith {}; // Pause menu
         if (isNull curatorCamera) exitWith {};
-        for "_i" from 0 to count _clusters - 1 do {
-            private _cluster = _clusters # _i;
+        for "_i" from 0 to count _cluster_indices - 1 do {
+            private _cluster_index = _cluster_indices # _i;
+            private _cluster = _clusters # _cluster_index;
             _cluster params [
                 "_cluster_points", "_cluster_centroid",
-                "_cluster_group_data", "_cluster_group"
+                "_cluster_group_data", "_cluster_group", "_cluster_active"
             ];
-            if (count _cluster_centroid < 3) then {
+            if (count _cluster_points == 0) then {
                 [
-                    format ["jib_ao__cluster_draw: Empty cluster %1", _i]
+                    format [
+                        "jib_ao__draw_commit: Empty cluster %1",
+                        _cluster_index
+                    ]
                 ] call jib_ao__log;
-                continue;
-            };
-            if (
-                isNull curatorCamera ||
-                    {curatorCamera distance _cluster_centroid > _draw_distance}
-            ) then {
                 continue;
             };
             // Draw title
             private _icon = "\A3\ui_f\data\map\markers\military\dot_CA.paa";
-            private _color = [0,1,0,.5];
-            private _offset = jib_ao_cluster_draw_offset;
-            private _shadow = false;
+            private _color = switch true do
+            {
+                case (_cluster_active): {[0, 1, 0, 0.5]};
+                case (count _cluster_group_data > 0): {[1, 0, 0, 0.5]};
+                default {[0, 0, 0, 0.5]};
+            };
+            private _offset = jib_ao_draw_offset;
+            private _shadow = true;
             private _iconSize = 1;
             private _textSize = 1;
             private _textFont = "RobotoCondensedBold";
@@ -999,7 +1078,10 @@ jib_ao__cluster_draw = {
                 _iconSize,
                 _iconSize,
                 0,
-                format ["Cluster %1 (size %2)", _i, count _cluster_points],
+                format [
+                    "Cluster %1 (size %2)",
+                    _cluster_index, count _cluster_points
+                ],
                 _shadow
                 // _textSize,
                 // _textFont,
@@ -1009,6 +1091,13 @@ jib_ao__cluster_draw = {
             for "_j" from 0 to count _cluster_points - 1 do {
                 private _cluster_point = _cluster_points # _j;
                 _cluster_point params ["_pos", "_unit_data", "_unit"];
+                private _color = switch true do
+                {
+                    case (alive _unit): {[0, 1, 0, 0.5]};
+                    case (count _unit_data == 0): {[0, 0, 0, 0.5]};
+                    case (_cluster_active): {[0, 0, 1, 0.5]};
+                    default {[1, 0, 0, 0.5]};
+                };
                 drawIcon3D [
                     _icon,
                     _color,
@@ -1029,7 +1118,7 @@ jib_ao__cluster_draw = {
                 ];
             };
         };
-    }, [_clusters, _draw_distance]];
+    }, [_clusters, _cluster_indices]];
 };
 
 // Insert position into 3D tree.
