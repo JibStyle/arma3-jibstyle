@@ -8,8 +8,11 @@ jib_ao_serial_delay = 0; // 0.1;
 jib_ao_log_delay = 3;
 jib_ao_cluster_supercluster_threshold = 100;
 jib_ao_population_delay = 1;
+jib_ao_population_default_n = 100;
 jib_ao_draw_offset = 10;
 jib_ao_draw_delay = 1;
+jib_ao_draw_default_n = 500;
+jib_ao_zeus_draw_delay = 1;
 
 // Default param values.
 jib_ao_default_unit_init = {
@@ -24,7 +27,504 @@ jib_ao_default_group_init = {
 
 // Public
 
+// Add nearest building to selection.
+jib_ao_module_building_add_nearest = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [getPos _logic] remoteExec ["jib_ao__zeus_building_add_nearest", 2];
+    deleteVehicle _logic;
+};
+
+// Add buildings within 100 meter radius to selection.
+jib_ao_module_building_add_100 = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [getPos _logic, 100] remoteExec ["jib_ao__zeus_building_add_radius", 2];
+    deleteVehicle _logic;
+};
+
+// Add buildings within 500 meter radius to selection.
+jib_ao_module_building_add_500 = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [getPos _logic, 500] remoteExec ["jib_ao__zeus_building_add_radius", 2];
+    deleteVehicle _logic;
+};
+
+// Add buildings within 100000 meter radius to selection.
+jib_ao_module_building_add_100000 = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [getPos _logic, 100000] remoteExec ["jib_ao__zeus_building_add_radius", 2];
+    deleteVehicle _logic;
+};
+
+// Remove nearest building from selection.
+jib_ao_module_building_remove_nearest = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [getPos _logic] remoteExec ["jib_ao__zeus_building_remove_nearest", 2];
+    deleteVehicle _logic;
+};
+
+// Remove buildings within 100 meter radius from selection.
+jib_ao_module_building_remove_100 = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [getPos _logic, 100] remoteExec ["jib_ao__zeus_building_remove_radius", 2];
+    deleteVehicle _logic;
+};
+
+// Remove buildings within 500 meter radius from selection.
+jib_ao_module_building_remove_500 = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [getPos _logic, 500] remoteExec ["jib_ao__zeus_building_remove_radius", 2];
+    deleteVehicle _logic;
+};
+
+// Reset building selection.
+jib_ao_module_building_reset = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [] remoteExec ["jib_ao__zeus_building_reset", 2];
+    deleteVehicle _logic;
+};
+
+// Add group to selection.
+jib_ao_module_group_add = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    private _attached =
+        _logic getvariable ["bis_fnc_curatorAttachObject_object", objNull];
+    if (isNull group _attached) exitWith {
+        [
+            objNull, "Must select a unit!"
+        ] call bis_fnc_showcuratorfeedbackmessage;
+        deleteVehicle _logic;
+    };
+    [group _attached] remoteExec ["jib_ao__zeus_group_add", 2];
+    deleteVehicle _logic;
+};
+
+// Reset group selection.
+jib_ao_module_group_reset = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [] remoteExec ["jib_ao__zeus_group_reset", 2];
+    deleteVehicle _logic;
+};
+
+// Add cluster and population data.
+jib_ao_module_population_add = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [] remoteExec ["jib_ao__zeus_population_add", 2];
+    deleteVehicle _logic;
+};
+
+// Reset cluster and population data.
+jib_ao_module_population_reset = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [] remoteExec ["jib_ao__zeus_population_reset", 2];
+    deleteVehicle _logic;
+};
+
+// Start population daemon.
+jib_ao_module_population_start = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [] remoteExec ["jib_ao__zeus_population_start", 2];
+    deleteVehicle _logic;
+};
+
+// Stop population daemon.
+jib_ao_module_population_stop = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [] remoteExec ["jib_ao__zeus_population_stop", 2];
+    deleteVehicle _logic;
+};
+
+// Start debug drawing.
+jib_ao_module_draw_start = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [] remoteExec ["jib_ao__zeus_cluster_draw_start", 2];
+    deleteVehicle _logic;
+};
+
+// Stop debug drawing.
+jib_ao_module_draw_stop = {
+    params ["_logic", "", "_activated"];
+    if (not _activated) exitWith {};
+    [] remoteExec ["jib_ao__zeus_cluster_draw_stop", 2];
+    deleteVehicle _logic;
+};
+
 // Private
+
+// Add buildings to selection.
+jib_ao__zeus_building_add_many = {
+    params ["_buildings"];
+    if (isNil "jib_ao__zeus_building_selected") then {
+        [] call jib_ao__zeus_building_reset;
+    };
+    _buildings apply {
+        jib_ao__zeus_building_selected pushBackUnique _x;
+    };
+    [jib_ao__zeus_building_selected] call jib_ao__zeus_draw_start;
+    _buildings;
+};
+
+// Add nearest building to selection.
+jib_ao__zeus_building_add_nearest = {
+    params [
+        "_pos",
+        ["_r", 100, [0]]
+    ];
+    private _buildings = _pos nearObjects _r select {
+        count (_x buildingPos -1) > 0
+    } apply {[_x distance _pos, _x]};
+    _buildings sort true;
+    [[_buildings # 0 # 1]] call jib_ao__zeus_building_add_many;
+};
+
+// Add buildings in radius to selection.
+jib_ao__zeus_building_add_radius = {
+    params [
+        "_pos",
+        ["_r", 100, [0]]
+    ];
+    private _buildings = _pos nearObjects _r select {
+        count (_x buildingPos -1) > 0
+    };
+    [_buildings] call jib_ao__zeus_building_add_many;
+};
+
+// Remove buildings from selection.
+jib_ao__zeus_building_remove_many = {
+    params ["_buildings"];
+    if (isNil "jib_ao__zeus_building_selected") then {
+        [] call jib_ao__zeus_building_reset;
+    };
+    jib_ao__zeus_building_selected =
+        jib_ao__zeus_building_selected select {
+            not (_x in _buildings);
+        };
+    [jib_ao__zeus_building_selected] call jib_ao__zeus_draw_start;
+    _buildings;
+};
+
+// Remove nearest building from selection.
+jib_ao__zeus_building_remove_nearest = {
+    params [
+        "_pos",
+        ["_r", 100, [0]]
+    ];
+    private _buildings = _pos nearObjects _r select {
+        count (_x buildingPos -1) > 0
+    } apply {[_x distance _pos, _x]};
+    _buildings sort true;
+    [[_buildings # 0 # 1]] call jib_ao__zeus_building_remove_many;
+};
+
+// Remove buildings in radius from selection.
+jib_ao__zeus_building_remove_radius = {
+    params [
+        "_pos",
+        ["_r", 100, [0]]
+    ];
+    private _buildings = _pos nearObjects _r select {
+        count (_x buildingPos -1) > 0
+    };
+    [_buildings] call jib_ao__zeus_building_remove_many;
+};
+
+// Reset building selection.
+jib_ao__zeus_building_reset = {
+    params [];
+    jib_ao__zeus_building_selected = [];
+    [] call jib_ao__zeus_draw_stop;
+};
+
+// Add group to selection.
+jib_ao__zeus_group_add = {
+    params ["_group"];
+    if (isNil "jib_ao__zeus_group_selected") then {
+        [] call jib_ao__zeus_group_reset;
+    };
+    private _group_data = [_group] call jib_ao__serial_read_group;
+    private _units_data = units _group apply {
+        private _unit = _x;
+        private _unit_data = [_unit] call jib_ao__serial_read_unit;
+        _unit_data;
+    };
+    private _group_units_data = [_group_data, _units_data];
+    jib_ao__zeus_group_selected pushBack _group_units_data;
+    _group_units_data;
+};
+
+// Reset group selection.
+jib_ao__zeus_group_reset = {
+    params [];
+    jib_ao__zeus_group_selected = [];
+};
+
+// Generate cluster and population data.
+jib_ao__zeus_population_add = {
+    params [];
+    private _time = uiTime;
+    private _buildings = jib_ao__zeus_building_selected;
+    private _groups_units_data = jib_ao__zeus_group_selected;
+    if (isNil {_buildings} || {count _buildings == 0}) exitWith {
+        ["jib_ao__zeus_population_add: No buildings."] call jib_ao__log;
+    };
+    if (
+        isNil {_groups_units_data} || {count _groups_units_data == 0}
+    ) exitWith {
+        ["jib_ao__zeus_population_add: No group data."] call jib_ao__log;
+    };
+    [_buildings] call jib_ao__cluster_supercluster params [
+        "_clusters", "_superclusters"
+    ];
+    [_clusters, _groups_units_data] call jib_ao__population_generate;
+    if (isNil "jib_ao__zeus_population_clusters") then {
+        jib_ao__zeus_population_clusters = [];
+    };
+    jib_ao__zeus_population_clusters =
+        jib_ao__zeus_population_clusters + _clusters;
+    [] call jib_ao__zeus_building_reset;
+    // [] call jib_ao__zeus_group_reset;
+    [
+        "AO Generation Complete",
+        format [
+            "Added cluster and population data (%1 clusters, %2 seconds).",
+            count _clusters, uiTime - _time
+        ],
+        10
+    ] remoteExec ["bis_fnc_curatorhint", allCurators apply {owner _x}];
+    ["AO Generation Complete"] remoteExec [
+        "systemChat", allCurators apply {owner _x}
+    ];
+};
+
+// Reset all data.
+jib_ao__zeus_population_reset = {
+    params [];
+    jib_ao__zeus_population_clusters = [];
+};
+
+// Start population daemon.
+jib_ao__zeus_population_start = {
+    params [];
+    if (isNil "jib_ao__zeus_population_clusters") then {
+        jib_ao__zeus_population_clusters = [];
+    };
+    [jib_ao__zeus_population_clusters] call jib_ao__population_start;
+};
+
+// Stop population daemon.
+jib_ao__zeus_population_stop = {
+    params [];
+    [] call jib_ao__population_stop;
+};
+
+// Start draw daemon.
+jib_ao__zeus_cluster_draw_start = {
+    params [];
+    if (isNil "jib_ao__zeus_population_clusters") then {
+        jib_ao__zeus_population_clusters = [];
+    };
+    [jib_ao__zeus_population_clusters] call jib_ao__draw_start;
+};
+
+// Stop draw daemon.
+jib_ao__zeus_cluster_draw_stop = {
+    params [];
+    [allCurators apply {owner _x}] call jib_ao__draw_stop;
+};
+
+// Start zeus drawing daemon.
+jib_ao__zeus_draw_start = {
+    params [
+        "_buildings",
+        ["_n", jib_ao_draw_default_n, [0]],
+        ["_distance", -1, [0]]
+    ];
+    [] call jib_ao__zeus_draw_stop;
+    jib_ao__zeus_draw_daemon = [_buildings, _n, _distance] spawn {
+        scriptName "jib_ao__zeus_draw_daemon";
+        params ["_buildings", "_n", "_distance"];
+        while {true} do {
+            [_buildings, _n, _distance] call jib_ao__zeus_draw_tick;
+            uiSleep jib_ao_zeus_draw_delay;
+        };
+    };
+    jib_ao__zeus_draw_daemon;
+};
+
+// Stop zeus drawing daemon.
+jib_ao__zeus_draw_stop = {
+    params [];
+    if (not isNil "jib_ao__zeus_draw_daemon") then {
+        terminate jib_ao__zeus_draw_daemon;
+    };
+    [[], []] remoteExec [
+        "jib_ao__zeus_draw_commit", allCurators apply {owner _x}
+    ];
+};
+
+// Draw near buildings once.
+jib_ao__zeus_draw_tick = {
+    params [
+        "_buildings",
+        ["_n", jib_ao_draw_default_n, [0]],
+        ["_distance", -1, [0]]
+    ];
+    private _building_indices =
+        [_buildings, _n, _distance] call jib_ao__zeus_draw_prepare;
+    private _buildings_selected = _building_indices apply {
+        _buildings # _x;
+    };
+    [_buildings_selected, _building_indices] remoteExec [
+        "jib_ao__zeus_draw_commit", allCurators apply {owner _x}
+    ];
+};
+
+// Get building indices for drawing.
+jib_ao__zeus_draw_prepare = {
+    params [
+        "_buildings",
+        ["_n", jib_ao_draw_default_n, [0]],
+        ["_distance", -1, [0]]
+    ];
+    private _building_scores = [_buildings] call jib_ao__zeus_draw_scores;
+    private _n_points_actual = 0;
+    private _building_indices = [];
+    _building_scores apply {
+        private _building_score = _x;
+        _building_score params ["_score", "_index"];
+        private _building = _buildings # _index;
+        private _building_n_points = count (_building buildingPos -1);
+        if (_n >= 0 && _n_points_actual >= _n) then {
+            break;
+        };
+        if (_distance >= 0 && _score > _distance) then {
+            break;
+        };
+        _building_indices pushBack _index;
+        _n_points_actual = _n_points_actual + _building_n_points;
+    };
+    _building_indices;
+};
+
+// Get near buildings.
+jib_ao__zeus_draw_scores = {
+    params [
+        "_buildings",
+        ["_targets", allCurators, [objNull]]
+    ];
+    private _building_scores = [];
+    for "_i" from 0 to count _buildings - 1 do {
+        private _building = _buildings # _i;
+        private _best = 1e9;
+        _targets apply {
+            private _target = _x;
+            private _distance = _target distance _building;
+            if (_distance < _best) then {
+                _best = _distance;
+            };
+        };
+        _building_scores pushBack [_best, _i];
+    };
+    _building_scores sort true;
+    _building_scores;
+};
+
+// Draw buildings.
+jib_ao__zeus_draw_commit = {
+    params [
+        "_buildings",
+        "_building_indices"
+    ];
+    if (!isNil "jib_ao__zeus_draw_handler") then {
+        removeMissionEventHandler ["Draw3D", jib_ao__zeus_draw_handler];
+    };
+    jib_ao__zeus_draw_handler = addMissionEventHandler ["Draw3D", {
+        _thisArgs params ["_buildings", "_building_indices"];
+        if (not isNull findDisplay 49) exitWith {}; // Pause menu
+        if (isNull curatorCamera) exitWith {};
+        for "_i" from 0 to count _building_indices - 1 do {
+            private _building_index = _building_indices # _i;
+            private _building = _buildings # _i;
+            private _building_points = _building buildingPos -1;
+            if (count _building_points == 0) then {
+                [
+                    format [
+                        "jib_ao__zeus_draw_commit: Empty building %1",
+                        _building_index
+                    ]
+                ] call jib_ao__log;
+                continue;
+            };
+            private _building_centroid = [0, 0, 0];
+            _building_points apply {
+                _building_centroid = _building_centroid vectorAdd _x;
+            };
+            _building_centroid =
+                _building_centroid vectorMultiply (1 / count _building_points);
+            // Draw title
+            private _icon = "\A3\ui_f\data\map\markers\military\dot_CA.paa";
+            private _color = [1, 1, 1, 0.5];
+            private _offset = jib_ao_draw_offset;
+            private _shadow = true;
+            private _iconSize = 1;
+            private _textSize = 1;
+            private _textFont = "RobotoCondensedBold";
+            private _textAlign = "right";
+            drawIcon3D [
+                _icon,
+                _color,
+                _building_centroid vectorAdd [0, 0, _offset],
+                _iconSize,
+                _iconSize,
+                0,
+                format [
+                    "Building %1 (size %2)",
+                    _building_index, count _building_points
+                ],
+                _shadow
+                // _textSize,
+                // _textFont,
+                // _textAlign
+            ];
+            // Draw positions
+            for "_j" from 0 to count _building_points - 1 do {
+                private _building_point = _building_points # _j;
+                drawIcon3D [
+                    _icon,
+                    _color,
+                    _building_point,
+                    _iconSize,
+                    _iconSize,
+                    0,
+                    "",
+                    _shadow
+                    // _textSize,
+                    // _textFont,
+                    // _textAlign
+                ];
+                drawLine3D [
+                    _building_centroid vectorAdd [0, 0, _offset],
+                    _building_point,
+                    _color
+                ];
+            };
+        };
+    }, [_buildings, _building_indices]];
+};
 
 // Get unit data
 jib_ao__serial_read_group = {
@@ -341,7 +841,7 @@ jib_ao__population_remove = {
 jib_ao__population_resolve = {
     params [
         "_clusters",
-        ["_n", 100, [0]],
+        ["_n", jib_ao_population_default_n, [0]],
         ["_distance", -1, [0]]
     ];
     private _cluster_scores = [_clusters] call jib_ao__cluster_scores;
@@ -388,7 +888,7 @@ jib_ao__population_resolve = {
 jib_ao__population_tick = {
     params [
         "_clusters",
-        ["_n", 100, [0]],
+        ["_n", jib_ao_population_default_n, [0]],
         ["_distance", -1, [0]]
     ];
     [_clusters, _n, _distance] call jib_ao__population_resolve params [
@@ -408,7 +908,7 @@ jib_ao__population_tick = {
 jib_ao__population_start = {
     params [
         "_clusters",
-        ["_n", 100, [0]],
+        ["_n", jib_ao_population_default_n, [0]],
         ["_distance", -1, [0]]
     ];
     [] call jib_ao__population_stop;
@@ -624,6 +1124,10 @@ jib_ao__cluster_scores = {
             "_cluster_group_data", "_cluster_group", "_cluster_active"
         ];
         private _best = 1e9;
+        if (count _cluster_points == 0) then {
+            _cluster_scores pushBack [_best, _i];
+            continue;
+        };
         _targets apply {
             private _target = _x;
             private _distance = _target distance _cluster_centroid;
@@ -961,47 +1465,52 @@ jib_ao__cluster_kmeans = {
 jib_ao__draw_start = {
     params [
         "_clusters",
-        ["_n", 200, [0]],
+        ["_n", jib_ao_draw_default_n, [0]],
         ["_distance", -1, [0]]
     ];
     [] call jib_ao__draw_stop;
-    jib_ao__draw_handle = [_clusters, _n, _distance] spawn {
-        scriptName "jib_ao__draw_handle";
+    jib_ao__draw_daemon = [_clusters, _n, _distance] spawn {
+        scriptName "jib_ao__draw_daemon";
         params ["_clusters", "_n", "_distance"];
         while {true} do {
             [_clusters, _n, _distance] call jib_ao__draw_tick;
             uiSleep jib_ao_draw_delay;
         };
     };
-    jib_ao__draw_handle;
+    jib_ao__draw_daemon;
 };
 
 // Stop drawing daemon.
 jib_ao__draw_stop = {
     params [];
-    if (not isNil "jib_ao__draw_handle") then {
-        terminate jib_ao__draw_handle;
+    if (not isNil "jib_ao__draw_daemon") then {
+        terminate jib_ao__draw_daemon;
     };
-    [[], []] call jib_ao__draw_commit;
+    [[], []] remoteExec ["jib_ao__draw_commit", allCurators apply {owner _x}];
 };
 
 // Draw near clusters once.
 jib_ao__draw_tick = {
     params [
         "_clusters",
-        ["_n", 200, [0]],
+        ["_n", jib_ao_draw_default_n, [0]],
         ["_distance", -1, [0]]
     ];
     private _cluster_indices =
         [_clusters, _n, _distance] call jib_ao__draw_prepare;
-    [_clusters, _cluster_indices] call jib_ao__draw_commit;
+    private _clusters_selected = _cluster_indices apply {
+        _clusters # _x;
+    };
+    [_clusters_selected, _cluster_indices] remoteExec [
+        "jib_ao__draw_commit", allCurators apply {owner _x}
+    ];
 };
 
 // Get cluster indices for drawing.
 jib_ao__draw_prepare = {
     params [
         "_clusters",
-        ["_n", 200, [0]],
+        ["_n", jib_ao_draw_default_n, [0]],
         ["_distance", -1, [0]]
     ];
     private _cluster_scores = [_clusters] call jib_ao__cluster_scores;
@@ -1034,16 +1543,16 @@ jib_ao__draw_commit = {
         "_clusters",
         "_cluster_indices"
     ];
-    if (!isNil "jib_ao__cluster_draw_handle") then {
-        removeMissionEventHandler ["Draw3D", jib_ao__cluster_draw_handle];
+    if (!isNil "jib_ao__cluster_draw_handler") then {
+        removeMissionEventHandler ["Draw3D", jib_ao__cluster_draw_handler];
     };
-    jib_ao__cluster_draw_handle = addMissionEventHandler ["Draw3D", {
+    jib_ao__cluster_draw_handler = addMissionEventHandler ["Draw3D", {
         _thisArgs params ["_clusters", "_cluster_indices"];
         if (not isNull findDisplay 49) exitWith {}; // Pause menu
         if (isNull curatorCamera) exitWith {};
         for "_i" from 0 to count _cluster_indices - 1 do {
             private _cluster_index = _cluster_indices # _i;
-            private _cluster = _clusters # _cluster_index;
+            private _cluster = _clusters # _i;
             _cluster params [
                 "_cluster_points", "_cluster_centroid",
                 "_cluster_group_data", "_cluster_group", "_cluster_active"
